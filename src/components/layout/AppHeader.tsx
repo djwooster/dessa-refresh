@@ -1,23 +1,10 @@
 "use client";
 
-import { Menu, Search } from "lucide-react";
-import { DessaLogo } from "./DessaLogo";
+import { Search } from "lucide-react";
 
 export function AppHeader() {
   return (
-    <header className="bg-white border-b border-[#e2e8f0] h-14 flex items-center px-4 gap-4 sticky top-0 z-30">
-      <button
-        className="text-gray-500 hover:text-gray-700 p-1 rounded"
-        aria-label="Open menu"
-      >
-        <Menu size={20} />
-      </button>
-
-      <DessaLogo />
-
-      <div className="flex-1" />
-
-      {/* Search */}
+    <header className="bg-white border-b border-[#e8ecf0] h-14 flex items-center px-5 shrink-0">
       <div className="relative w-72">
         <Search
           size={15}

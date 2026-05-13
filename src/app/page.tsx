@@ -1,4 +1,4 @@
-import { AppHeader } from "@/components/layout/AppHeader";
+import { AppShell } from "@/components/layout/AppShell";
 import { TimelineCard } from "@/components/dashboard/TimelineCard";
 import { MyStudentsCard } from "@/components/dashboard/MyStudentsCard";
 import { GradeLevelComparison } from "@/components/dashboard/GradeLevelComparison";
@@ -6,10 +6,8 @@ import { SupportStrategies } from "@/components/dashboard/SupportStrategies";
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-[#edf1f6] flex flex-col">
-      <AppHeader />
-
-      <main className="flex-1 max-w-[1080px] w-full mx-auto px-6 py-8">
+    <AppShell>
+      <div className="max-w-[1200px] w-full mx-auto px-6 py-8">
         {/* Welcome */}
         <div className="mb-7">
           <h1 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1">
@@ -35,7 +33,7 @@ export default function DashboardPage() {
         <div>
           <SupportStrategies />
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

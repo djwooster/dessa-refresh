@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AppHeader } from "@/components/layout/AppHeader";
+import { AppShell } from "@/components/layout/AppShell";
 
 const COLORS = [
   { name: "Navy / Primary", hex: "#1a4e8a", token: "--dessa-navy", usage: "Logo, primary actions, active tab indicators" },
@@ -71,10 +71,8 @@ const DECISIONS = [
 
 export default function DesignSystemPage() {
   return (
-    <div className="min-h-screen bg-[#edf1f6] flex flex-col">
-      <AppHeader />
-
-      <main className="max-w-[1080px] w-full mx-auto px-6 py-8">
+    <AppShell>
+      <div className="max-w-[1080px] w-full mx-auto px-6 py-8">
         <div className="mb-8 flex items-center gap-4">
           <div>
             <h1 className="text-[28px] font-extrabold text-gray-900 mb-1">Design System</h1>
@@ -172,8 +170,8 @@ export default function DesignSystemPage() {
             ))}
           </div>
         </Section>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 
