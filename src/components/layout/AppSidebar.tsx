@@ -12,7 +12,6 @@ import {
   GraduationCap,
   HelpCircle,
   Flag,
-  Info,
   UserCog,
   LogOut,
   ChevronDown,
@@ -54,8 +53,7 @@ const UTILITY_NAV: NavItem[] = [
 ];
 
 const ACCOUNT_NAV: NavItem[] = [
-  { label: "Basic Info", href: "/account/basic-info", icon: Info },
-  { label: "Admin",      href: "/account/admin",      icon: UserCog },
+  { label: "Admin", href: "/account/admin", icon: UserCog },
 ];
 
 // ─── Shared item styles ───────────────────────────────────────────────────────
@@ -106,7 +104,7 @@ function TrainingAccordion({ item }: { item: NavItem }) {
         />
         <span className="flex-1 text-left">{item.label}</span>
         <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
+          animate={{ rotate: open ? 0 : -90 }}
           transition={{ duration: 0.18 }}
           className="shrink-0"
         >
