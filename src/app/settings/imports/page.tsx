@@ -86,25 +86,26 @@ export default function ImportsPage() {
           })}
         </div>
 
-        <div className="border-t border-[#f0f4f8] pt-5 space-y-2.5">
-          {RESOURCES.map((r) => (
-            <a
-              key={r}
-              href="#"
-              className="flex items-center gap-2 text-[13.5px] text-[#1565c0] hover:underline"
-            >
-              <ExternalLink size={13} strokeWidth={1.75} className="shrink-0" />
-              {r}
-            </a>
-          ))}
+        <div className="border-t border-[#f0f4f8] pt-5">
+          <div className="flex items-end justify-between gap-4">
+            <div className="space-y-2.5">
+              {RESOURCES.map((r) => (
+                <a
+                  key={r}
+                  href="#"
+                  className="flex items-center gap-2 text-[13.5px] text-[#1565c0] hover:underline"
+                >
+                  <ExternalLink size={13} strokeWidth={1.75} className="shrink-0" />
+                  {r}
+                </a>
+              ))}
+            </div>
+            <button className="flex items-center gap-2 h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors shrink-0">
+              Continue
+              <ArrowRight size={14} strokeWidth={2} />
+            </button>
+          </div>
         </div>
-      </div>
-
-      <div className="flex justify-end">
-        <button className="flex items-center gap-2 h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors">
-          Continue
-          <ArrowRight size={14} strokeWidth={2} />
-        </button>
       </div>
     </div>
   );

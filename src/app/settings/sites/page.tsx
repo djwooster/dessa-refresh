@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus, Pencil, Trash2, CheckCircle2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 type Site = {
   id: number;
@@ -36,7 +36,7 @@ function Toggle({
       role="switch"
       aria-checked={checked}
       onClick={onChange}
-      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#1a4e8a]/30 ${
+      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#1a4e8a]/30 cursor-pointer ${
         checked ? "bg-[#1a4e8a]" : "bg-gray-200"
       }`}
     >
@@ -49,15 +49,24 @@ function Toggle({
   );
 }
 
+type SortDir = "asc" | "desc" | null;
+
 export default function SitesPage() {
   const [sites, setSites] = useState<Site[]>(INITIAL_SITES);
   const [search, setSearch] = useState("");
+  const [sortDir, setSortDir] = useState<SortDir>(null);
 
-  const filtered = search
-    ? sites.filter((s) =>
-        s.name.toLowerCase().includes(search.toLowerCase())
-      )
-    : sites;
+  function cycleSort() {
+    setSortDir((d) => (d === null ? "asc" : d === "asc" ? "desc" : null));
+  }
+
+  const filtered = sites
+    .filter((s) => !search || s.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (sortDir === "asc")  return a.name.localeCompare(b.name);
+      if (sortDir === "desc") return b.name.localeCompare(a.name);
+      return 0;
+    });
 
   function toggle(
     id: number,
@@ -100,16 +109,27 @@ export default function SitesPage() {
           <thead>
             <tr className="border-b border-[#e8ecf0] bg-gray-50/70">
               <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
-                Site Name
+                <button
+                  onClick={cycleSort}
+                  className="flex items-center gap-1.5 hover:text-gray-700 transition-colors cursor-pointer"
+                >
+                  Site Name
+                  {sortDir === "asc"  ? <ArrowUp   size={12} strokeWidth={2} className="text-[#1a4e8a]" /> :
+                   sortDir === "desc" ? <ArrowDown  size={12} strokeWidth={2} className="text-[#1a4e8a]" /> :
+                                        <ArrowUpDown size={12} strokeWidth={2} className="text-gray-300" />}
+                </button>
               </th>
-              <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[200px]">
-                Student Completed<br />Assessment Activation
+              <th className="text-center px-4 py-3 w-[190px]">
+                <span className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Student Assessment</span>
+                <span className="block text-[11px] text-gray-400 normal-case tracking-normal font-normal mt-0.5">Activation</span>
               </th>
-              <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[180px]">
-                DESSA SEIR<br />Assessment Site
+              <th className="text-center px-4 py-3 w-[170px]">
+                <span className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">DESSA SEIR</span>
+                <span className="block text-[11px] text-gray-400 normal-case tracking-normal font-normal mt-0.5">Assessment site</span>
               </th>
-              <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[180px]">
-                DESSA Second Step®<br />Assessment Site
+              <th className="text-center px-4 py-3 w-[170px]">
+                <span className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Second Step®</span>
+                <span className="block text-[11px] text-gray-400 normal-case tracking-normal font-normal mt-0.5">Assessment site</span>
               </th>
               <th className="w-16" />
             </tr>
@@ -143,23 +163,18 @@ export default function SitesPage() {
                 </td>
                 <td className="px-4 py-3.5 text-center">
                   <div className="flex justify-center">
-                    {site.secondStep ? (
-                      <CheckCircle2
-                        size={18}
-                        className="text-[#7dc49a]"
-                        strokeWidth={1.75}
-                      />
-                    ) : (
-                      <span className="inline-block w-[18px]" />
-                    )}
+                    <Toggle
+                      checked={site.secondStep}
+                      onChange={() => toggle(site.id, "secondStep")}
+                    />
                   </div>
                 </td>
                 <td className="px-3 py-3.5">
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-[#1565c0] hover:bg-blue-50 transition-colors">
+                  <div className="flex items-center justify-end gap-1">
+                    <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-[#1565c0] hover:bg-blue-50 transition-colors cursor-pointer">
                       <Pencil size={13} strokeWidth={1.75} />
                     </button>
-                    <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                    <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer">
                       <Trash2 size={13} strokeWidth={1.75} />
                     </button>
                   </div>
