@@ -237,13 +237,13 @@ export default function MyStudentsV2Page() {
   const [draftAcademic, setDraftAcademic]   = useState("all");
   const [draftGenders, setDraftGenders]     = useState("all");
   const [draftCustom, setDraftCustom]       = useState("all");
-  const [draftWindows, setDraftWindows]     = useState<string[]>(["25-26 Mid"]);
+  const [draftWindows, setDraftWindows]     = useState<string[]>([]);
   const [draftForms, setDraftForms]         = useState("all");
   const [draftStart, setDraftStart]         = useState("");
   const [draftEnd, setDraftEnd]             = useState("");
 
   // Applied state — what actually filters the table
-  const [appliedWindows, setAppliedWindows] = useState<string[]>(["25-26 Mid"]);
+  const [appliedWindows, setAppliedWindows] = useState<string[]>([]);
 
   const activeFilterCount = [
     draftSites !== "all",
@@ -347,11 +347,6 @@ export default function MyStudentsV2Page() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 h-8 px-3.5 rounded-lg border border-[#e8ecf0] bg-white text-[12.5px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-              <Download size={13} strokeWidth={1.75} />
-              Export CSV
-            </button>
-
             {/* Filter trigger */}
             <button
               onClick={() => setDrawerOpen(true)}
@@ -368,6 +363,11 @@ export default function MyStudentsV2Page() {
                   {activeFilterCount}
                 </span>
               )}
+            </button>
+
+            <button className="flex items-center gap-2 h-8 px-3.5 rounded-lg border border-[#e8ecf0] bg-white text-[12.5px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+              <Download size={13} strokeWidth={1.75} />
+              Export CSV
             </button>
           </div>
         </div>

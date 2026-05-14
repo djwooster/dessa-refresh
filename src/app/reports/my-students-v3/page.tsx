@@ -338,11 +338,6 @@ export default function MyStudentsV3Page() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 h-8 px-3.5 rounded-lg border border-[#e8ecf0] bg-white text-[12.5px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-              <Download size={13} strokeWidth={1.75} />
-              Export CSV
-            </button>
-
             {/* Filter trigger + popover anchor */}
             <div className="relative" ref={popoverRef}>
               <button
@@ -471,6 +466,11 @@ export default function MyStudentsV3Page() {
                 )}
               </AnimatePresence>
             </div>
+
+            <button className="flex items-center gap-2 h-8 px-3.5 rounded-lg border border-[#e8ecf0] bg-white text-[12.5px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+              <Download size={13} strokeWidth={1.75} />
+              Export CSV
+            </button>
           </div>
         </div>
 
