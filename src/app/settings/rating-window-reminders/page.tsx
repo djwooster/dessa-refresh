@@ -10,7 +10,7 @@ const WINDOWS = [
 
 export default function RatingWindowRemindersPage() {
   return (
-    <div className="p-6 max-w-[700px]">
+    <div className="p-6">
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900 mb-1">
           Rating Window Email Reminders

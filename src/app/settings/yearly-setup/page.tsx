@@ -19,7 +19,7 @@ export default function YearlySetupPage() {
   const [year, setYear] = useState("2025-2026");
 
   return (
-    <div className="p-6 max-w-[820px]">
+    <div className="p-6">
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900 mb-1">Yearly Setup</h1>
         <p className="text-[13.5px] text-gray-500">

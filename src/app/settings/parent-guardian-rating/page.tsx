@@ -11,7 +11,7 @@ export default function ParentGuardianRatingPage() {
   const [formType, setFormType] = useState("");
 
   return (
-    <div className="p-6 max-w-[700px]">
+    <div className="p-6">
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900 mb-1">
           Parent/Guardian Rating

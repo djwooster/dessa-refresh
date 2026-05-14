@@ -34,7 +34,7 @@ export default function ImportsPage() {
   const [selected, setSelected] = useState("sites-educators-students");
 
   return (
-    <div className="p-6 max-w-[820px]">
+    <div className="p-6">
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900">Imports</h1>
       </div>
