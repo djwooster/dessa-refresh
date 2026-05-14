@@ -56,7 +56,9 @@ const itemActive = "bg-gray-100 text-gray-900";
 
 function NavLink({ item }: { item: NavItem }) {
   const pathname = usePathname();
-  const isActive = pathname === item.href;
+  const isActive = item.href === "/"
+    ? pathname === "/"
+    : pathname === item.href || pathname.startsWith(item.href + "/");
   const Icon = item.icon;
 
   return (
