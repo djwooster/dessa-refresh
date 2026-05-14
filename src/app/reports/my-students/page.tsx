@@ -218,7 +218,7 @@ function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, name, value }: {
 
 export default function MyStudentsPage() {
   // Filter panel
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Filter fields (Students)
   const [sites, setSites]               = useState("all");
