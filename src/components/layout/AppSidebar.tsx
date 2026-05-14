@@ -6,16 +6,12 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
-  LayoutGrid,
-  BarChart2,
+  ClipboardCheck,
+  PieChart,
   GitFork,
   GraduationCap,
-  HelpCircle,
-  Flag,
-  UserCog,
   ChevronDown,
-  ChevronRight,
-  Lightbulb,
+  Settings,
 } from "lucide-react";
 import { DessaLogo } from "./DessaLogo";
 
@@ -32,8 +28,8 @@ interface NavItem {
 
 const PRIMARY_NAV: NavItem[] = [
   { label: "Dashboard",        href: "/",                    icon: LayoutDashboard },
-  { label: "Ratings",          href: "/ratings",             icon: LayoutGrid },
-  { label: "Reports",          href: "/reports",             icon: BarChart2 },
+  { label: "Ratings",          href: "/ratings",             icon: ClipboardCheck },
+  { label: "Reports",          href: "/reports",             icon: PieChart },
   { label: "Strategies",       href: "/strategies",          icon: GitFork },
   {
     label: "Training",
@@ -45,16 +41,9 @@ const PRIMARY_NAV: NavItem[] = [
       { label: "EdSERT",                  href: "/training/edsert",         icon: GraduationCap },
     ],
   },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-const UTILITY_NAV: NavItem[] = [
-  { label: "Help & Support",      href: "/help",    icon: HelpCircle },
-  { label: "Feature Flag Override", href: "/flags", icon: Flag },
-];
-
-const ACCOUNT_NAV: NavItem[] = [
-  { label: "Admin", href: "/account/admin", icon: UserCog },
-];
 
 // ─── Shared item styles ───────────────────────────────────────────────────────
 
@@ -87,7 +76,7 @@ function NavLink({ item }: { item: NavItem }) {
 function TrainingAccordion({ item }: { item: NavItem }) {
   const pathname = usePathname();
   const isChildActive = item.children?.some((c) => pathname === c.href) ?? false;
-  const [open, setOpen] = useState<boolean>(isChildActive || true);
+  const [open, setOpen] = useState<boolean>(isChildActive);
   const Icon = item.icon;
   const isActive = pathname === item.href;
 
@@ -169,37 +158,8 @@ export function AppSidebar() {
           )
         )}
 
-        <Divider />
-
-        {/* Utility */}
-        {UTILITY_NAV.map((item) => (
-          <NavLink key={item.href} item={item} />
-        ))}
-
-        <Divider />
-
-        {/* Account */}
-        {ACCOUNT_NAV.map((item) => (
-          <NavLink key={item.href} item={item} />
-        ))}
-
-        <Divider />
-
-        {/* Concepts — bottom of nav */}
-        <NavLink item={{ label: "Concepts", href: "/concepts", icon: Lightbulb }} />
       </nav>
 
-      {/* User avatar — bottom */}
-      <div className="px-3 py-3 border-t border-[#e8ecf0]">
-        <button className={`${itemBase} gap-3`}>
-          {/* Initials avatar */}
-          <div className="w-7 h-7 rounded-full bg-[#1a4e8a] flex items-center justify-center shrink-0">
-            <span className="text-white text-[11px] font-semibold leading-none">TW</span>
-          </div>
-          <span className="flex-1 text-left truncate">Tara Westbrook</span>
-          <ChevronRight size={14} className="shrink-0 text-gray-400" strokeWidth={1.75} />
-        </button>
-      </div>
     </aside>
   );
 }
