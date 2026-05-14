@@ -228,13 +228,13 @@ export default function MyStudentsV3Page() {
   const [draftAcademic, setDraftAcademic] = useState("all");
   const [draftGenders, setDraftGenders]   = useState("all");
   const [draftCustom, setDraftCustom]     = useState("all");
-  const [draftWindows, setDraftWindows]   = useState<string[]>(["25-26 Mid"]);
+  const [draftWindows, setDraftWindows]   = useState<string[]>([]);
   const [draftForms, setDraftForms]       = useState("all");
   const [draftStart, setDraftStart]       = useState("");
   const [draftEnd, setDraftEnd]           = useState("");
 
   // Applied state
-  const [, setAppliedWindows] = useState<string[]>(["25-26 Mid"]);
+  const [, setAppliedWindows] = useState<string[]>([]);
 
   const activeFilterCount = [
     draftSites !== "all",
