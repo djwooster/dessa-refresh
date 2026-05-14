@@ -133,10 +133,10 @@ export default function StudentsPage() {
                 <td className="px-4 py-3.5 text-[13px] text-gray-600">{s.site}</td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center justify-end gap-1">
-                    <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-[#1565c0] hover:bg-blue-50 transition-colors">
+                    <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-[#1565c0] hover:bg-blue-50 transition-colors cursor-pointer">
                       <Pencil size={13} strokeWidth={1.75} />
                     </button>
-                    <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                    <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer">
                       <Trash2 size={13} strokeWidth={1.75} />
                     </button>
                   </div>

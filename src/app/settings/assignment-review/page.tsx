@@ -40,7 +40,7 @@ export default function AssignmentReviewPage() {
             Data updated hourly
           </span>
         </div>
-        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
           <MoreHorizontal size={16} strokeWidth={1.75} />
         </button>
       </div>
@@ -184,7 +184,7 @@ export default function AssignmentReviewPage() {
                   )}
                 </td>
                 <td className="px-4 py-3.5">
-                  <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-[#1565c0] hover:bg-blue-50 transition-colors">
+                  <button className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-[#1565c0] hover:bg-blue-50 transition-colors cursor-pointer">
                     <Pencil size={13} strokeWidth={1.75} />
                   </button>
                 </td>
