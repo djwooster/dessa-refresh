@@ -13,9 +13,9 @@ import {
   HelpCircle,
   Flag,
   UserCog,
-  LogOut,
   ChevronDown,
   ChevronRight,
+  Lightbulb,
 } from "lucide-react";
 import { DessaLogo } from "./DessaLogo";
 
@@ -185,11 +185,8 @@ export function AppSidebar() {
 
         <Divider />
 
-        {/* Log Out */}
-        <button className={`${itemBase}`}>
-          <LogOut size={15} className="shrink-0 text-gray-400 group-hover:text-gray-600" strokeWidth={1.75} />
-          <span>Log Out</span>
-        </button>
+        {/* Concepts — bottom of nav */}
+        <NavLink item={{ label: "Concepts", href: "/concepts", icon: Lightbulb }} />
       </nav>
 
       {/* User avatar — bottom */}
