@@ -93,7 +93,9 @@ export function ConceptB() {
                 {badge.label}
               </div>
               <p className="text-[13px] font-bold text-gray-900 leading-tight">{w.label}</p>
-              <p className="text-[12px] text-gray-500">{w.date}</p>
+              <p className="text-[12px] text-gray-500">
+                <span className="text-gray-400">Opens </span>{w.date}
+              </p>
             </motion.div>
           );
         })}

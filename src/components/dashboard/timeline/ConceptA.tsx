@@ -44,7 +44,7 @@ export function ConceptA() {
                 active === w.id ? "text-gray-400" : "text-gray-300"
               }`}
             >
-              {w.dateObj.getFullYear()}
+              opens {w.dateObj.getFullYear()}
             </span>
           </button>
         ))}

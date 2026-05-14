@@ -56,7 +56,7 @@ export function ConceptD() {
               <p className={`text-[11px] text-center ${
                 w.status === "current" ? "text-gray-500" : "text-gray-400"
               }`}>
-                {w.date}
+                <span className="text-gray-400">opens </span>{w.date}
               </p>
             </div>
           );
