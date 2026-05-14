@@ -9,6 +9,7 @@ const NAV_GROUPS = [
     items: [
       { label: "My Students",                href: "/reports/my-students" },
       { label: "My Students (v2)",           href: "/reports/my-students-v2" },
+      { label: "My Students (v3)",           href: "/reports/my-students-v3" },
       { label: "Competencies",               href: "/reports/competencies" },
       { label: "Rating Window Overview",     href: "/reports/rating-window-overview" },
       { label: "Rating Window Breakdown",    href: "/reports/rating-window-breakdown" },
