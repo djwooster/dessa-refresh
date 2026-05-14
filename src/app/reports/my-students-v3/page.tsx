@@ -58,32 +58,6 @@ const LEVEL_BADGE: Record<Level, string> = {
 
 // ─── Popover sub-components ───────────────────────────────────────────────────
 
-function FilterSection({
-  label,
-  hasValue,
-  onClear,
-  children,
-}: {
-  label: string;
-  hasValue: boolean;
-  onClear: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="px-5 py-4 border-b border-[#f0f4f8] last:border-0">
-      <div className="flex items-center justify-between mb-2.5">
-        <span className="text-[11.5px] font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
-        {hasValue && (
-          <button onClick={onClear} className="text-[12px] text-[#1565c0] hover:underline">
-            Clear
-          </button>
-        )}
-      </div>
-      {children}
-    </div>
-  );
-}
-
 function PopoverSelect({
   placeholder = "All",
   options,
@@ -361,15 +335,14 @@ export default function MyStudentsV3Page() {
               <AnimatePresence>
                 {popoverOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    initial={{ opacity: 0, y: 6, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute right-0 top-full mt-2 w-[400px] bg-white rounded-xl border border-[#e0e5eb] shadow-xl z-50 flex flex-col"
-                    style={{ maxHeight: "calc(100vh - 220px)" }}
+                    className="absolute right-0 bottom-full mb-2 w-[680px] bg-white rounded-xl border border-[#e0e5eb] shadow-xl z-50"
                   >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e8ecf0] shrink-0">
+                    <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e8ecf0]">
                       <h2 className="text-[14px] font-bold text-gray-900">Filter</h2>
                       <button
                         onClick={() => setPopoverOpen(false)}
@@ -379,76 +352,129 @@ export default function MyStudentsV3Page() {
                       </button>
                     </div>
 
-                    {/* Scrollable sections */}
-                    <div className="flex-1 overflow-y-auto">
+                    {/* Body — 2-column grid, no scroll */}
+                    <div className="px-5 py-4 space-y-4">
 
-                      <FilterSection
-                        label="Select Date"
-                        hasValue={draftStart !== "" || draftEnd !== ""}
-                        onClear={() => { setDraftStart(""); setDraftEnd(""); }}
-                      >
+                      {/* Date row — full width, 2 sub-cols */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Select Date</span>
+                          {(draftStart !== "" || draftEnd !== "") && (
+                            <button onClick={() => { setDraftStart(""); setDraftEnd(""); }} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <p className="text-[11.5px] font-semibold text-gray-700 mb-1.5">From:</p>
+                            <p className="text-[11.5px] font-medium text-gray-600 mb-1.5">From:</p>
                             <input type="date" value={draftStart} onChange={(e) => setDraftStart(e.target.value)}
                               className="w-full h-9 px-3 rounded-lg border border-[#e0e5eb] text-[12.5px] text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a4e8a]/20 focus:border-[#1a4e8a]" />
                           </div>
                           <div>
-                            <p className="text-[11.5px] font-semibold text-gray-700 mb-1.5">To:</p>
+                            <p className="text-[11.5px] font-medium text-gray-600 mb-1.5">To:</p>
                             <input type="date" value={draftEnd} onChange={(e) => setDraftEnd(e.target.value)}
                               className="w-full h-9 px-3 rounded-lg border border-[#e0e5eb] text-[12.5px] text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a4e8a]/20 focus:border-[#1a4e8a]" />
                           </div>
                         </div>
-                      </FilterSection>
+                      </div>
 
-                      <FilterSection label="Sites" hasValue={draftSites !== "all"} onClear={() => setDraftSites("all")}>
-                        <PopoverSelect value={draftSites} onChange={setDraftSites}
-                          options={[{ value: "riverside", label: "Riverside Elementary" }, { value: "hillstrong", label: "Hillstrong High School" }]} />
-                      </FilterSection>
+                      {/* 2-col grid for remaining single-select filters */}
+                      <div className="grid grid-cols-2 gap-x-5 gap-y-4">
 
-                      <FilterSection label="Grades" hasValue={draftGrades !== "all"} onClear={() => setDraftGrades("all")}>
-                        <PopoverSelect value={draftGrades} onChange={setDraftGrades}
-                          options={[{ value: "3", label: "Grade 3" }, { value: "4", label: "Grade 4" }, { value: "5", label: "Grade 5" }]} />
-                      </FilterSection>
+                        {/* Sites */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Sites</span>
+                            {draftSites !== "all" && <button onClick={() => setDraftSites("all")} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>}
+                          </div>
+                          <PopoverSelect value={draftSites} onChange={setDraftSites}
+                            options={[{ value: "riverside", label: "Riverside Elementary" }, { value: "hillstrong", label: "Hillstrong High School" }]} />
+                        </div>
 
-                      <FilterSection label="Raters" hasValue={draftRaters !== "all"} onClear={() => setDraftRaters("all")}>
-                        <PopoverSelect value={draftRaters} onChange={setDraftRaters}
-                          options={[{ value: "educator", label: "Educator" }, { value: "ssr", label: "Student Self-Report" }]} />
-                      </FilterSection>
+                        {/* Grades */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Grades</span>
+                            {draftGrades !== "all" && <button onClick={() => setDraftGrades("all")} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>}
+                          </div>
+                          <PopoverSelect value={draftGrades} onChange={setDraftGrades}
+                            options={[{ value: "3", label: "Grade 3" }, { value: "4", label: "Grade 4" }, { value: "5", label: "Grade 5" }]} />
+                        </div>
 
-                      <FilterSection label="Race" hasValue={draftRace !== "all"} onClear={() => setDraftRace("all")}>
-                        <PopoverSelect value={draftRace} onChange={setDraftRace}
-                          options={[{ value: "white", label: "White" }, { value: "black", label: "Black / African American" }, { value: "hispanic", label: "Hispanic / Latino" }, { value: "asian", label: "Asian" }]} />
-                      </FilterSection>
+                        {/* Raters */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Raters</span>
+                            {draftRaters !== "all" && <button onClick={() => setDraftRaters("all")} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>}
+                          </div>
+                          <PopoverSelect value={draftRaters} onChange={setDraftRaters}
+                            options={[{ value: "educator", label: "Educator" }, { value: "ssr", label: "Student Self-Report" }]} />
+                        </div>
 
-                      <FilterSection label="Academic" hasValue={draftAcademic !== "all"} onClear={() => setDraftAcademic("all")}>
-                        <PopoverSelect value={draftAcademic} onChange={setDraftAcademic}
-                          options={[{ value: "gifted", label: "Gifted" }, { value: "iep", label: "Students with IEPs" }, { value: "el", label: "English Learner" }]} />
-                      </FilterSection>
+                        {/* Race */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Race</span>
+                            {draftRace !== "all" && <button onClick={() => setDraftRace("all")} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>}
+                          </div>
+                          <PopoverSelect value={draftRace} onChange={setDraftRace}
+                            options={[{ value: "white", label: "White" }, { value: "black", label: "Black / African American" }, { value: "hispanic", label: "Hispanic / Latino" }, { value: "asian", label: "Asian" }]} />
+                        </div>
 
-                      <FilterSection label="Genders" hasValue={draftGenders !== "all"} onClear={() => setDraftGenders("all")}>
-                        <PopoverSelect value={draftGenders} onChange={setDraftGenders}
-                          options={[{ value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "nonbinary", label: "Non-binary" }]} />
-                      </FilterSection>
+                        {/* Academic */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Academic</span>
+                            {draftAcademic !== "all" && <button onClick={() => setDraftAcademic("all")} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>}
+                          </div>
+                          <PopoverSelect value={draftAcademic} onChange={setDraftAcademic}
+                            options={[{ value: "gifted", label: "Gifted" }, { value: "iep", label: "Students with IEPs" }, { value: "el", label: "English Learner" }]} />
+                        </div>
 
-                      <FilterSection label="Custom Group" hasValue={draftCustom !== "all"} onClear={() => setDraftCustom("all")}>
-                        <PopoverSelect placeholder="Select a custom group" value={draftCustom} onChange={setDraftCustom}
-                          options={[{ value: "group1", label: "SEL Intervention Group A" }, { value: "group2", label: "Tier 2 Support" }]} />
-                      </FilterSection>
+                        {/* Genders */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Genders</span>
+                            {draftGenders !== "all" && <button onClick={() => setDraftGenders("all")} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>}
+                          </div>
+                          <PopoverSelect value={draftGenders} onChange={setDraftGenders}
+                            options={[{ value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "nonbinary", label: "Non-binary" }]} />
+                        </div>
 
-                      <FilterSection label="Rating Windows" hasValue={draftWindows.length > 0} onClear={() => setDraftWindows([])}>
+                        {/* Custom Group */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Custom Group</span>
+                            {draftCustom !== "all" && <button onClick={() => setDraftCustom("all")} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>}
+                          </div>
+                          <PopoverSelect placeholder="Select a custom group" value={draftCustom} onChange={setDraftCustom}
+                            options={[{ value: "group1", label: "SEL Intervention Group A" }, { value: "group2", label: "Tier 2 Support" }]} />
+                        </div>
+
+                        {/* Forms */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Forms</span>
+                            {draftForms !== "all" && <button onClick={() => setDraftForms("all")} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>}
+                          </div>
+                          <PopoverSelect value={draftForms} onChange={setDraftForms}
+                            options={[{ value: "dessa", label: "DESSA" }, { value: "dessa2", label: "DESSA 2" }, { value: "mini1", label: "DESSA-mini Form 1" }, { value: "ssese", label: "DESSA-SSESE" }]} />
+                        </div>
+
+                      </div>
+
+                      {/* Rating Windows — full width */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Rating Windows</span>
+                          {draftWindows.length > 0 && <button onClick={() => setDraftWindows([])} className="text-[11.5px] text-[#1565c0] hover:underline">Clear</button>}
+                        </div>
                         <RatingWindowPopover selected={draftWindows} onChange={setDraftWindows} />
-                      </FilterSection>
-
-                      <FilterSection label="Forms" hasValue={draftForms !== "all"} onClear={() => setDraftForms("all")}>
-                        <PopoverSelect value={draftForms} onChange={setDraftForms}
-                          options={[{ value: "dessa", label: "DESSA" }, { value: "dessa2", label: "DESSA 2" }, { value: "mini1", label: "DESSA-mini Form 1" }, { value: "ssese", label: "DESSA-SSESE" }]} />
-                      </FilterSection>
+                      </div>
 
                     </div>
 
                     {/* Footer */}
-                    <div className="px-5 py-3.5 border-t border-[#e8ecf0] flex items-center justify-between shrink-0">
+                    <div className="px-5 py-3.5 border-t border-[#e8ecf0] flex items-center justify-between">
                       <button
                         onClick={handleReset}
                         className="h-9 px-4 rounded-lg border border-[#e8ecf0] bg-white text-[12.5px] font-medium text-gray-700 hover:bg-gray-50 transition-colors"
