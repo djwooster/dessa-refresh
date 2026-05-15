@@ -116,7 +116,7 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
                     <button
                       key={item.href}
                       onClick={() => { router.push(item.href); setOpen(false); }}
-                      className={`w-full flex items-center justify-between px-3 py-[6px] mx-0 text-[13px] transition-colors ${
+                      className={`w-full flex items-center justify-between px-3 py-[6px] mx-0 text-[13px] transition-colors cursor-pointer ${
                         isActive
                           ? "text-[#1a4e8a] font-semibold bg-[#eef2f8]"
                           : "text-gray-700 hover:bg-gray-50"
