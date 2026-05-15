@@ -579,19 +579,19 @@ export default function Reports3MyStudentsPage() {
       <div>
         <div className="flex items-center justify-between">
           <ReportSelector currentHref="/reports3/my-students" />
-          <button className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
-            <MoreHorizontal size={16} strokeWidth={1.75} />
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 text-[13px] text-gray-500">
+              <RefreshCw size={12} strokeWidth={2} />
+              Data updated hourly
+            </span>
+            <button className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+              <MoreHorizontal size={16} strokeWidth={1.75} />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center justify-between mt-1">
-          <p className="text-[13px] text-gray-500">
-            This report shows the distribution of student assessment scores across the descriptive ranges.
-          </p>
-          <span className="flex items-center gap-1.5 text-[13px] text-gray-500 shrink-0 ml-4">
-            <RefreshCw size={12} strokeWidth={2} />
-            Data updated hourly
-          </span>
-        </div>
+        <p className="text-[13px] text-gray-500 mt-1">
+          This report shows the distribution of student assessment scores across the descriptive ranges.
+        </p>
       </div>
 
       {/* ── Visualization cards ──────────────────────────────────────────────── */}
