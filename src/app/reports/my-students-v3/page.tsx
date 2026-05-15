@@ -3,7 +3,10 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { ChevronDown, Search, Download, X, Plus, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Search, Download, X, Plus, SlidersHorizontal, CalendarIcon } from "lucide-react";
+import { format, parseISO, isValid } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Pagination } from "@/components/ui/Pagination";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -57,6 +60,39 @@ const LEVEL_BADGE: Record<Level, string> = {
 };
 
 // ─── Popover sub-components ───────────────────────────────────────────────────
+
+function DatePicker({
+  value,
+  onChange,
+  placeholder = "Pick a date",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const parsed   = value ? parseISO(value) : undefined;
+  const selected = parsed && isValid(parsed) ? parsed : undefined;
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        className="flex h-9 w-full items-center justify-between rounded-lg border border-[#e0e5eb] px-3 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1a4e8a]/20 focus:border-[#1a4e8a] transition-colors"
+      >
+        <span className={`text-[12.5px] ${selected ? "text-gray-800" : "text-gray-400"}`}>
+          {selected ? format(selected, "MMM d, yyyy") : placeholder}
+        </span>
+        <CalendarIcon size={13} className="text-gray-400 shrink-0" />
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start" side="bottom">
+        <Calendar
+          mode="single"
+          selected={selected}
+          onSelect={(date) => onChange(date ? format(date, "yyyy-MM-dd") : "")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function PopoverSelect({
   placeholder = "All",
@@ -402,13 +438,11 @@ export default function MyStudentsV3Page() {
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <p className="text-[11.5px] font-medium text-gray-600 mb-1.5">From:</p>
-                            <input type="date" value={draftStart} onChange={(e) => setDraftStart(e.target.value)}
-                              className="w-full h-9 px-3 rounded-lg border border-[#e0e5eb] text-[12.5px] text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a4e8a]/20 focus:border-[#1a4e8a]" />
+                            <DatePicker value={draftStart} onChange={setDraftStart} placeholder="Start date" />
                           </div>
                           <div>
                             <p className="text-[11.5px] font-medium text-gray-600 mb-1.5">To:</p>
-                            <input type="date" value={draftEnd} onChange={(e) => setDraftEnd(e.target.value)}
-                              className="w-full h-9 px-3 rounded-lg border border-[#e0e5eb] text-[12.5px] text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a4e8a]/20 focus:border-[#1a4e8a]" />
+                            <DatePicker value={draftEnd} onChange={setDraftEnd} placeholder="End date" />
                           </div>
                         </div>
                       </div>
