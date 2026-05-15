@@ -1,0 +1,139 @@
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, X, CalendarIcon, RefreshCw } from "lucide-react";
+import { format, parseISO, isValid } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ReportSelector } from "../ReportSelector";
+
+const SITES    = ["All", "Riverside Elementary", "Hillstrong High School", "Washington Middle School", "Lincoln Elementary"];
+const GRADES   = ["All", "K", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
+const RACES    = ["All", "White", "Black / African American", "Hispanic / Latino", "Asian", "Other"];
+const ACADEMIC = ["All", "Gifted", "Students with IEPs", "English Learner", "Economically Disadvantaged"];
+const GENDERS  = ["All", "Male", "Female", "Non-binary"];
+const GROUPS   = ["Select a custom group", "SEL Intervention Group A", "Tier 2 Support"];
+const WINDOWS  = ["25-26 Mid", "25-26 Pre", "24-25 End", "24-25 Mid"];
+
+function FilterSelect({ label, value, onChange, options, clearable = false }: {
+  label: string; value: string; onChange: (v: string) => void; options: string[]; clearable?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-[11.5px] font-medium text-gray-600 mb-1.5">{label}</p>
+      <div className="relative">
+        <select value={value} onChange={(e) => onChange(e.target.value)}
+          className="w-full h-9 pl-3 pr-8 rounded-lg border border-[#e0e5eb] text-[12.5px] text-gray-800 bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-[#1a4e8a]/20 focus:border-[#1a4e8a]">
+          {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+        {clearable && value !== options[0] ? (
+          <button onClick={() => onChange(options[0])} className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center">
+            <X size={9} strokeWidth={2.5} />
+          </button>
+        ) : (
+          <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DatePicker({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder: string }) {
+  const parsed   = value ? parseISO(value) : undefined;
+  const selected = parsed && isValid(parsed) ? parsed : undefined;
+  return (
+    <div>
+      <p className="text-[11.5px] font-medium text-gray-600 mb-1.5">{label}</p>
+      <Popover>
+        <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-lg border border-[#e0e5eb] px-3 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1a4e8a]/20 focus:border-[#1a4e8a] transition-colors">
+          <span className={`text-[12.5px] ${selected ? "text-gray-800" : "text-gray-400"}`}>
+            {selected ? format(selected, "MM / dd / yyyy") : placeholder}
+          </span>
+          <CalendarIcon size={13} className="text-gray-400 shrink-0" />
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start" side="bottom">
+          <Calendar mode="single" selected={selected} onSelect={(d) => onChange(d ? format(d, "yyyy-MM-dd") : "")} />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+export default function SEIRRiskPage() {
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [site, setSite]       = useState("All");
+  const [grade, setGrade]     = useState("All");
+  const [race, setRace]       = useState("All");
+  const [academic, setAcademic] = useState("All");
+  const [gender, setGender]   = useState("All");
+  const [group, setGroup]     = useState("Select a custom group");
+  const [window, setWindow]   = useState("25-26 Mid");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate]     = useState("");
+
+  function handleReset() {
+    setSite("All"); setGrade("All"); setRace("All"); setAcademic("All");
+    setGender("All"); setGroup("Select a custom group");
+    setWindow("25-26 Mid"); setStartDate(""); setEndDate("");
+  }
+
+  return (
+    <div className="p-6 space-y-5">
+      <div>
+        <div className="flex items-center justify-between">
+          <ReportSelector currentHref="/reports3/seir-risk" />
+          <span className="flex items-center gap-1.5 text-[13px] text-gray-500">
+            <RefreshCw size={12} strokeWidth={2} />
+            Data updated hourly
+          </span>
+        </div>
+        <p className="text-[13px] text-gray-500 mt-1">
+          This report provides results of the SEIR (Screener for Externalizing and Internalizing Risk).
+        </p>
+      </div>
+
+      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
+        <button onClick={() => setFiltersOpen((o) => !o)}
+          className="w-full flex items-center gap-1.5 px-5 py-3 text-[13.5px] font-semibold text-gray-700 hover:text-gray-900 transition-colors">
+          Filters
+          <ChevronDown size={13} strokeWidth={2.5} className={`ml-auto text-[#1a4e8a] transition-transform duration-150 ${filtersOpen ? "rotate-180" : ""}`} />
+        </button>
+        <AnimatePresence initial={false}>
+          {filtersOpen && (
+            <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} transition={{ duration: 0.15, ease: "easeInOut" }} className="overflow-hidden">
+              <div className="border-t border-[#e8ecf0] px-5 py-5 space-y-5">
+
+                <div>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Students</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FilterSelect label="Sites"        value={site}     onChange={setSite}     options={SITES}    />
+                    <FilterSelect label="Grades"       value={grade}    onChange={setGrade}    options={GRADES}   />
+                    <FilterSelect label="Race"         value={race}     onChange={setRace}     options={RACES}    />
+                    <FilterSelect label="Academic"     value={academic} onChange={setAcademic} options={ACADEMIC} />
+                    <FilterSelect label="Genders"      value={gender}   onChange={setGender}   options={GENDERS}  />
+                    <FilterSelect label="Custom Group" value={group}    onChange={setGroup}    options={GROUPS}   />
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Ratings</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FilterSelect label="Rating Window" value={window} onChange={setWindow} options={WINDOWS} clearable />
+                    <DatePicker label="Start Date" value={startDate} onChange={setStartDate} placeholder="mm / dd / yyyy" />
+                    <DatePicker label="End Date"   value={endDate}   onChange={setEndDate}   placeholder="mm / dd / yyyy" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button className="h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-[12.5px] font-semibold hover:bg-[#15407a] transition-colors">Run Report</button>
+                  <button onClick={handleReset} className="h-9 px-4 rounded-lg border border-[#e8ecf0] bg-white text-[12.5px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">Reset Filters</button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
