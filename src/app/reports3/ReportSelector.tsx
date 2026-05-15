@@ -40,6 +40,13 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Student Goals",      href: "/reports3/student-goals" },
     ],
   },
+  {
+    label: "Move This World",
+    items: [
+      { label: "Daily Engagement",   href: "/reports3/mtw-daily-engagement" },
+      { label: "Site Engagement",    href: "/reports3/mtw-site-engagement" },
+    ],
+  },
 ];
 
 export const ALL_REPORT_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
