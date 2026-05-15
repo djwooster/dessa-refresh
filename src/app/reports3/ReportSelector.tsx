@@ -130,9 +130,9 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
                 {search && (
                   <button
                     onClick={() => { setSearch(""); searchRef.current?.focus(); }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 hover:text-gray-700 transition-colors"
                   >
-                    <X size={13} />
+                    <X size={10} strokeWidth={2.5} />
                   </button>
                 )}
               </div>
