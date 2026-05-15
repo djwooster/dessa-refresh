@@ -413,8 +413,8 @@ export default function MyStudentsV3Page() {
                         </div>
                       </div>
 
-                      {/* 2-col grid for remaining single-select filters */}
-                      <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+                      {/* 3-col grid for remaining single-select filters */}
+                      <div className="grid grid-cols-3 gap-x-5 gap-y-4">
 
                         {/* Sites */}
                         <div>
