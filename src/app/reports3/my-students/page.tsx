@@ -392,11 +392,10 @@ function CardTitleDropdown({
 
 // ─── Card components ──────────────────────────────────────────────────────────
 
-type CombinedView = "tiles" | "rows" | "bar";
+type CombinedView = "rows" | "bar";
 const COMBINED_VIEW_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "tiles", label: "Tiles" },
-  { value: "rows",  label: "Rows"  },
-  { value: "bar",   label: "Bar"   },
+  { value: "rows", label: "Rows" },
+  { value: "bar",  label: "Bar"  },
 ];
 
 function CombinedRatingsCard({ data }: { data: typeof PIE_DATA }) {
@@ -414,8 +413,7 @@ function CombinedRatingsCard({ data }: { data: typeof PIE_DATA }) {
           onChange={(v) => setView(v as CombinedView)}
         />
       </div>
-      {view === "tiles" && <CombinedTiles data={data} />}
-      {view === "rows"  && <CombinedRows  data={data} />}
+      {view === "rows" && <CombinedRows data={data} />}
       {view === "bar"   && <CombinedStackedBar data={data} />}
     </div>
   );
