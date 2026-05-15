@@ -172,27 +172,97 @@ function TScoreBadge({ score }: { score: number }) {
   );
 }
 
-function CompletionRing({ completed, total }: { completed: number; total: number }) {
-  const r = 62, cx = 80, cy = 80;
-  const circ = 2 * Math.PI * r;
+function RatingWindowStat({ completed, total }: { completed: number; total: number }) {
+  const remaining = total - completed;
+  const pct = (completed / total) * 100;
   return (
-    <div className="flex flex-col items-center justify-center py-2">
-      <div className="relative inline-flex items-center justify-center">
-        <svg width={160} height={160}>
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e8ecf0" strokeWidth={11} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#7dc49a" strokeWidth={11}
-            strokeLinecap="round" strokeDasharray={circ}
-            strokeDashoffset={circ * (1 - completed / total)}
-            transform={`rotate(-90 ${cx} ${cy})`} />
-        </svg>
-        <div className="absolute text-center px-2">
-          <div className="text-[15px] font-bold text-gray-900 leading-tight whitespace-nowrap">
-            {completed.toLocaleString()} / {total.toLocaleString()}
-          </div>
-          <div className="text-[11px] text-gray-500 mt-1">Students Complete</div>
+    <div className="space-y-4 pt-1">
+      <div>
+        <div className="text-[40px] font-bold text-gray-900 leading-none">
+          {completed.toLocaleString()}
+        </div>
+        <p className="text-[13px] text-gray-500 mt-1.5">students rated this window</p>
+      </div>
+      <div className="space-y-1.5">
+        <div className="h-2 w-full rounded-full bg-[#e8ecf0] overflow-hidden">
+          <div
+            className="h-full rounded-full bg-[#1a4e8a] transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between text-[12px]">
+          <span className="text-gray-400">of {total.toLocaleString()} total</span>
+          {remaining > 0 && (
+            <span className="text-[#b91c1c] font-medium">{remaining} not yet rated</span>
+          )}
         </div>
       </div>
-      <p className="text-[12px] font-semibold text-gray-500 mt-1">Current Rating Window</p>
+    </div>
+  );
+}
+
+function RatingWindowBar({ completed, total }: { completed: number; total: number }) {
+  const remaining = total - completed;
+  const pct = (completed / total) * 100;
+  // Give remaining a minimum visual flex so it's always visible
+  const ratedFlex = completed;
+  const remainingFlex = Math.max(remaining, total * 0.018);
+  return (
+    <div className="space-y-3 pt-1">
+      <div className="flex h-7 rounded-lg overflow-hidden gap-0.5">
+        <div className="bg-[#1a4e8a] rounded-l-lg" style={{ flex: ratedFlex }} />
+        <div className="bg-[#e3f0fa] rounded-r-lg" style={{ flex: remainingFlex }} />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-sm bg-[#1a4e8a]" />
+          <div>
+            <span className="text-[13px] font-semibold text-gray-900">{completed.toLocaleString()}</span>
+            <span className="text-[12px] text-gray-500 ml-1.5">Rated · {pct.toFixed(1)}%</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-sm bg-[#e3f0fa] border border-[#7ab5de]" />
+          <div>
+            <span className="text-[13px] font-semibold text-gray-900">{remaining.toLocaleString()}</span>
+            <span className="text-[12px] text-gray-500 ml-1.5">Not Rated · {(100 - pct).toFixed(2)}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type RatingView = "stat" | "bar";
+const VIEW_OPTIONS: Array<{ value: RatingView; label: string }> = [
+  { value: "stat", label: "Stat view" },
+  { value: "bar",  label: "Bar view"  },
+];
+
+function RatingWindowCard({ completed, total }: { completed: number; total: number }) {
+  const [view, setView] = useState<RatingView>("stat");
+  const selectedLabel = VIEW_OPTIONS.find((o) => o.value === view)?.label ?? "";
+  return (
+    <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[13px] font-semibold text-gray-700">Rating Window</p>
+        <div className="relative inline-flex items-center h-6 pl-2.5 pr-1.5 rounded-full border border-[#e8ecf0] bg-white cursor-pointer hover:border-gray-300 transition-colors">
+          <span className="text-[11px] text-gray-700 font-medium mr-0.5">{selectedLabel}</span>
+          <ChevronDown size={11} className="text-gray-400 ml-0.5" />
+          <select
+            className="absolute inset-0 opacity-0 cursor-pointer w-full text-[11px]"
+            value={view}
+            onChange={(e) => setView(e.target.value as RatingView)}
+          >
+            {VIEW_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      </div>
+      {view === "stat" ? (
+        <RatingWindowStat completed={completed} total={total} />
+      ) : (
+        <RatingWindowBar completed={completed} total={total} />
+      )}
     </div>
   );
 }
@@ -338,10 +408,7 @@ export default function Reports3MyStudentsPage() {
 
       {/* ── Visualization cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-5">
-        <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5 flex flex-col items-center">
-          <p className="text-[13px] font-semibold text-gray-700 mb-3 self-start">Rating Window</p>
-          <CompletionRing completed={9891} total={9895} />
-        </div>
+        <RatingWindowCard completed={9891} total={9895} />
         <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5">
           <p className="text-[13px] font-semibold text-gray-700 mb-1">Combined Ratings</p>
           <div className="flex items-center justify-center">
