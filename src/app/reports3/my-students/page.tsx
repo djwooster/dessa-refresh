@@ -579,7 +579,7 @@ export default function Reports3MyStudentsPage() {
       <div className="flex items-start justify-between">
         <div>
           <ReportSelector currentHref="/reports3/my-students" />
-          <p className="text-[13px] text-gray-500 mt-1">
+          <p className="text-[14px] text-gray-500 mt-1">
             This report shows the distribution of student assessment scores across the descriptive ranges.
           </p>
         </div>
