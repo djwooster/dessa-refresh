@@ -407,7 +407,7 @@ function CombinedRatingsCard({ data }: { data: typeof PIE_DATA }) {
     <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between mb-4">
         <CardTitleDropdown
-          label="Combined Ratings"
+          label="Rating Distribution"
           options={COMBINED_VIEW_OPTIONS}
           value={view}
           onChange={(v) => setView(v as CombinedView)}
