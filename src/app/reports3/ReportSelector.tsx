@@ -102,10 +102,11 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
             animate={{ opacity: 1, y: 0,  scale: 1    }}
             exit={{    opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.13, ease: "easeOut" }}
-            className="absolute left-0 top-full mt-2 bg-white rounded-xl border border-[#e0e5eb] shadow-xl z-50 p-2 overflow-hidden flex flex-row gap-0"
+            className="absolute left-0 top-full mt-2 w-[248px] bg-white rounded-xl border border-[#e0e5eb] shadow-xl z-50 py-2 overflow-hidden"
           >
             {NAV_GROUPS.map((group, gi) => (
-              <div key={group.label} className={`flex flex-col min-w-[160px] ${gi > 0 ? "border-l border-[#f0f4f8] ml-1 pl-1" : ""}`}>
+              <div key={group.label}>
+                {gi > 0 && <div className="my-1.5 mx-3 border-t border-[#f0f4f8]" />}
                 <p className="px-3 pt-1.5 pb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-gray-600 select-none">
                   {group.label}
                 </p>
@@ -115,14 +116,14 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
                     <button
                       key={item.href}
                       onClick={() => { router.push(item.href); setOpen(false); }}
-                      className={`w-full flex items-center justify-between px-3 py-[6px] text-[13px] rounded-md transition-colors cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-[6px] text-[13px] transition-colors cursor-pointer ${
                         isActive
                           ? "text-[#1a4e8a] font-semibold bg-[#eef2f8]"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       {item.label}
-                      {isActive && <Check size={13} className="text-[#1a4e8a] shrink-0 ml-2" />}
+                      {isActive && <Check size={13} className="text-[#1a4e8a] shrink-0" />}
                     </button>
                   );
                 })}
