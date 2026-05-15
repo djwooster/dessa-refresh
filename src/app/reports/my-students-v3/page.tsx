@@ -178,15 +178,43 @@ function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, name, value }: {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+interface PopoverPlacement {
+  top?: number;
+  bottom?: number;
+  right: number;
+  maxHeight: number;
+}
+
 export default function MyStudentsV3Page() {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const [placement, setPlacement] = useState<PopoverPlacement | null>(null);
+  const popoverRef  = useRef<HTMLDivElement>(null);
+  const buttonRef   = useRef<HTMLButtonElement>(null);
+
+  function togglePopover() {
+    if (popoverOpen) { setPopoverOpen(false); return; }
+    if (!buttonRef.current) return;
+    const rect    = buttonRef.current.getBoundingClientRect();
+    const GAP     = 8;
+    const right   = window.innerWidth - rect.right;
+    const below   = window.innerHeight - rect.bottom - GAP;
+    const above   = rect.top - GAP;
+    if (below >= above) {
+      setPlacement({ top: rect.bottom + GAP, right, maxHeight: below - 8 });
+    } else {
+      setPlacement({ bottom: window.innerHeight - rect.top + GAP, right, maxHeight: above - 8 });
+    }
+    setPopoverOpen(true);
+  }
 
   // Close on outside click
   useEffect(() => {
     if (!popoverOpen) return;
     function handleClick(e: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
+        buttonRef.current  && !buttonRef.current.contains(e.target as Node)
+      ) {
         setPopoverOpen(false);
       }
     }
@@ -312,34 +340,42 @@ export default function MyStudentsV3Page() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Filter trigger + popover anchor */}
-            <div className="relative" ref={popoverRef}>
-              <button
-                onClick={() => setPopoverOpen((o) => !o)}
-                className={`flex items-center gap-2 h-8 px-3.5 rounded-lg border text-[12.5px] font-medium transition-colors ${
-                  activeFilterCount > 0 || popoverOpen
-                    ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]"
-                    : "border-[#e8ecf0] bg-white text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <SlidersHorizontal size={13} strokeWidth={1.75} />
-                Filter
-                {activeFilterCount > 0 && (
-                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#1a4e8a] text-white text-[10px] font-bold">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
+            {/* Filter trigger */}
+            <button
+              ref={buttonRef}
+              onClick={togglePopover}
+              className={`flex items-center gap-2 h-8 px-3.5 rounded-lg border text-[12.5px] font-medium transition-colors ${
+                activeFilterCount > 0 || popoverOpen
+                  ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]"
+                  : "border-[#e8ecf0] bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <SlidersHorizontal size={13} strokeWidth={1.75} />
+              Filter
+              {activeFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#1a4e8a] text-white text-[10px] font-bold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
 
-              {/* ── Popover ──────────────────────────────────────────────── */}
-              <AnimatePresence>
-                {popoverOpen && (
+            {/* ── Popover (fixed, smart placement) ────────────────────────── */}
+            <AnimatePresence>
+              {popoverOpen && placement && (
                   <motion.div
-                    initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                    ref={popoverRef}
+                    initial={{ opacity: 0, y: placement.top !== undefined ? -6 : 6, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                    exit={{ opacity: 0, y: placement.top !== undefined ? -6 : 6, scale: 0.98 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute right-0 bottom-full mb-2 w-[680px] bg-white rounded-xl border border-[#e0e5eb] shadow-xl z-50"
+                    style={{
+                      position: "fixed",
+                      top: placement.top,
+                      bottom: placement.bottom,
+                      right: placement.right,
+                      maxHeight: placement.maxHeight,
+                    }}
+                    className="w-[680px] bg-white rounded-xl border border-[#e0e5eb] shadow-xl z-50 flex flex-col overflow-hidden"
                   >
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e8ecf0]">
@@ -352,8 +388,8 @@ export default function MyStudentsV3Page() {
                       </button>
                     </div>
 
-                    {/* Body — 2-column grid, no scroll */}
-                    <div className="px-5 py-4 space-y-4">
+                    {/* Body — 2-column grid, scrollable only if viewport is tiny */}
+                    <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1">
 
                       {/* Date row — full width, 2 sub-cols */}
                       <div>
@@ -491,7 +527,6 @@ export default function MyStudentsV3Page() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
 
             <button className="flex items-center gap-2 h-8 px-3.5 rounded-lg border border-[#e8ecf0] bg-white text-[12.5px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
               <Download size={13} strokeWidth={1.75} />
