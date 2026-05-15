@@ -824,10 +824,10 @@ export default function Reports3MyStudentsPage() {
               return (
                 <tr key={s.id} className={`hover:bg-gray-50/70 transition-colors ${!isLast ? "border-b border-[#f5f7fa]" : ""}`}>
                   <td className="px-4 py-3">
-                    <span className="text-[13px] font-medium text-[#1565c0] hover:underline cursor-pointer">{s.name}</span>
+                    <span className="text-[14px] font-medium text-[#1565c0] hover:underline cursor-pointer">{s.name}</span>
                   </td>
-                  <td className="px-4 py-3 text-[13px] text-gray-500">{s.username ?? "—"}</td>
-                  <td className="px-4 py-3 text-[13px] text-gray-600">
+                  <td className="px-4 py-3 text-[14px] text-gray-500">{s.username ?? "—"}</td>
+                  <td className="px-4 py-3 text-[14px] text-gray-600">
                     {s.ssrPoints ? s.ssrPoints.toLocaleString() : <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-4 py-3">
@@ -836,9 +836,9 @@ export default function Reports3MyStudentsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3"><TScoreBadge score={s.tScore} /></td>
-                  <td className="px-4 py-3 text-[13px] text-gray-600 whitespace-nowrap">{s.form}</td>
-                  <td className="px-4 py-3 text-[13px] text-gray-600 whitespace-nowrap">{s.window}</td>
-                  <td className="px-4 py-3 text-[13px] text-gray-500 whitespace-nowrap">{s.date}</td>
+                  <td className="px-4 py-3 text-[14px] text-gray-600 whitespace-nowrap">{s.form}</td>
+                  <td className="px-4 py-3 text-[14px] text-gray-600 whitespace-nowrap">{s.window}</td>
+                  <td className="px-4 py-3 text-[14px] text-gray-500 whitespace-nowrap">{s.date}</td>
                 </tr>
               );
             })}
