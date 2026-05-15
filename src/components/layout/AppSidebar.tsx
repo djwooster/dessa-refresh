@@ -40,7 +40,7 @@ const SETTINGS_NAV: NavItem = { label: "Settings", href: "/settings", icon: Sett
 // ─── Shared item styles ───────────────────────────────────────────────────────
 
 const itemBase =
-  "group flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-md text-[13.5px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-100 cursor-pointer select-none";
+  "group flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-md text-[14px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-100 cursor-pointer select-none";
 
 const itemActive = "bg-gray-100 text-gray-900";
 
