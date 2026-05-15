@@ -378,7 +378,7 @@ export default function MyStudentsV3Page() {
                     className="w-[680px] bg-white rounded-xl border border-[#e0e5eb] shadow-xl z-50 flex flex-col overflow-hidden"
                   >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e8ecf0]">
+                    <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e8ecf0] bg-[#f8fafc] rounded-t-xl shrink-0">
                       <h2 className="text-[14px] font-bold text-gray-900">Filter</h2>
                       <button
                         onClick={() => setPopoverOpen(false)}
@@ -510,7 +510,7 @@ export default function MyStudentsV3Page() {
                     </div>
 
                     {/* Footer */}
-                    <div className="px-5 py-3.5 border-t border-[#e8ecf0] flex items-center justify-between">
+                    <div className="px-5 py-3.5 border-t border-[#e8ecf0] bg-[#f8fafc] rounded-b-xl flex items-center justify-between shrink-0">
                       <button
                         onClick={handleReset}
                         className="h-9 px-4 rounded-lg border border-[#e8ecf0] bg-white text-[12.5px] font-medium text-gray-700 hover:bg-gray-50 transition-colors"
