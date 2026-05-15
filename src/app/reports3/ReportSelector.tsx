@@ -3,7 +3,8 @@
 import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 // ─── Nav definition ───────────────────────────────────────────────────────────
 
@@ -47,12 +48,23 @@ export const ALL_REPORT_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 export function ReportSelector({ currentHref }: { currentHref: string }) {
   const router     = useRouter();
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen]     = useState(false);
+  const [search, setSearch] = useState("");
+  const triggerRef  = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchRef   = useRef<HTMLInputElement>(null);
 
   const currentLabel =
     ALL_REPORT_ITEMS.find((i) => i.href === currentHref)?.label ?? "Select Report";
+
+  // Auto-focus search and clear on open/close
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => searchRef.current?.focus(), 50);
+    } else {
+      setSearch("");
+    }
+  }, [open]);
 
   // Close on outside click
   useEffect(() => {
@@ -102,32 +114,54 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
             animate={{ opacity: 1, y: 0,  scale: 1    }}
             exit={{    opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.13, ease: "easeOut" }}
-            className="absolute left-0 top-full mt-2 w-[248px] bg-white rounded-xl border border-[#e0e5eb] shadow-xl z-50 py-2 overflow-hidden"
+            className="absolute left-0 top-full mt-2 w-[260px] bg-white rounded-xl border border-[#e0e5eb] shadow-xl z-50 overflow-hidden"
           >
-            {NAV_GROUPS.map((group, gi) => (
-              <div key={group.label}>
-                <p className="px-3 pt-1.5 pb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-gray-600 select-none bg-gray-100 border-b border-[#e8ecf0]">
-                  {group.label}
-                </p>
-                {group.items.map((item) => {
-                  const isActive = item.href === currentHref;
-                  return (
-                    <button
-                      key={item.href}
-                      onClick={() => { router.push(item.href); setOpen(false); }}
-                      className={`w-full flex items-center justify-between px-3 py-[6px] text-[13px] transition-colors cursor-pointer ${
-                        isActive
-                          ? "text-[#1a4e8a] font-semibold bg-[#eef2f8]"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {item.label}
-                      {isActive && <Check size={13} className="text-[#1a4e8a] shrink-0" />}
-                    </button>
-                  );
-                })}
+            {/* Search */}
+            <div className="px-2.5 pt-2.5 pb-2 border-b border-[#e8ecf0]">
+              <div className="relative">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <Input
+                  ref={searchRef}
+                  placeholder="Search reports…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-7 h-8 text-[12.5px] bg-gray-50 border-[#e0e5eb] focus-visible:ring-[#1a4e8a]/20 focus-visible:border-[#1a4e8a]"
+                />
               </div>
-            ))}
+            </div>
+
+            {/* Groups */}
+            <div className="py-1.5">
+              {NAV_GROUPS.map((group) => {
+                const filtered = group.items.filter((i) =>
+                  !search || i.label.toLowerCase().includes(search.toLowerCase())
+                );
+                if (filtered.length === 0) return null;
+                return (
+                  <div key={group.label}>
+                    <p className="px-3 pt-1.5 pb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-gray-600 select-none bg-gray-100 border-b border-[#e8ecf0]">
+                      {group.label}
+                    </p>
+                    {filtered.map((item) => {
+                      const isActive = item.href === currentHref;
+                      return (
+                        <button
+                          key={item.href}
+                          onClick={() => { router.push(item.href); setOpen(false); }}
+                          className={`w-full flex items-center justify-between px-3 py-[6px] text-[13px] transition-colors cursor-pointer ${
+                            isActive
+                              ? "text-[#1a4e8a] font-semibold bg-[#eef2f8]"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {item.label}
+                          {isActive && <Check size={13} className="text-[#1a4e8a] shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}</div>
           </motion.div>
         )}
       </AnimatePresence>
