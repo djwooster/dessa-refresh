@@ -30,6 +30,7 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Dashboard",        href: "/",                    icon: LayoutDashboard },
   { label: "Ratings",          href: "/ratings",             icon: ClipboardCheck },
   { label: "Reports",          href: "/reports",             icon: PieChart },
+  { label: "Reports2",         href: "/reports2",            icon: PieChart },
   { label: "Strategies",       href: "/strategies",          icon: GitFork },
   {
     label: "Training",
