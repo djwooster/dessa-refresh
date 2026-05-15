@@ -831,7 +831,7 @@ export default function Reports3MyStudentsPage() {
                     {s.ssrPoints ? s.ssrPoints.toLocaleString() : <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center h-5 px-2 rounded-md text-[11px] font-semibold ${LEVEL_BADGE[s.range]}`}>
+                    <span className={`inline-flex items-center h-5 px-2 rounded-md text-[12px] font-semibold ${LEVEL_BADGE[s.range]}`}>
                       {s.range}
                     </span>
                   </td>
