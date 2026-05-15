@@ -95,7 +95,7 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
       <button
         ref={triggerRef}
         onClick={() => setOpen((o) => !o)}
-        className="group flex items-center gap-1 text-[22px] font-bold text-gray-900 hover:text-gray-700 transition-colors leading-tight"
+        className="group flex items-center gap-1 text-[22px] font-bold text-gray-900 hover:text-gray-700 transition-colors leading-tight cursor-pointer"
       >
         <span>{currentLabel}</span>
         <ChevronDown
