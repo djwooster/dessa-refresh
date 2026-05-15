@@ -576,22 +576,22 @@ export default function Reports3MyStudentsPage() {
     <div className="p-6 space-y-5">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div>
-        <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
+        <div>
           <ReportSelector currentHref="/reports3/my-students" />
-          <div className="flex flex-col items-end gap-1">
-            <button className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
-              <MoreHorizontal size={16} strokeWidth={1.75} />
-            </button>
-            <span className="flex items-center gap-1.5 text-[13px] text-gray-500">
-              <RefreshCw size={12} strokeWidth={2} />
-              Data updated hourly
-            </span>
-          </div>
+          <p className="text-[13px] text-gray-500 mt-1">
+            This report shows the distribution of student assessment scores across the descriptive ranges.
+          </p>
         </div>
-        <p className="text-[13px] text-gray-500 mt-1">
-          This report shows the distribution of student assessment scores across the descriptive ranges.
-        </p>
+        <div className="flex flex-col items-end gap-1 shrink-0 ml-6">
+          <button className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+            <MoreHorizontal size={16} strokeWidth={1.75} />
+          </button>
+          <span className="flex items-center gap-1.5 text-[13px] text-gray-500 whitespace-nowrap">
+            <RefreshCw size={12} strokeWidth={2} />
+            Data updated hourly
+          </span>
+        </div>
       </div>
 
       {/* ── Visualization cards ──────────────────────────────────────────────── */}
