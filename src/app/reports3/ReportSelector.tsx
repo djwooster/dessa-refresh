@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Check, Search } from "lucide-react";
+import { ChevronDown, Check, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 // ─── Nav definition ───────────────────────────────────────────────────────────
@@ -125,8 +125,16 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
                   placeholder="Search reports…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-7 h-8 text-[12.5px] bg-gray-50 border-[#e0e5eb] focus-visible:ring-[#1a4e8a]/20 focus-visible:border-[#1a4e8a]"
+                  className="pl-7 pr-7 h-8 text-[12.5px] bg-gray-50 border-[#e0e5eb] focus-visible:ring-[#1a4e8a]/20 focus-visible:border-[#1a4e8a]"
                 />
+                {search && (
+                  <button
+                    onClick={() => { setSearch(""); searchRef.current?.focus(); }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
               </div>
             </div>
 
