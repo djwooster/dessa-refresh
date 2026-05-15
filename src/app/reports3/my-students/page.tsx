@@ -326,8 +326,8 @@ export default function Reports3MyStudentsPage() {
       <div>
         <div className="flex items-center justify-between">
           <ReportSelector currentHref="/reports3/my-students" />
-          <span className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
-            <RefreshCw size={12} strokeWidth={2} className="text-gray-400" />
+          <span className="flex items-center gap-1.5 text-[13px] text-gray-500">
+            <RefreshCw size={12} strokeWidth={2} />
             Data updated hourly
           </span>
         </div>
