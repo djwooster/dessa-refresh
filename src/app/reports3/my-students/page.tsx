@@ -579,14 +579,14 @@ export default function Reports3MyStudentsPage() {
       <div>
         <div className="flex items-center justify-between">
           <ReportSelector currentHref="/reports3/my-students" />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-end gap-1">
+            <button className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+              <MoreHorizontal size={16} strokeWidth={1.75} />
+            </button>
             <span className="flex items-center gap-1.5 text-[13px] text-gray-500">
               <RefreshCw size={12} strokeWidth={2} />
               Data updated hourly
             </span>
-            <button className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
-              <MoreHorizontal size={16} strokeWidth={1.75} />
-            </button>
           </div>
         </div>
         <p className="text-[13px] text-gray-500 mt-1">
