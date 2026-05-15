@@ -178,7 +178,7 @@ function RatingWindowStat({ completed, total }: { completed: number; total: numb
   return (
     <div className="space-y-4 pt-1">
       <div>
-        <div className="text-[40px] font-bold text-gray-900 leading-none">
+        <div className="text-[32px] font-semibold text-gray-900 leading-none">
           {completed.toLocaleString()}
         </div>
         <p className="text-[13px] text-gray-500 mt-1.5">students rated this window</p>
@@ -284,26 +284,26 @@ function CombinedRows({ data }: { data: typeof PIE_DATA }) {
 function CombinedStackedBar({ data }: { data: typeof PIE_DATA }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   return (
-    <div className="space-y-3 pt-1">
-      <div className="flex h-8 rounded-lg overflow-hidden gap-0.5">
-        {data.map((d) => (
-          <div key={d.name} style={{ flex: d.value, backgroundColor: d.color }} />
-        ))}
-      </div>
-      <div className="flex items-start justify-between">
-        {data.map((d) => {
+    <div className="space-y-2 pt-1">
+      <div className="flex">
+        {data.map((d, i) => {
           const pct = ((d.value / total) * 100).toFixed(1);
+          const justify = i === 0 ? "justify-start" : i === 1 ? "justify-center" : "justify-start";
           return (
-            <div key={d.name} className="flex items-start gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: d.color }} />
-              <div>
-                <div className="text-[13px] font-bold text-gray-900">{d.value.toLocaleString()}</div>
-                <div className="text-[11.5px] text-gray-500">{d.name}</div>
-                <div className="text-[11px] font-semibold" style={{ color: d.color }}>{pct}%</div>
+            <div key={d.name} className={`flex ${justify}`} style={{ flex: d.value }}>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                <span className="text-[12.5px] font-semibold text-gray-800">{d.name}</span>
+                <span className="text-[12px] font-semibold" style={{ color: d.color }}>{pct}%</span>
               </div>
             </div>
           );
         })}
+      </div>
+      <div className="flex h-7 rounded-lg overflow-hidden gap-0.5">
+        {data.map((d) => (
+          <div key={d.name} style={{ flex: d.value, backgroundColor: d.color }} />
+        ))}
       </div>
     </div>
   );
@@ -413,9 +413,6 @@ function CombinedRatingsCard({ data }: { data: typeof PIE_DATA }) {
           value={view}
           onChange={(v) => setView(v as CombinedView)}
         />
-        <span className="text-[12px] font-bold text-[#1a5a8a] bg-[#e3f0fa] px-2.5 py-0.5 rounded-full">
-          {typicalPct}% Typical
-        </span>
       </div>
       {view === "tiles" && <CombinedTiles data={data} />}
       {view === "rows"  && <CombinedRows  data={data} />}
@@ -432,7 +429,7 @@ const VIEW_OPTIONS: Array<{ value: string; label: string }> = [
 
 function RatingWindowCard({ completed, total }: { completed: number; total: number }) {
   const [view, setView] = useState<RatingView>("stat");
-  const pct = ((completed / total) * 100).toFixed(1);
+  const pct = ((completed / total) * 100).toFixed(2);
   return (
     <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
