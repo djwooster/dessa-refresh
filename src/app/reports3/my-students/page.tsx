@@ -810,9 +810,9 @@ export default function Reports3MyStudentsPage() {
 
         <table className="w-full">
           <thead>
-            <tr className="border-b border-[#f0f4f8]">
+            <tr className="border-b border-[#e0e5eb] bg-[#edf0f4]">
               {["Name", "Username", "SSR Points", "Descriptive Range", "T-Score", "Rating Form", "Rating Window", "Rating Date"].map((col) => (
-                <th key={col} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400 whitespace-nowrap">
+                <th key={col} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 whitespace-nowrap">
                   {col}
                 </th>
               ))}
