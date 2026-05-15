@@ -12,7 +12,7 @@ interface NavGroup { label: string; items: NavItem[] }
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Ratings",
+    label: "Ratings Reports",
     items: [
       { label: "My Students",        href: "/reports3/my-students" },
       { label: "Competencies",       href: "/reports3/competencies" },
@@ -27,14 +27,14 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Completion",
+    label: "Completion Reports",
     items: [
       { label: "Rating Completion",  href: "/reports3/rating-completion" },
       { label: "EdSERT Completion",  href: "/reports3/edsert-completion" },
     ],
   },
   {
-    label: "Student Portal",
+    label: "Student Portal Reports",
     items: [
       { label: "Student Goals",      href: "/reports3/student-goals" },
     ],
@@ -106,7 +106,6 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
           >
             {NAV_GROUPS.map((group, gi) => (
               <div key={group.label}>
-                {gi > 0 && <div className="my-1.5 mx-3 border-t border-[#f0f4f8]" />}
                 <p className="px-3 pt-1.5 pb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-gray-600 select-none bg-gray-100 border-b border-[#e8ecf0]">
                   {group.label}
                 </p>
