@@ -573,7 +573,7 @@ export default function Reports3MyStudentsPage() {
   );
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="pt-10 px-6 pb-6 space-y-5">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between">
