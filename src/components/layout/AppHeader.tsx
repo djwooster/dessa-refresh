@@ -22,7 +22,7 @@ function UserMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-8 h-8 rounded-full bg-[#1a4e8a] flex items-center justify-center hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#1565c0]/40"
+        className="w-8 h-8 rounded-full bg-[#1a4e8a] flex items-center justify-center hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#1565c0]/40 cursor-pointer"
         aria-label="User menu"
       >
         <span className="text-white text-[11px] font-semibold leading-none">TW</span>

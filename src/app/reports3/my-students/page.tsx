@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { ChevronDown, Search, Download, X, Plus, SlidersHorizontal, CalendarIcon, RefreshCw } from "lucide-react";
+import { ChevronDown, Check, Search, Download, X, Plus, SlidersHorizontal, CalendarIcon, RefreshCw } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -309,31 +309,113 @@ function CombinedStackedBar({ data }: { data: typeof PIE_DATA }) {
   );
 }
 
+// ─── Card title dropdown ──────────────────────────────────────────────────────
+
+function CardTitleDropdown({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const triggerRef  = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        triggerRef.current  && !triggerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open]);
+
+  return (
+    <div className="relative">
+      <button
+        ref={triggerRef}
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1 text-[13px] font-semibold text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
+      >
+        {label}
+        <ChevronDown
+          size={13}
+          strokeWidth={2.5}
+          className={`text-[#1a4e8a] transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0,  scale: 1    }}
+            exit={{    opacity: 0, y: -4, scale: 0.97 }}
+            transition={{ duration: 0.12, ease: "easeOut" }}
+            className="absolute left-0 top-full mt-1.5 w-[140px] bg-white rounded-lg border border-[#e0e5eb] shadow-lg z-50 py-1 overflow-hidden"
+          >
+            {options.map((o) => (
+              <button
+                key={o.value}
+                onClick={() => { onChange(o.value); setOpen(false); }}
+                className={`w-full flex items-center justify-between px-3 py-[5px] text-[12.5px] transition-colors cursor-pointer ${
+                  value === o.value
+                    ? "text-[#1a4e8a] font-semibold bg-[#eef2f8]"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {o.label}
+                {value === o.value && <Check size={12} className="text-[#1a4e8a] shrink-0" />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Card components ──────────────────────────────────────────────────────────
+
 type CombinedView = "tiles" | "rows" | "bar";
-const COMBINED_VIEW_OPTIONS: Array<{ value: CombinedView; label: string }> = [
-  { value: "tiles", label: "Tiles"  },
-  { value: "rows",  label: "Rows"   },
-  { value: "bar",   label: "Bar"    },
+const COMBINED_VIEW_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "tiles", label: "Tiles" },
+  { value: "rows",  label: "Rows"  },
+  { value: "bar",   label: "Bar"   },
 ];
 
 function CombinedRatingsCard({ data }: { data: typeof PIE_DATA }) {
-  const [view, setView] = useState<CombinedView>("tiles");
-  const selectedLabel = COMBINED_VIEW_OPTIONS.find((o) => o.value === view)?.label ?? "";
+  const [view, setView] = useState<CombinedView>("bar");
+  const total   = data.reduce((s, d) => s + d.value, 0);
+  const typical = data.find((d) => d.name === "Typical");
+  const typicalPct = typical ? ((typical.value / total) * 100).toFixed(1) : "—";
   return (
-    <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5">
+    <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[13px] font-semibold text-gray-700">Combined Ratings</p>
-        <div className="relative inline-flex items-center h-6 pl-2.5 pr-1.5 rounded-full border border-[#e8ecf0] bg-white cursor-pointer hover:border-gray-300 transition-colors">
-          <span className="text-[11px] text-gray-700 font-medium mr-0.5">{selectedLabel}</span>
-          <ChevronDown size={11} className="text-gray-400 ml-0.5" />
-          <select
-            className="absolute inset-0 opacity-0 cursor-pointer w-full text-[11px]"
-            value={view}
-            onChange={(e) => setView(e.target.value as CombinedView)}
-          >
-            {COMBINED_VIEW_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </div>
+        <CardTitleDropdown
+          label="Combined Ratings"
+          options={COMBINED_VIEW_OPTIONS}
+          value={view}
+          onChange={(v) => setView(v as CombinedView)}
+        />
+        <span className="text-[12px] font-bold text-[#1a5a8a] bg-[#e3f0fa] px-2.5 py-0.5 rounded-full">
+          {typicalPct}% Typical
+        </span>
       </div>
       {view === "tiles" && <CombinedTiles data={data} />}
       {view === "rows"  && <CombinedRows  data={data} />}
@@ -343,29 +425,26 @@ function CombinedRatingsCard({ data }: { data: typeof PIE_DATA }) {
 }
 
 type RatingView = "stat" | "bar";
-const VIEW_OPTIONS: Array<{ value: RatingView; label: string }> = [
+const VIEW_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "stat", label: "Stat view" },
   { value: "bar",  label: "Bar view"  },
 ];
 
 function RatingWindowCard({ completed, total }: { completed: number; total: number }) {
   const [view, setView] = useState<RatingView>("stat");
-  const selectedLabel = VIEW_OPTIONS.find((o) => o.value === view)?.label ?? "";
+  const pct = ((completed / total) * 100).toFixed(1);
   return (
     <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[13px] font-semibold text-gray-700">Rating Window</p>
-        <div className="relative inline-flex items-center h-6 pl-2.5 pr-1.5 rounded-full border border-[#e8ecf0] bg-white cursor-pointer hover:border-gray-300 transition-colors">
-          <span className="text-[11px] text-gray-700 font-medium mr-0.5">{selectedLabel}</span>
-          <ChevronDown size={11} className="text-gray-400 ml-0.5" />
-          <select
-            className="absolute inset-0 opacity-0 cursor-pointer w-full text-[11px]"
-            value={view}
-            onChange={(e) => setView(e.target.value as RatingView)}
-          >
-            {VIEW_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </div>
+        <CardTitleDropdown
+          label="Rating Window"
+          options={VIEW_OPTIONS}
+          value={view}
+          onChange={(v) => setView(v as RatingView)}
+        />
+        <span className="text-[12px] font-bold text-[#166534] bg-[#e4f4eb] px-2.5 py-0.5 rounded-full">
+          {pct}% rated
+        </span>
       </div>
       {view === "stat" ? (
         <RatingWindowStat completed={completed} total={total} />

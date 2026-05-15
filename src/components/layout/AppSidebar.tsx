@@ -9,7 +9,7 @@ import {
   ClipboardCheck,
   PieChart,
   GitFork,
-  GraduationCap,
+  BookOpen,
   ChevronDown,
   Settings,
 } from "lucide-react";
@@ -27,24 +27,14 @@ interface NavItem {
 // ─── Nav definition ───────────────────────────────────────────────────────────
 
 const PRIMARY_NAV: NavItem[] = [
-  { label: "Dashboard",        href: "/",                    icon: LayoutDashboard },
-  { label: "Ratings",          href: "/ratings",             icon: ClipboardCheck },
-  // { label: "Reports",          href: "/reports",             icon: PieChart },
-  // { label: "Reports2",         href: "/reports2",            icon: PieChart },
-  { label: "Reports",          href: "/reports3",            icon: PieChart },
-  { label: "Strategies",       href: "/strategies",          icon: GitFork },
-  {
-    label: "Training",
-    href: "/training",
-    icon: GraduationCap,
-    children: [
-      { label: "Implementation Training", href: "/training/implementation", icon: GraduationCap },
-      { label: "EdSERT Manager",          href: "/training/edsert-manager", icon: GraduationCap },
-      { label: "EdSERT",                  href: "/training/edsert",         icon: GraduationCap },
-    ],
-  },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Dashboard",      href: "/",          icon: LayoutDashboard },
+  { label: "Ratings",        href: "/ratings",   icon: ClipboardCheck },
+  { label: "Reports",        href: "/reports3",  icon: PieChart },
+  { label: "Strategies",     href: "/strategies", icon: GitFork },
+  { label: "SEL Curriculum", href: "/lessons",   icon: BookOpen },
 ];
+
+const SETTINGS_NAV: NavItem = { label: "Settings", href: "/settings", icon: Settings };
 
 
 // ─── Shared item styles ───────────────────────────────────────────────────────
@@ -153,7 +143,6 @@ export function AppSidebar() {
 
       {/* Nav — scrollable middle section */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-        {/* Primary nav */}
         {PRIMARY_NAV.map((item) =>
           item.children ? (
             <TrainingAccordion key={item.href} item={item} />
@@ -161,8 +150,12 @@ export function AppSidebar() {
             <NavLink key={item.href} item={item} />
           )
         )}
-
       </nav>
+
+      {/* Settings — pinned to bottom */}
+      <div className="px-3 py-3 border-t border-[#e8ecf0]">
+        <NavLink item={SETTINGS_NAV} />
+      </div>
 
     </aside>
   );
