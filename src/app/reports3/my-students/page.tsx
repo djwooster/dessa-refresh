@@ -233,6 +233,115 @@ function RatingWindowBar({ completed, total }: { completed: number; total: numbe
   );
 }
 
+// ─── Combined Ratings views ───────────────────────────────────────────────────
+
+function CombinedTiles({ data }: { data: typeof PIE_DATA }) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  return (
+    <div className="grid grid-cols-3 gap-3 pt-1">
+      {data.map((d) => {
+        const pct = ((d.value / total) * 100).toFixed(1);
+        return (
+          <div key={d.name} className="rounded-lg border border-[#e8ecf0] p-3.5" style={{ borderTopColor: d.color, borderTopWidth: 3 }}>
+            <div className="text-[28px] font-bold text-gray-900 leading-none">{d.value.toLocaleString()}</div>
+            <div className="text-[12px] text-gray-500 mt-1">{d.name}</div>
+            <div className="text-[11px] font-semibold mt-1" style={{ color: d.color }}>{pct}%</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CombinedRows({ data }: { data: typeof PIE_DATA }) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  return (
+    <div className="space-y-3 pt-1">
+      {data.map((d) => {
+        const pct = (d.value / total) * 100;
+        return (
+          <div key={d.name} className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                <span className="text-[13px] font-medium text-gray-700">{d.name}</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="text-[13px] font-bold text-gray-900">{d.value.toLocaleString()}</span>
+                <span className="text-[11.5px] text-gray-400 w-10 text-right">{pct.toFixed(1)}%</span>
+              </div>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-[#e8ecf0] overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: d.color }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CombinedStackedBar({ data }: { data: typeof PIE_DATA }) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  return (
+    <div className="space-y-3 pt-1">
+      <div className="flex h-8 rounded-lg overflow-hidden gap-0.5">
+        {data.map((d) => (
+          <div key={d.name} style={{ flex: d.value, backgroundColor: d.color }} />
+        ))}
+      </div>
+      <div className="flex items-start justify-between">
+        {data.map((d) => {
+          const pct = ((d.value / total) * 100).toFixed(1);
+          return (
+            <div key={d.name} className="flex items-start gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: d.color }} />
+              <div>
+                <div className="text-[13px] font-bold text-gray-900">{d.value.toLocaleString()}</div>
+                <div className="text-[11.5px] text-gray-500">{d.name}</div>
+                <div className="text-[11px] font-semibold" style={{ color: d.color }}>{pct}%</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+type CombinedView = "tiles" | "rows" | "bar";
+const COMBINED_VIEW_OPTIONS: Array<{ value: CombinedView; label: string }> = [
+  { value: "tiles", label: "Tiles"  },
+  { value: "rows",  label: "Rows"   },
+  { value: "bar",   label: "Bar"    },
+];
+
+function CombinedRatingsCard({ data }: { data: typeof PIE_DATA }) {
+  const [view, setView] = useState<CombinedView>("tiles");
+  const selectedLabel = COMBINED_VIEW_OPTIONS.find((o) => o.value === view)?.label ?? "";
+  return (
+    <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[13px] font-semibold text-gray-700">Combined Ratings</p>
+        <div className="relative inline-flex items-center h-6 pl-2.5 pr-1.5 rounded-full border border-[#e8ecf0] bg-white cursor-pointer hover:border-gray-300 transition-colors">
+          <span className="text-[11px] text-gray-700 font-medium mr-0.5">{selectedLabel}</span>
+          <ChevronDown size={11} className="text-gray-400 ml-0.5" />
+          <select
+            className="absolute inset-0 opacity-0 cursor-pointer w-full text-[11px]"
+            value={view}
+            onChange={(e) => setView(e.target.value as CombinedView)}
+          >
+            {COMBINED_VIEW_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      </div>
+      {view === "tiles" && <CombinedTiles data={data} />}
+      {view === "rows"  && <CombinedRows  data={data} />}
+      {view === "bar"   && <CombinedStackedBar data={data} />}
+    </div>
+  );
+}
+
 type RatingView = "stat" | "bar";
 const VIEW_OPTIONS: Array<{ value: RatingView; label: string }> = [
   { value: "stat", label: "Stat view" },
@@ -409,27 +518,7 @@ export default function Reports3MyStudentsPage() {
       {/* ── Visualization cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-5">
         <RatingWindowCard completed={9891} total={9895} />
-        <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5">
-          <p className="text-[13px] font-semibold text-gray-700 mb-1">Combined Ratings</p>
-          <div className="flex items-center justify-center">
-            <ResponsiveContainer width={220} height={220}>
-              <PieChart>
-                <Pie data={PIE_DATA} cx="50%" cy="50%" outerRadius={95} dataKey="value"
-                  labelLine={false} label={PieLabel as never} isAnimationActive={false}>
-                  {PIE_DATA.map((e, i) => <Cell key={i} fill={e.color} />)}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex items-center justify-center gap-4 mt-1">
-            {PIE_DATA.map((d) => (
-              <div key={d.name} className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
-                <span className="text-[11.5px] text-gray-500">{d.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CombinedRatingsCard data={PIE_DATA} />
       </div>
 
       {/* ── Student table ────────────────────────────────────────────────────── */}
