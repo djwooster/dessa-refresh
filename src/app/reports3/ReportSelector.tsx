@@ -89,7 +89,7 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
         <ChevronDown
           size={18}
           strokeWidth={2.5}
-          className={`mt-0.5 text-gray-400 group-hover:text-gray-600 transition-all duration-150 ${open ? "rotate-180" : ""}`}
+          className={`mt-0.5 text-[#1a4e8a] transition-all duration-150 ${open ? "rotate-180" : ""}`}
         />
       </button>
 
