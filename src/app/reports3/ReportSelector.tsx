@@ -107,7 +107,7 @@ export function ReportSelector({ currentHref }: { currentHref: string }) {
             {NAV_GROUPS.map((group, gi) => (
               <div key={group.label}>
                 {gi > 0 && <div className="my-1.5 mx-3 border-t border-[#f0f4f8]" />}
-                <p className="px-3 pt-1.5 pb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-gray-600 select-none">
+                <p className="px-3 pt-1.5 pb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-gray-600 select-none bg-gray-50">
                   {group.label}
                 </p>
                 {group.items.map((item) => {
