@@ -10,6 +10,7 @@ import {
   PieChart,
   GitFork,
   BookOpen,
+  GraduationCap,
   ChevronDown,
   Settings,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Reports",        href: "/reports3",  icon: PieChart },
   { label: "Strategies",     href: "/strategies", icon: GitFork },
   { label: "Curriculum",     href: "/lessons",   icon: BookOpen },
+  { label: "Training",       href: "/training",  icon: GraduationCap },
 ];
 
 const SETTINGS_NAV: NavItem = { label: "Settings", href: "/settings", icon: Settings };

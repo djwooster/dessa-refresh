@@ -90,7 +90,7 @@ function LastYearModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-[540px] overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-[680px] overflow-hidden">
         {/* Modal header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#e8ecf0]">
           <div>
@@ -391,58 +391,104 @@ export default function EditSetupPage() {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Assessments</h2>
 
         {/* Assessment type */}
-        <div className="mb-6 pb-6 border-b border-[#f0f4f8]">
+        <div>
           <p className="text-[14px] font-semibold text-gray-800 mb-3">
             Assessment type
           </p>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { value: "screener", icon: Zap,          label: "Screener",        desc: "DESSA 2 mini, DESSA HSE-mini" },
-              { value: "full",     icon: ClipboardList, label: "Full Assessment", desc: "DESSA 2, DESSA HSE, DESSA Second Step® Assessments" },
-            ].map(({ value, icon: Icon, label, desc }) => {
-              const selected = assessment === value;
-              return (
-                <button
-                  key={value}
-                  onClick={() => setAssessment(value as "screener" | "full")}
-                  className={`text-left rounded-xl border-2 p-4 transition-all cursor-pointer ${
-                    selected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"
-                  }`}
-                >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${selected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
-                    <Icon size={18} className={selected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
+          {(() => {
+            const options = [
+              {
+                value: "screener",
+                icon: Zap,
+                label: "Screener",
+                desc: "DESSA 2 mini, DESSA HSE-mini",
+                summary: "A brief rating form that quickly identifies students who may need additional support.",
+                items: ["DESSA 2 mini", "DESSA HSE-mini"],
+              },
+              {
+                value: "full",
+                icon: ClipboardList,
+                label: "Full Assessment",
+                desc: "DESSA 2, DESSA HSE, DESSA Second Step® Assessments",
+                summary: "A comprehensive rating form measuring eight social-emotional competencies in depth.",
+                items: ["DESSA 2", "DESSA HSE", "DESSA Second Step® Assessments"],
+              },
+            ];
+            const selected = options.find((o) => o.value === assessment);
+            return (
+              <>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {options.map(({ value, icon: Icon, label, desc }) => {
+                    const isSelected = assessment === value;
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => setAssessment(value as "screener" | "full")}
+                        className={`text-left rounded-xl border-2 p-4 transition-all cursor-pointer ${
+                          isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
+                          <Icon size={18} className={isSelected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
+                        </div>
+                        <p className={`text-[14px] font-bold mb-1 ${isSelected ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
+                        <p className="text-sm text-gray-500 leading-snug">{desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selected && (
+                  <div className="mt-4 flex items-start gap-3 rounded-lg bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3">
+                    <Info size={15} className="text-[#1a4e8a] shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#1a4e8a] mb-2">{selected.summary}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {selected.items.map((item) => (
+                          <span key={item} className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1a4e8a] bg-white border border-[#c7d7ee] rounded-full px-2.5 py-1">
+                            <svg width="10" height="10" viewBox="0 0 14 14" fill="none" className="shrink-0">
+                              <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
+                              <path d="M4.5 7l1.75 1.75L9.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <p className={`text-[14px] font-bold mb-1 ${selected ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
-                  <p className="text-sm text-gray-500 leading-snug">{desc}</p>
-                </button>
-              );
-            })}
-          </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
-        {/* Conditional assignment */}
-        <div>
-          <p className="text-[14px] font-semibold text-gray-800 mb-3">
-            Automatically assign a separate assessment based on screener results
-          </p>
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <div
-                onClick={() => setConditionalAssignment(!conditionalAssignment)}
-                className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors cursor-pointer ${
-                  conditionalAssignment ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"
-                }`}
-              >
-                {conditionalAssignment && (
-                  <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                    <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[14px] text-gray-700">
-                  Conditional assignment of a full assessment based on a T-Score less than or equal to
-                </span>
+      </div>
+
+      {/* Conditional assignment */}
+      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Conditional Assessment</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Automatically follow up a screener with a full assessment for students who score below a threshold.
+        </p>
+        <div className="space-y-4">
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div
+              onClick={() => setConditionalAssignment(!conditionalAssignment)}
+              className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center mt-0.5 transition-colors cursor-pointer ${
+                conditionalAssignment ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"
+              }`}
+            >
+              {conditionalAssignment && (
+                <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                  <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <span className="text-[14px] font-semibold text-gray-800 block mb-1">
+                Assign a full assessment when a student scores below the T-Score threshold
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">T-Score threshold</span>
                 <input
                   type="number"
                   value={tScore}
@@ -450,14 +496,16 @@ export default function EditSetupPage() {
                   disabled={!conditionalAssignment}
                   className="w-16 h-8 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
                 />
+                <span className="text-sm text-gray-500">or below</span>
               </div>
-            </label>
-            <Checkbox
-              checked={resetEachWindow}
-              onChange={setResetEachWindow}
-              label="Reset each rating window to begin with a screener"
-            />
-          </div>
+            </div>
+          </label>
+          <Checkbox
+            checked={resetEachWindow}
+            onChange={setResetEachWindow}
+            label="Start each rating window with a screener"
+            sublabel="Students will complete a screener at the start of every window before a full assessment is conditionally assigned."
+          />
         </div>
       </div>
 
