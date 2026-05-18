@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Info, Zap, ClipboardList, ChevronDown } from "lucide-react";
+import { ArrowLeft, Info, Zap, ClipboardList, ChevronDown, X, CheckCircle2 } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
 
 const WINDOW_OPTIONS = [
@@ -61,6 +62,111 @@ function ConfirmModal({ onDiscard, onKeep }: { onDiscard: () => void; onKeep: ()
   );
 }
 
+const LAST_YEAR = {
+  year: "2024–2025",
+  windowCount: 3,
+  windowDesc: "Pre, Mid & Post Assessment",
+  windows: [
+    { label: "Pre-Assessment",  date: "Aug 1, 2024" },
+    { label: "Mid-Assessment",  date: "Jan 1, 2025" },
+    { label: "Post-Assessment", date: "May 28, 2025" },
+  ],
+  assessment: "Screener",
+  assessmentDesc: "DESSA 2 mini, DESSA HSE-mini",
+  conditionalAssignment: true,
+  tScore: "40",
+  resetEachWindow: false,
+  siteLeaderManage: false,
+};
+
+function LastYearModal({
+  onClose,
+  onUse,
+}: {
+  onClose: () => void;
+  onUse: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-[540px] overflow-hidden">
+        {/* Modal header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#e8ecf0]">
+          <div>
+            <h2 className="text-[16px] font-bold text-gray-900">Last Year's Setup</h2>
+            <p className="text-[12.5px] text-gray-500 mt-0.5">{LAST_YEAR.year} School Year</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Modal body */}
+        <div className="px-6 py-5 space-y-5">
+          {/* Rating windows */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Rating Windows</p>
+            <p className="text-[13px] font-semibold text-gray-700 mb-3">{LAST_YEAR.windowCount} windows — {LAST_YEAR.windowDesc}</p>
+            <div className="grid grid-cols-3 gap-3">
+              {LAST_YEAR.windows.map((w) => (
+                <div key={w.label} className="bg-[#f8fafc] rounded-lg px-3 py-2.5 border border-[#edf0f4]">
+                  <p className="text-[11px] font-semibold text-gray-400 mb-0.5">{w.label}</p>
+                  <p className="text-[13px] font-semibold text-gray-800">{w.date}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Assessments */}
+          <div className="border-t border-[#f0f4f8] pt-5">
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Assessments</p>
+            <div className="space-y-2">
+              <div className="flex justify-between items-baseline">
+                <span className="text-[13.5px] font-semibold text-gray-700">Type</span>
+                <span className="text-[13.5px] text-gray-500">{LAST_YEAR.assessment} ({LAST_YEAR.assessmentDesc})</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-[13.5px] font-semibold text-gray-700">Conditional T-Score</span>
+                <span className="text-[13.5px] text-gray-500">≤ {LAST_YEAR.tScore}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-[13.5px] font-semibold text-gray-700">Reset each window</span>
+                <span className="text-[13.5px] text-gray-500">{LAST_YEAR.resetEachWindow ? "Yes" : "No"}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Student completed assessments */}
+          <div className="border-t border-[#f0f4f8] pt-5">
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Student Completed Assessments</p>
+            <div className="flex justify-between items-baseline">
+              <span className="text-[13.5px] font-semibold text-gray-700">Site Leader management</span>
+              <span className="text-[13.5px] text-gray-500">{LAST_YEAR.siteLeaderManage ? "Enabled" : "Disabled"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal footer */}
+        <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-t border-[#e8ecf0]">
+          <p className="text-[12px] text-gray-400">Applying this will replace your current selections.</p>
+          <div className="flex items-center gap-2">
+            <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+              Dismiss
+            </button>
+            <button
+              onClick={onUse}
+              className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+            >
+              <CheckCircle2 size={14} strokeWidth={2} />
+              Use Last Year's Setup
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Checkbox({
   checked,
   onChange,
@@ -105,6 +211,7 @@ export default function EditSetupPage() {
   const [resetEachWindow, setResetEachWindow] = useState(DEFAULT_STATE.resetEachWindow);
   const [siteLeaderManage, setSiteLeaderManage] = useState(DEFAULT_STATE.siteLeaderManage);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showLastYear, setShowLastYear] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -127,6 +234,21 @@ export default function EditSetupPage() {
     tScore !== DEFAULT_STATE.tScore ||
     resetEachWindow !== DEFAULT_STATE.resetEachWindow ||
     siteLeaderManage !== DEFAULT_STATE.siteLeaderManage;
+
+  const applyLastYear = () => {
+    setWindowCount(LAST_YEAR.windowCount);
+    setDates(LAST_YEAR.windows.map((w) => {
+      const [month, day, year] = w.date.split(" ");
+      const months: Record<string, string> = { Jan:"01",Feb:"02",Mar:"03",Apr:"04",May:"05",Jun:"06",Jul:"07",Aug:"08",Sep:"09",Oct:"10",Nov:"11",Dec:"12" };
+      return `${year}-${months[month]}-${day.replace(",","").padStart(2,"0")}`;
+    }));
+    setAssessment("screener");
+    setConditionalAssignment(LAST_YEAR.conditionalAssignment);
+    setTScore(LAST_YEAR.tScore);
+    setResetEachWindow(LAST_YEAR.resetEachWindow);
+    setSiteLeaderManage(LAST_YEAR.siteLeaderManage);
+    setShowLastYear(false);
+  };
 
   const handleBack = () => {
     if (isDirty) setShowConfirm(true);
@@ -151,6 +273,12 @@ export default function EditSetupPage() {
           onKeep={() => setShowConfirm(false)}
         />
       )}
+      {showLastYear && (
+        <LastYearModal
+          onClose={() => setShowLastYear(false)}
+          onUse={applyLastYear}
+        />
+      )}
 
       {/* Sticky header */}
       <div
@@ -173,9 +301,15 @@ export default function EditSetupPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleBack}
-              className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+              className="h-9 px-4 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
             >
               Cancel
+            </button>
+            <button
+              onClick={() => setShowLastYear(true)}
+              className="h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-medium text-[#1a4e8a] hover:bg-[#dce8f5] transition-colors cursor-pointer"
+            >
+              View Previous Setup
             </button>
             <button
               onClick={() => {
@@ -229,16 +363,11 @@ export default function EditSetupPage() {
         {/* Date fields */}
         <div className="flex gap-6">
           {dates.map((date, i) => (
-            <div key={i} className="flex flex-col gap-1 flex-1">
+            <div key={i} className="flex flex-col gap-1 w-44">
               <label className="text-[13.5px] font-semibold text-gray-900">
                 {labels[i]}
               </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => updateDate(i, e.target.value)}
-                className="h-9 px-3 border border-[#d1d5db] rounded-lg text-[13px] text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] cursor-pointer w-full"
-              />
+              <DatePicker value={date} onChange={(v) => updateDate(i, v)} />
             </div>
           ))}
         </div>

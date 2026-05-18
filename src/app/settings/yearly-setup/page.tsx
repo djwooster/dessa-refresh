@@ -59,8 +59,8 @@ export default function YearlySetupPage() {
         {/* Rating windows visualization */}
         <div className="px-6 py-5 border-b border-[#f0f4f8]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              Rating Windows
+            <h3 className="text-[13.5px] font-semibold text-gray-800">
+              Rating windows
             </h3>
             <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
               {(["timeline", "connected"] as View[]).map((v) => (
