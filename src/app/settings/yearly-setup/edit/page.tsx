@@ -40,19 +40,19 @@ function ConfirmModal({ onDiscard, onKeep }: { onDiscard: () => void; onKeep: ()
       <div className="absolute inset-0 bg-black/30" onClick={onKeep} />
       <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[400px]">
         <h2 className="text-[16px] font-bold text-gray-900 mb-2">Discard changes?</h2>
-        <p className="text-[13.5px] text-gray-500 mb-6">
+        <p className="text-[14px] text-gray-500 mb-6">
           You have unsaved changes. If you leave now they will be lost.
         </p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onKeep}
-            className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+            className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
           >
             Keep Editing
           </button>
           <button
             onClick={onDiscard}
-            className="h-9 px-4 rounded-lg bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 transition-colors cursor-pointer"
+            className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer"
           >
             Discard Changes
           </button>
@@ -94,7 +94,7 @@ function LastYearModal({
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#e8ecf0]">
           <div>
             <h2 className="text-[16px] font-bold text-gray-900">Last Year's Setup</h2>
-            <p className="text-[12.5px] text-gray-500 mt-0.5">{LAST_YEAR.year} School Year</p>
+            <p className="text-sm text-gray-500 mt-0.5">{LAST_YEAR.year} School Year</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
             <X size={16} />
@@ -105,13 +105,13 @@ function LastYearModal({
         <div className="px-6 py-5 space-y-5">
           {/* Rating windows */}
           <div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Rating Windows</p>
-            <p className="text-[13px] font-semibold text-gray-700 mb-3">{LAST_YEAR.windowCount} windows — {LAST_YEAR.windowDesc}</p>
+            <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Rating Windows</p>
+            <p className="text-sm font-semibold text-gray-700 mb-3">{LAST_YEAR.windowCount} windows — {LAST_YEAR.windowDesc}</p>
             <div className="grid grid-cols-3 gap-3">
               {LAST_YEAR.windows.map((w) => (
                 <div key={w.label} className="bg-[#f8fafc] rounded-lg px-3 py-2.5 border border-[#edf0f4]">
-                  <p className="text-[11px] font-semibold text-gray-400 mb-0.5">{w.label}</p>
-                  <p className="text-[13px] font-semibold text-gray-800">{w.date}</p>
+                  <p className="text-sm font-semibold text-gray-400 mb-0.5">{w.label}</p>
+                  <p className="text-sm font-semibold text-gray-800">{w.date}</p>
                 </div>
               ))}
             </div>
@@ -119,43 +119,43 @@ function LastYearModal({
 
           {/* Assessments */}
           <div className="border-t border-[#f0f4f8] pt-5">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Assessments</p>
+            <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Assessments</p>
             <div className="space-y-2">
               <div className="flex justify-between items-baseline">
-                <span className="text-[13.5px] font-semibold text-gray-700">Type</span>
-                <span className="text-[13.5px] text-gray-500">{LAST_YEAR.assessment} ({LAST_YEAR.assessmentDesc})</span>
+                <span className="text-[14px] font-semibold text-gray-700">Type</span>
+                <span className="text-[14px] text-gray-500">{LAST_YEAR.assessment} ({LAST_YEAR.assessmentDesc})</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[13.5px] font-semibold text-gray-700">Conditional T-Score</span>
-                <span className="text-[13.5px] text-gray-500">≤ {LAST_YEAR.tScore}</span>
+                <span className="text-[14px] font-semibold text-gray-700">Conditional T-Score</span>
+                <span className="text-[14px] text-gray-500">≤ {LAST_YEAR.tScore}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[13.5px] font-semibold text-gray-700">Reset each window</span>
-                <span className="text-[13.5px] text-gray-500">{LAST_YEAR.resetEachWindow ? "Yes" : "No"}</span>
+                <span className="text-[14px] font-semibold text-gray-700">Reset each window</span>
+                <span className="text-[14px] text-gray-500">{LAST_YEAR.resetEachWindow ? "Yes" : "No"}</span>
               </div>
             </div>
           </div>
 
           {/* Student completed assessments */}
           <div className="border-t border-[#f0f4f8] pt-5">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Student Completed Assessments</p>
+            <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Student Completed Assessments</p>
             <div className="flex justify-between items-baseline">
-              <span className="text-[13.5px] font-semibold text-gray-700">Site Leader management</span>
-              <span className="text-[13.5px] text-gray-500">{LAST_YEAR.siteLeaderManage ? "Enabled" : "Disabled"}</span>
+              <span className="text-[14px] font-semibold text-gray-700">Site Leader management</span>
+              <span className="text-[14px] text-gray-500">{LAST_YEAR.siteLeaderManage ? "Enabled" : "Disabled"}</span>
             </div>
           </div>
         </div>
 
         {/* Modal footer */}
         <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-t border-[#e8ecf0]">
-          <p className="text-[12px] text-gray-400">Applying this will replace your current selections.</p>
+          <p className="text-sm text-gray-400">Applying this will replace your current selections.</p>
           <div className="flex items-center gap-2">
-            <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+            <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
               Dismiss
             </button>
             <button
               onClick={onUse}
-              className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-sm font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
             >
               <CheckCircle2 size={14} strokeWidth={2} />
               Use Last Year's Setup
@@ -193,8 +193,8 @@ function Checkbox({
         )}
       </div>
       <div>
-        <span className="text-[13.5px] text-gray-700">{label}</span>
-        {sublabel && <p className="text-[12px] text-gray-400 mt-0.5">{sublabel}</p>}
+        <span className="text-[14px] text-gray-700">{label}</span>
+        {sublabel && <p className="text-sm text-gray-400 mt-0.5">{sublabel}</p>}
       </div>
     </label>
   );
@@ -288,7 +288,7 @@ export default function EditSetupPage() {
       >
         <button
           onClick={handleBack}
-          className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-gray-700 mb-3 cursor-pointer transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-3 cursor-pointer transition-colors"
         >
           <ArrowLeft size={14} />
           Back to Yearly Setup
@@ -296,18 +296,18 @@ export default function EditSetupPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[22px] font-bold text-gray-900 mb-0.5">Edit Setup</h1>
-            <p className="text-[13.5px] text-gray-500">2025–2026 School Year</p>
+            <p className="text-[14px] text-gray-500">2025–2026 School Year</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handleBack}
-              className="h-9 px-4 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+              className="h-9 px-4 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={() => setShowLastYear(true)}
-              className="h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-medium text-[#1a4e8a] hover:bg-[#dce8f5] transition-colors cursor-pointer"
+              className="h-9 px-4 rounded-lg border border-[#1a4e8a] text-sm font-medium text-[#1a4e8a] hover:bg-[#dce8f5] transition-colors cursor-pointer"
             >
               View Previous Setup
             </button>
@@ -318,7 +318,7 @@ export default function EditSetupPage() {
                 });
                 router.back();
               }}
-              className="h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+              className="h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-sm font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
             >
               Save Changes
             </button>
@@ -334,21 +334,21 @@ export default function EditSetupPage() {
 
       {/* Rating Windows */}
       <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
-        <h2 className="text-[15px] font-bold text-gray-900 mb-1">Rating Windows</h2>
-        <p className="text-[13px] text-gray-500 mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Rating Windows</h2>
+        <p className="text-[14px] text-gray-500 mb-6">
           Set the number of assessment windows and their start dates for this school year.
         </p>
 
         {/* Window count dropdown */}
         <div className="mb-6 pb-6 border-b border-[#f0f4f8]">
-          <p className="text-[13.5px] font-semibold text-gray-800 mb-3">
+          <p className="text-[14px] font-semibold text-gray-800 mb-3">
             How many times would you like all students to be assessed this school year?
           </p>
           <div className="relative w-80">
             <select
               value={windowCount}
               onChange={(e) => handleCountChange(Number(e.target.value))}
-              className="w-full h-9 pl-3 pr-8 border border-[#d1d5db] rounded-lg text-[13px] text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] appearance-none cursor-pointer"
+              className="w-full h-9 pl-3 pr-8 border border-[#d1d5db] rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] appearance-none cursor-pointer"
             >
               {WINDOW_OPTIONS.map(({ count, desc }) => (
                 <option key={count} value={count}>
@@ -364,7 +364,7 @@ export default function EditSetupPage() {
         <div className="flex gap-6">
           {dates.map((date, i) => (
             <div key={i} className="flex flex-col gap-1 w-44">
-              <label className="text-[13.5px] font-semibold text-gray-900">
+              <label className="text-[14px] font-semibold text-gray-900">
                 {labels[i]}
               </label>
               <DatePicker value={date} onChange={(v) => updateDate(i, v)} />
@@ -375,12 +375,12 @@ export default function EditSetupPage() {
 
       {/* Assessments */}
       <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
-        <h2 className="text-[15px] font-bold text-gray-900 mb-6">Assessments</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Assessments</h2>
 
         {/* Assessment type */}
         <div className="mb-6 pb-6 border-b border-[#f0f4f8]">
-          <p className="text-[13.5px] font-semibold text-gray-800 mb-3">
-            Which assessment will you use to assess all students?
+          <p className="text-[14px] font-semibold text-gray-800 mb-3">
+            Assessment type
           </p>
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -399,8 +399,8 @@ export default function EditSetupPage() {
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${selected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
                     <Icon size={18} className={selected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
                   </div>
-                  <p className={`text-[13.5px] font-bold mb-1 ${selected ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
-                  <p className="text-[12.5px] text-gray-500 leading-snug">{desc}</p>
+                  <p className={`text-[14px] font-bold mb-1 ${selected ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
+                  <p className="text-sm text-gray-500 leading-snug">{desc}</p>
                 </button>
               );
             })}
@@ -409,7 +409,7 @@ export default function EditSetupPage() {
 
         {/* Conditional assignment */}
         <div>
-          <p className="text-[13.5px] font-semibold text-gray-800 mb-3">
+          <p className="text-[14px] font-semibold text-gray-800 mb-3">
             Automatically assign a separate assessment based on screener results
           </p>
           <div className="space-y-3">
@@ -427,7 +427,7 @@ export default function EditSetupPage() {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[13.5px] text-gray-700">
+                <span className="text-[14px] text-gray-700">
                   Conditional assignment of a full assessment based on a T-Score less than or equal to
                 </span>
                 <input
@@ -435,7 +435,7 @@ export default function EditSetupPage() {
                   value={tScore}
                   onChange={(e) => setTScore(e.target.value)}
                   disabled={!conditionalAssignment}
-                  className="w-16 h-8 px-2 border border-[#d1d5db] rounded-lg text-[13px] text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-16 h-8 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
                 />
               </div>
             </label>
@@ -450,10 +450,10 @@ export default function EditSetupPage() {
 
       {/* Student Completed Assessments */}
       <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6">
-        <h2 className="text-[15px] font-bold text-gray-900 mb-4">Student Completed Assessments</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Student Completed Assessments</h2>
         <div className="flex items-start gap-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-lg px-4 py-3 mb-4">
           <Info size={15} className="text-[#1d4ed8] shrink-0 mt-0.5" />
-          <p className="text-[13px] text-[#1e40af] leading-relaxed">
+          <p className="text-[14px] text-[#1e40af] leading-relaxed">
             If your program has enabled student completed assessments, they will automatically be available
             for students to complete unless you de-activate them.{" "}
             <a href="#" className="underline font-medium cursor-pointer">
