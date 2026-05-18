@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Info, Zap, ClipboardList, ChevronDown, X, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
 
@@ -213,17 +214,17 @@ export default function EditSetupPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showLastYear, setShowLastYear] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setScrolled(!entry.isIntersecting),
-      { threshold: 0 }
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
+    let el = headerRef.current?.parentElement;
+    while (el && el.scrollHeight <= el.clientHeight) {
+      el = el.parentElement;
+    }
+    if (!el) return;
+    const handler = () => setScrolled((el as HTMLElement).scrollTop > 0);
+    el.addEventListener("scroll", handler, { passive: true });
+    return () => el!.removeEventListener("scroll", handler);
   }, []);
 
   const isDirty =
@@ -281,18 +282,33 @@ export default function EditSetupPage() {
       )}
 
       {/* Sticky header */}
-      <div
-        className={`sticky top-0 z-10 px-6 py-4 transition-all duration-150 ${
-          scrolled ? "bg-white border-b border-[#e8ecf0] shadow-sm" : "bg-transparent"
-        }`}
+      <motion.div
+        ref={headerRef}
+        className="sticky top-0 z-10 px-6"
+        animate={{
+          paddingTop: scrolled ? 12 : 16,
+          paddingBottom: scrolled ? 12 : 16,
+          backgroundColor: scrolled ? "#ffffff" : "rgba(255,255,255,0)",
+          boxShadow: scrolled ? "0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px #e8ecf0" : "0 0px 0px rgba(0,0,0,0)",
+        }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
       >
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-3 cursor-pointer transition-colors"
-        >
-          <ArrowLeft size={14} />
-          Back to Yearly Setup
-        </button>
+        <AnimatePresence initial={false}>
+          {!scrolled && (
+            <motion.button
+              key="back"
+              onClick={handleBack}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 cursor-pointer transition-colors overflow-hidden"
+              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+              animate={{ opacity: 1, height: "auto", marginBottom: 12 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+            >
+              <ArrowLeft size={14} />
+              Back to Yearly Setup
+            </motion.button>
+          )}
+        </AnimatePresence>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[22px] font-bold text-gray-900 mb-0.5">Edit Setup</h1>
@@ -324,10 +340,7 @@ export default function EditSetupPage() {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Scroll sentinel — when this leaves the viewport, the header becomes opaque */}
-      <div ref={sentinelRef} className="h-0" />
+      </motion.div>
 
       {/* Page content */}
       <div className="px-6 pb-6">
@@ -342,7 +355,7 @@ export default function EditSetupPage() {
         {/* Window count dropdown */}
         <div className="mb-6 pb-6 border-b border-[#f0f4f8]">
           <p className="text-[14px] font-semibold text-gray-800 mb-3">
-            How many times would you like all students to be assessed this school year?
+            Number of rating windows
           </p>
           <div className="relative w-80">
             <select

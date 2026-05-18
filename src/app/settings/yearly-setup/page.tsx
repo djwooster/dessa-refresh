@@ -4,20 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, ChevronDown } from "lucide-react";
 import { ConceptC } from "@/components/dashboard/timeline/ConceptC";
-import { ConceptB } from "@/components/dashboard/timeline/ConceptB";
-
-const CONFIGS = [
-  { label: "Screening",         value: "Screener (e.g., DESSA 2 mini, DESSA HSE-mini)" },
-  { label: "Conditional Score", value: "40" },
-  { label: "Exceptions",        value: "None" },
-];
-
-type View = "timeline" | "connected";
 
 export default function YearlySetupPage() {
   const router = useRouter();
   const [year, setYear] = useState("2025-2026");
-  const [view, setView] = useState<View>("timeline");
 
   return (
     <div className="p-6">
@@ -58,31 +48,10 @@ export default function YearlySetupPage() {
 
         {/* Rating windows visualization */}
         <div className="px-6 py-5 border-b border-[#f0f4f8]">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[13.5px] font-semibold text-gray-800">
-              Rating windows
-            </h3>
-            <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
-              {(["timeline", "connected"] as View[]).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-3 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
-                    view === v
-                      ? "bg-white text-gray-800 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  {v === "timeline" ? "Timeline" : "Connected Cards"}
-                </button>
-              ))}
-            </div>
-          </div>
-          {view === "timeline" ? (
-            <ConceptC showYearLabel={false} />
-          ) : (
-            <ConceptB />
-          )}
+          <h3 className="text-[13.5px] font-semibold text-gray-800 mb-4">
+            Rating windows
+          </h3>
+          <ConceptC showYearLabel={false} />
         </div>
 
         {/* Assessment configurations */}
