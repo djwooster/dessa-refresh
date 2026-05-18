@@ -1,0 +1,344 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Info, Zap, ClipboardList, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
+
+const WINDOW_OPTIONS = [
+  { count: 1, desc: "Annual Assessment",                    labels: ["Annual Assessment"] },
+  { count: 2, desc: "Pre & Post Assessment",                labels: ["Pre-Assessment", "Post-Assessment"] },
+  { count: 3, desc: "Pre, Mid & Post Assessment",           labels: ["Pre-Assessment", "Mid-Assessment", "Post-Assessment"] },
+  { count: 4, desc: "Pre, Mid 1, Mid 2 & Post Assessment",  labels: ["Pre-Assessment", "Mid 1 Assessment", "Mid 2 Assessment", "Post-Assessment"] },
+  { count: 5, desc: "Pre, Mid 1, Mid 2, Mid 3 & Post Assessment", labels: ["Pre-Assessment", "Mid 1 Assessment", "Mid 2 Assessment", "Mid 3 Assessment", "Post-Assessment"] },
+];
+
+const DEFAULT_DATES: Record<number, string[]> = {
+  1: ["2025-08-01"],
+  2: ["2025-08-01", "2026-05-28"],
+  3: ["2025-08-01", "2026-01-01", "2026-05-28"],
+  4: ["2025-08-01", "2025-11-01", "2026-02-01", "2026-05-28"],
+  5: ["2025-08-01", "2025-10-01", "2026-01-01", "2026-03-01", "2026-05-28"],
+};
+
+const DEFAULT_COUNT = 3;
+
+const DEFAULT_STATE = {
+  windowCount: DEFAULT_COUNT,
+  dates: DEFAULT_DATES[DEFAULT_COUNT],
+  assessment: "screener" as const,
+  conditionalAssignment: true,
+  tScore: "40",
+  resetEachWindow: false,
+  siteLeaderManage: false,
+};
+
+function ConfirmModal({ onDiscard, onKeep }: { onDiscard: () => void; onKeep: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/30" onClick={onKeep} />
+      <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[400px]">
+        <h2 className="text-[16px] font-bold text-gray-900 mb-2">Discard changes?</h2>
+        <p className="text-[13.5px] text-gray-500 mb-6">
+          You have unsaved changes. If you leave now they will be lost.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onKeep}
+            className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Keep Editing
+          </button>
+          <button
+            onClick={onDiscard}
+            className="h-9 px-4 rounded-lg bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 transition-colors cursor-pointer"
+          >
+            Discard Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Checkbox({
+  checked,
+  onChange,
+  label,
+  sublabel,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: React.ReactNode;
+  sublabel?: string;
+}) {
+  return (
+    <label className="flex items-start gap-3 cursor-pointer group">
+      <div
+        onClick={() => onChange(!checked)}
+        className={`mt-0.5 w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors cursor-pointer ${
+          checked ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"
+        }`}
+      >
+        {checked && (
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+            <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </div>
+      <div>
+        <span className="text-[13.5px] text-gray-700">{label}</span>
+        {sublabel && <p className="text-[12px] text-gray-400 mt-0.5">{sublabel}</p>}
+      </div>
+    </label>
+  );
+}
+
+export default function EditSetupPage() {
+  const router = useRouter();
+
+  const [windowCount, setWindowCount] = useState(DEFAULT_STATE.windowCount);
+  const [dates, setDates] = useState<string[]>(DEFAULT_STATE.dates);
+  const [assessment, setAssessment] = useState<"screener" | "full">(DEFAULT_STATE.assessment);
+  const [conditionalAssignment, setConditionalAssignment] = useState(DEFAULT_STATE.conditionalAssignment);
+  const [tScore, setTScore] = useState(DEFAULT_STATE.tScore);
+  const [resetEachWindow, setResetEachWindow] = useState(DEFAULT_STATE.resetEachWindow);
+  const [siteLeaderManage, setSiteLeaderManage] = useState(DEFAULT_STATE.siteLeaderManage);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setScrolled(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  const isDirty =
+    windowCount !== DEFAULT_STATE.windowCount ||
+    JSON.stringify(dates) !== JSON.stringify(DEFAULT_STATE.dates) ||
+    assessment !== DEFAULT_STATE.assessment ||
+    conditionalAssignment !== DEFAULT_STATE.conditionalAssignment ||
+    tScore !== DEFAULT_STATE.tScore ||
+    resetEachWindow !== DEFAULT_STATE.resetEachWindow ||
+    siteLeaderManage !== DEFAULT_STATE.siteLeaderManage;
+
+  const handleBack = () => {
+    if (isDirty) setShowConfirm(true);
+    else router.back();
+  };
+
+  const handleCountChange = (count: number) => {
+    setWindowCount(count);
+    setDates(DEFAULT_DATES[count]);
+  };
+
+  const updateDate = (i: number, date: string) =>
+    setDates(dates.map((d, idx) => (idx === i ? date : d)));
+
+  const labels = WINDOW_OPTIONS.find((o) => o.count === windowCount)!.labels;
+
+  return (
+    <div>
+      {showConfirm && (
+        <ConfirmModal
+          onDiscard={() => router.back()}
+          onKeep={() => setShowConfirm(false)}
+        />
+      )}
+
+      {/* Sticky header */}
+      <div
+        className={`sticky top-0 z-10 px-6 py-4 transition-all duration-150 ${
+          scrolled ? "bg-white border-b border-[#e8ecf0] shadow-sm" : "bg-transparent"
+        }`}
+      >
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-gray-700 mb-3 cursor-pointer transition-colors"
+        >
+          <ArrowLeft size={14} />
+          Back to Yearly Setup
+        </button>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[22px] font-bold text-gray-900 mb-0.5">Edit Setup</h1>
+            <p className="text-[13.5px] text-gray-500">2025–2026 School Year</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBack}
+              className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                toast.success("Setup saved", {
+                  description: "Your yearly setup changes have been saved.",
+                });
+                router.back();
+              }}
+              className="h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Scroll sentinel — when this leaves the viewport, the header becomes opaque */}
+      <div ref={sentinelRef} className="h-0" />
+
+      {/* Page content */}
+      <div className="px-6 pb-6">
+
+      {/* Rating Windows */}
+      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
+        <h2 className="text-[15px] font-bold text-gray-900 mb-1">Rating Windows</h2>
+        <p className="text-[13px] text-gray-500 mb-6">
+          Set the number of assessment windows and their start dates for this school year.
+        </p>
+
+        {/* Window count dropdown */}
+        <div className="mb-6 pb-6 border-b border-[#f0f4f8]">
+          <p className="text-[13.5px] font-semibold text-gray-800 mb-3">
+            How many times would you like all students to be assessed this school year?
+          </p>
+          <div className="relative w-80">
+            <select
+              value={windowCount}
+              onChange={(e) => handleCountChange(Number(e.target.value))}
+              className="w-full h-9 pl-3 pr-8 border border-[#d1d5db] rounded-lg text-[13px] text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] appearance-none cursor-pointer"
+            >
+              {WINDOW_OPTIONS.map(({ count, desc }) => (
+                <option key={count} value={count}>
+                  {count} – ({desc})
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Date fields */}
+        <div className="flex gap-6">
+          {dates.map((date, i) => (
+            <div key={i} className="flex flex-col gap-1 flex-1">
+              <label className="text-[13.5px] font-semibold text-gray-900">
+                {labels[i]}
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => updateDate(i, e.target.value)}
+                className="h-9 px-3 border border-[#d1d5db] rounded-lg text-[13px] text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] cursor-pointer w-full"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Assessments */}
+      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
+        <h2 className="text-[15px] font-bold text-gray-900 mb-6">Assessments</h2>
+
+        {/* Assessment type */}
+        <div className="mb-6 pb-6 border-b border-[#f0f4f8]">
+          <p className="text-[13.5px] font-semibold text-gray-800 mb-3">
+            Which assessment will you use to assess all students?
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { value: "screener", icon: Zap,          label: "Screener",        desc: "DESSA 2 mini, DESSA HSE-mini" },
+              { value: "full",     icon: ClipboardList, label: "Full Assessment", desc: "DESSA 2, DESSA HSE, DESSA Second Step® Assessments" },
+            ].map(({ value, icon: Icon, label, desc }) => {
+              const selected = assessment === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => setAssessment(value as "screener" | "full")}
+                  className={`text-left rounded-xl border-2 p-4 transition-all cursor-pointer ${
+                    selected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${selected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
+                    <Icon size={18} className={selected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
+                  </div>
+                  <p className={`text-[13.5px] font-bold mb-1 ${selected ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
+                  <p className="text-[12.5px] text-gray-500 leading-snug">{desc}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Conditional assignment */}
+        <div>
+          <p className="text-[13.5px] font-semibold text-gray-800 mb-3">
+            Automatically assign a separate assessment based on screener results
+          </p>
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div
+                onClick={() => setConditionalAssignment(!conditionalAssignment)}
+                className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors cursor-pointer ${
+                  conditionalAssignment ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"
+                }`}
+              >
+                {conditionalAssignment && (
+                  <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                    <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[13.5px] text-gray-700">
+                  Conditional assignment of a full assessment based on a T-Score less than or equal to
+                </span>
+                <input
+                  type="number"
+                  value={tScore}
+                  onChange={(e) => setTScore(e.target.value)}
+                  disabled={!conditionalAssignment}
+                  className="w-16 h-8 px-2 border border-[#d1d5db] rounded-lg text-[13px] text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
+                />
+              </div>
+            </label>
+            <Checkbox
+              checked={resetEachWindow}
+              onChange={setResetEachWindow}
+              label="Reset each rating window to begin with a screener"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Student Completed Assessments */}
+      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6">
+        <h2 className="text-[15px] font-bold text-gray-900 mb-4">Student Completed Assessments</h2>
+        <div className="flex items-start gap-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-lg px-4 py-3 mb-4">
+          <Info size={15} className="text-[#1d4ed8] shrink-0 mt-0.5" />
+          <p className="text-[13px] text-[#1e40af] leading-relaxed">
+            If your program has enabled student completed assessments, they will automatically be available
+            for students to complete unless you de-activate them.{" "}
+            <a href="#" className="underline font-medium cursor-pointer">
+              Learn more about managing student completed assessments
+            </a>
+          </p>
+        </div>
+        <Checkbox
+          checked={siteLeaderManage}
+          onChange={setSiteLeaderManage}
+          label="Allow Site Leaders to manage when students can complete assessments at their assigned sites"
+        />
+      </div>
+      </div>
+    </div>
+  );
+}

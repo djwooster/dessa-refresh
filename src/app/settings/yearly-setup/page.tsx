@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, ChevronDown } from "lucide-react";
-
-const WINDOWS = [
-  { label: "Pre-Assessment",  date: "August 1, 2025" },
-  { label: "Mid-Assessment",  date: "January 1, 2026" },
-  { label: "Post-Assessment", date: "May 28, 2026" },
-];
+import { ConceptC } from "@/components/dashboard/timeline/ConceptC";
+import { ConceptB } from "@/components/dashboard/timeline/ConceptB";
 
 const CONFIGS = [
   { label: "Screening",         value: "Screener (e.g., DESSA 2 mini, DESSA HSE-mini)" },
@@ -15,8 +12,12 @@ const CONFIGS = [
   { label: "Exceptions",        value: "None" },
 ];
 
+type View = "timeline" | "connected";
+
 export default function YearlySetupPage() {
+  const router = useRouter();
   const [year, setYear] = useState("2025-2026");
+  const [view, setView] = useState<View>("timeline");
 
   return (
     <div className="p-6">
@@ -27,12 +28,10 @@ export default function YearlySetupPage() {
         </p>
       </div>
 
-      {/* Plan year selector */}
-      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-5 mb-4">
-        <div className="flex items-center gap-3">
-          <label className="text-[13px] font-semibold text-gray-600 uppercase tracking-wide">
-            Plan Year
-          </label>
+      {/* Summary card */}
+      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
+        {/* Card header */}
+        <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
           <div className="relative">
             <select
               value={year}
@@ -48,62 +47,58 @@ export default function YearlySetupPage() {
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
             />
           </div>
-          <button className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors">
+          <button
+            onClick={() => router.push("/settings/yearly-setup/edit")}
+            className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+          >
             <Pencil size={13} strokeWidth={1.75} />
             Edit Setup
           </button>
         </div>
-      </div>
 
-      {/* Summary card */}
-      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6">
-        <div className="flex items-center gap-2 mb-5 pb-4 border-b border-[#f0f4f8]">
-          <span className="text-[13.5px] font-semibold text-gray-800">Number of rating windows</span>
-          <span className="text-gray-300 mx-1">·</span>
-          <span className="text-[13.5px] text-gray-600">
-            3 (Pre-Assessment, Mid-Assessment, Post-Assessment)
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-8">
-          {/* Rating Window Start Dates */}
-          <div>
-            <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-4">
-              Rating Window Start Dates
+        {/* Rating windows visualization */}
+        <div className="px-6 py-5 border-b border-[#f0f4f8]">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              Rating Windows
             </h3>
-            <div className="space-y-0">
-              {WINDOWS.map((w, i) => (
-                <div
-                  key={w.label}
-                  className={`flex justify-between items-center py-3 ${
-                    i < WINDOWS.length - 1 ? "border-b border-gray-50" : ""
+            <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+              {(["timeline", "connected"] as View[]).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-3 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
+                    view === v
+                      ? "bg-white text-gray-800 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  <span className="text-[13.5px] font-medium text-gray-700">{w.label}</span>
-                  <span className="text-[13.5px] text-gray-500">{w.date}</span>
-                </div>
+                  {v === "timeline" ? "Timeline" : "Connected Cards"}
+                </button>
               ))}
             </div>
           </div>
-
-          {/* Assessment Configurations */}
-          <div>
-            <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-4">
-              Assessment Configurations
-            </h3>
-            <div className="space-y-0">
-              {CONFIGS.map((c, i) => (
-                <div
-                  key={c.label}
-                  className={`py-3 ${i < CONFIGS.length - 1 ? "border-b border-gray-50" : ""}`}
-                >
-                  <p className="text-[13px] font-semibold text-gray-700 mb-0.5">{c.label}</p>
-                  <p className="text-[13px] text-gray-500">{c.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          {view === "timeline" ? (
+            <ConceptC showYearLabel={false} />
+          ) : (
+            <ConceptB />
+          )}
         </div>
+
+        {/* Assessment configurations */}
+        {/* <div className="px-6 py-5">
+          <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-4">
+            Assessment Configurations
+          </h3>
+          <div className="space-y-3">
+            {CONFIGS.map((c) => (
+              <div key={c.label} className="flex justify-between items-baseline gap-6">
+                <span className="text-[13.5px] font-semibold text-gray-800 shrink-0">{c.label}</span>
+                <span className="text-[13.5px] text-gray-500 text-right">{c.value}</span>
+              </div>
+            ))}
+          </div>
+        </div> */}
       </div>
     </div>
   );

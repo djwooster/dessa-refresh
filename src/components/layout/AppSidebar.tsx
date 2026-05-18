@@ -31,7 +31,7 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Ratings",        href: "/ratings",   icon: ClipboardCheck },
   { label: "Reports",        href: "/reports3",  icon: PieChart },
   { label: "Strategies",     href: "/strategies", icon: GitFork },
-  { label: "SEL Curriculum", href: "/lessons",   icon: BookOpen },
+  { label: "Curriculum",     href: "/lessons",   icon: BookOpen },
 ];
 
 const SETTINGS_NAV: NavItem = { label: "Settings", href: "/settings", icon: Settings };
