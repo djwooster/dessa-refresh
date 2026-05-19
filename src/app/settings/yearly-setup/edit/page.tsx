@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Info, Zap, ClipboardList, ChevronDown, X, CheckCircle2, CalendarClock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 
 const WINDOW_OPTIONS = [
   { count: 1, desc: "Annual Assessment",                    labels: ["Annual Assessment"] },
@@ -25,15 +26,93 @@ const DEFAULT_DATES: Record<number, string[]> = {
 
 const DEFAULT_COUNT = 3;
 
+type WindowConfig = {
+  conditionalAssignment: boolean;
+  tScore: string;
+  resetBehavior: "rescreen" | "skip";
+};
+
+const DEFAULT_WINDOW_CONFIG: WindowConfig = {
+  conditionalAssignment: true,
+  tScore: "40",
+  resetBehavior: "rescreen",
+};
+
 const DEFAULT_STATE = {
   windowCount: DEFAULT_COUNT,
   dates: DEFAULT_DATES[DEFAULT_COUNT],
   assessment: "screener" as const,
   conditionalAssignment: true,
   tScore: "40",
-  resetEachWindow: false,
+  resetBehavior: "rescreen" as "rescreen" | "skip",
+  sameConfigAllWindows: true,
+  windowConfigs: Array(DEFAULT_COUNT).fill(null).map(() => ({ ...DEFAULT_WINDOW_CONFIG })) as WindowConfig[],
   siteLeaderManage: false,
 };
+
+function ReviewPanel({
+  windowCount, dates, labels, assessment, conditionalAssignment, tScore, resetBehavior,
+  sameConfigAllWindows, windowConfigs, siteLeaderManage,
+  onBack, onSave, saving,
+}: {
+  windowCount: number; dates: string[]; labels: string[]; assessment: "screener" | "full";
+  conditionalAssignment: boolean; tScore: string; resetBehavior: "rescreen" | "skip";
+  sameConfigAllWindows: boolean; windowConfigs: WindowConfig[]; siteLeaderManage: boolean;
+  onBack: () => void; onSave: () => void; saving?: boolean;
+}) {
+  const windowDesc = WINDOW_OPTIONS.find((o) => o.count === windowCount)!.desc;
+  const row = (label: string, value: React.ReactNode) => (
+    <div key={label} className="flex justify-between items-baseline gap-6 py-2.5 border-b border-[#f0f4f8] last:border-0">
+      <span className="text-sm font-semibold text-gray-700 shrink-0">{label}</span>
+      <span className="text-sm text-gray-500 text-right">{value}</span>
+    </div>
+  );
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onBack} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#e8ecf0]">
+          <div>
+            <h2 className="text-[16px] font-bold text-gray-900">Review your setup</h2>
+            <p className="text-sm text-gray-500 mt-0.5">2025–2026 School Year</p>
+          </div>
+          <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="px-6 py-4 overflow-y-auto max-h-[60vh] space-y-5">
+          {/* Rating windows */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Rating Windows</p>
+            {row("Schedule", `${windowCount} windows — ${windowDesc}`)}
+            {dates.map((d, i) => row(labels[i], d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"))}
+          </div>
+          {/* Assessment */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Teacher Completed Assessments</p>
+            {row("Starting assessment", assessment === "screener" ? "Screener" : "Full Assessment")}
+            {assessment === "screener" && row("Conditional full DESSA", conditionalAssignment ? `T-Score ≤ ${tScore}` : "Disabled")}
+            {assessment === "screener" && conditionalAssignment && row("If previously below threshold", resetBehavior === "rescreen" ? "Re-screen them" : "Skip to full DESSA")}
+            {assessment === "screener" && row("Per-window config", sameConfigAllWindows ? "Same for all windows" : "Configured per window")}
+          </div>
+          {/* Student assessments */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Student Completed Assessments</p>
+            {row("Site Leader access control", siteLeaderManage ? "Enabled" : "Disabled")}
+          </div>
+        </div>
+        <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-t border-[#e8ecf0]">
+          <button onClick={onBack} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+            Back to Edit
+          </button>
+          <button onClick={onSave} disabled={saving} className="h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-sm font-semibold hover:bg-[#15407a] transition-colors cursor-pointer disabled:opacity-60">
+            {saving ? "Saving…" : "Save Setup"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ConfirmModal({ onDiscard, onKeep }: { onDiscard: () => void; onKeep: () => void }) {
   return (
@@ -201,21 +280,141 @@ function Checkbox({
   );
 }
 
+const MOCK_SITES = [
+  "Lincoln Elementary", "Roosevelt Middle", "Washington High",
+  "Jefferson Elementary", "Adams Middle", "Madison High", "Monroe Elementary",
+];
+
+const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {
+  "Jefferson Elementary": "North Region Group",
+  "Adams Middle": "North Region Group",
+};
+
 export default function EditSetupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isOverride = searchParams.get("override") === "true";
+
+  const [overrideName, setOverrideName] = useState("");
+  const [selectedSites, setSelectedSites] = useState<string[]>([]);
+  const [siteConflict, setSiteConflict] = useState<string | null>(null);
+
+  const toggleSite = (site: string) => {
+    const conflict = SITES_IN_OTHER_OVERRIDES[site];
+    if (conflict && !selectedSites.includes(site)) {
+      setSiteConflict(site);
+      return;
+    }
+    setSelectedSites((prev) => prev.includes(site) ? prev.filter((s) => s !== site) : [...prev, site]);
+  };
+
+  const supabase = createClient();
+  const existingId = searchParams.get("id");
 
   const [windowCount, setWindowCount] = useState(DEFAULT_STATE.windowCount);
   const [dates, setDates] = useState<string[]>(DEFAULT_STATE.dates);
   const [assessment, setAssessment] = useState<"screener" | "full">(DEFAULT_STATE.assessment);
   const [conditionalAssignment, setConditionalAssignment] = useState(DEFAULT_STATE.conditionalAssignment);
   const [tScore, setTScore] = useState(DEFAULT_STATE.tScore);
-  const [resetEachWindow, setResetEachWindow] = useState(DEFAULT_STATE.resetEachWindow);
+  const [resetBehavior, setResetBehavior] = useState<"rescreen" | "skip">(DEFAULT_STATE.resetBehavior);
+  const [sameConfigAllWindows, setSameConfigAllWindows] = useState(DEFAULT_STATE.sameConfigAllWindows);
+  const [windowConfigs, setWindowConfigs] = useState<WindowConfig[]>(DEFAULT_STATE.windowConfigs);
   const [siteLeaderManage, setSiteLeaderManage] = useState(DEFAULT_STATE.siteLeaderManage);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showLastYear, setShowLastYear] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
+  const [showReview, setShowReview] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
+
+  // Load existing setup when editing
+  useEffect(() => {
+    if (!existingId) return;
+    async function load() {
+      const { data: raw } = await supabase
+        .from("yearly_setups")
+        .select("*, yearly_setup_sites(*), yearly_setup_window_configs(*)")
+        .eq("id", existingId!)
+        .single();
+      if (!raw) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = raw as any;
+      setWindowCount(data.window_count);
+      setDates(data.dates);
+      setAssessment(data.assessment_type as "screener" | "full");
+      setConditionalAssignment(data.conditional_assignment);
+      setTScore(data.t_score);
+      setResetBehavior(data.reset_behavior as "rescreen" | "skip");
+      setSameConfigAllWindows(data.same_config_all_windows);
+      setSiteLeaderManage(data.site_leader_manage);
+      if (data.yearly_setup_sites?.length) {
+        setSelectedSites(data.yearly_setup_sites.map((s: { site_name: string }) => s.site_name));
+        setOverrideName(data.group_name ?? "");
+      }
+      if (data.yearly_setup_window_configs?.length) {
+        const configs = [...Array(data.window_count)].map((_, i) => {
+          const wc = data.yearly_setup_window_configs.find((c: { window_index: number }) => c.window_index === i);
+          return wc
+            ? { conditionalAssignment: wc.conditional_assignment, tScore: wc.t_score, resetBehavior: wc.reset_behavior as "rescreen" | "skip" }
+            : { ...DEFAULT_WINDOW_CONFIG };
+        });
+        setWindowConfigs(configs);
+      }
+    }
+    load();
+  }, [existingId]);
+
+  const saveToSupabase = async () => {
+    setSaving(true);
+    const payload = {
+      is_default: !isOverride,
+      group_name: isOverride ? overrideName || null : null,
+      year: "2025-2026",
+      window_count: windowCount,
+      dates,
+      assessment_type: assessment,
+      conditional_assignment: conditionalAssignment,
+      t_score: tScore,
+      reset_behavior: resetBehavior,
+      same_config_all_windows: sameConfigAllWindows,
+      site_leader_manage: siteLeaderManage,
+    };
+
+    let setupId = existingId;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any;
+
+    if (existingId) {
+      await db.from("yearly_setups").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", existingId);
+    } else {
+      const { data } = await db.from("yearly_setups").insert(payload).select("id").single();
+      setupId = data?.id ?? null;
+    }
+
+    if (setupId) {
+      if (isOverride) {
+        await db.from("yearly_setup_sites").delete().eq("setup_id", setupId);
+        if (selectedSites.length) {
+          await db.from("yearly_setup_sites").insert(selectedSites.map((s: string) => ({ setup_id: setupId, site_name: s })));
+        }
+      }
+      await db.from("yearly_setup_window_configs").delete().eq("setup_id", setupId);
+      if (!sameConfigAllWindows) {
+        await db.from("yearly_setup_window_configs").insert(
+          windowConfigs.map((wc, i) => ({
+            setup_id: setupId,
+            window_index: i,
+            conditional_assignment: wc.conditionalAssignment,
+            t_score: wc.tScore,
+            reset_behavior: wc.resetBehavior,
+          }))
+        );
+      }
+    }
+
+    setSaving(false);
+  };
 
   useEffect(() => {
     let el = headerRef.current?.parentElement;
@@ -234,7 +433,9 @@ export default function EditSetupPage() {
     assessment !== DEFAULT_STATE.assessment ||
     conditionalAssignment !== DEFAULT_STATE.conditionalAssignment ||
     tScore !== DEFAULT_STATE.tScore ||
-    resetEachWindow !== DEFAULT_STATE.resetEachWindow ||
+    resetBehavior !== DEFAULT_STATE.resetBehavior ||
+    sameConfigAllWindows !== DEFAULT_STATE.sameConfigAllWindows ||
+    JSON.stringify(windowConfigs) !== JSON.stringify(DEFAULT_STATE.windowConfigs) ||
     siteLeaderManage !== DEFAULT_STATE.siteLeaderManage;
 
   const applyLastYear = () => {
@@ -247,7 +448,7 @@ export default function EditSetupPage() {
     setAssessment("screener");
     setConditionalAssignment(LAST_YEAR.conditionalAssignment);
     setTScore(LAST_YEAR.tScore);
-    setResetEachWindow(LAST_YEAR.resetEachWindow);
+    setResetBehavior(LAST_YEAR.resetEachWindow ? "rescreen" : "skip");
     setSiteLeaderManage(LAST_YEAR.siteLeaderManage);
     setShowLastYear(false);
   };
@@ -260,7 +461,14 @@ export default function EditSetupPage() {
   const handleCountChange = (count: number) => {
     setWindowCount(count);
     setDates(DEFAULT_DATES[count]);
+    setWindowConfigs((prev) => {
+      if (count > prev.length) return [...prev, ...Array(count - prev.length).fill(null).map(() => ({ ...DEFAULT_WINDOW_CONFIG }))];
+      return prev.slice(0, count);
+    });
   };
+
+  const updateWindowConfig = (i: number, patch: Partial<WindowConfig>) =>
+    setWindowConfigs((prev) => prev.map((c, idx) => idx === i ? { ...c, ...patch } : c));
 
   const updateDate = (i: number, date: string) =>
     setDates(dates.map((d, idx) => (idx === i ? date : d)));
@@ -273,6 +481,26 @@ export default function EditSetupPage() {
         <ConfirmModal
           onDiscard={() => router.back()}
           onKeep={() => setShowConfirm(false)}
+        />
+      )}
+      {showReview && (
+        <ReviewPanel
+          windowCount={windowCount} dates={dates} labels={labels}
+          assessment={assessment} conditionalAssignment={conditionalAssignment}
+          tScore={tScore} resetBehavior={resetBehavior}
+          sameConfigAllWindows={sameConfigAllWindows} windowConfigs={windowConfigs}
+          siteLeaderManage={siteLeaderManage}
+          onBack={() => setShowReview(false)}
+          onSave={async () => {
+            await saveToSupabase();
+            setShowReview(false);
+            toast.success("Setup saved", {
+              description: "Don't forget to configure rating window reminder emails.",
+              action: { label: "Set reminders", onClick: () => router.push("/settings/rating-window-reminders") },
+            });
+            router.back();
+          }}
+          saving={saving}
         />
       )}
       {showLastYear && (
@@ -323,15 +551,10 @@ export default function EditSetupPage() {
               Cancel
             </button>
             <button
-              onClick={() => {
-                toast.success("Setup saved", {
-                  description: "Your yearly setup changes have been saved.",
-                });
-                router.back();
-              }}
+              onClick={() => setShowReview(true)}
               className="h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-sm font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
             >
-              Save Changes
+              Review &amp; Save
             </button>
           </div>
         </div>
@@ -382,11 +605,84 @@ export default function EditSetupPage() {
         )}
       </AnimatePresence>
 
+      {/* Step 0 — Site selection (override only) */}
+      {isOverride && (
+        <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">Site Selection</h2>
+          <p className="text-sm text-gray-500 mb-6">
+            You can give certain sites their own schedule — allowing for different timing, a different number of rating windows, or a different starting assessment.
+          </p>
+
+          {/* Group name */}
+          <div className="mb-6 pb-6 border-b border-[#f0f4f8]">
+            <p className="text-[14px] font-semibold text-gray-800 mb-2">Group name</p>
+            <input
+              type="text"
+              value={overrideName}
+              onChange={(e) => setOverrideName(e.target.value)}
+              placeholder="e.g. Downtown Sites, North Region"
+              className="w-80 h-9 px-3 border border-[#d1d5db] rounded-lg text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0]"
+            />
+          </div>
+
+          {/* Site picker */}
+          <div>
+            <p className="text-[14px] font-semibold text-gray-800 mb-1">Which sites should follow this schedule?</p>
+            <p className="text-sm text-gray-500 mb-3">Select one or more sites. Sites already in another override are marked.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {MOCK_SITES.map((site) => {
+                const inOther = SITES_IN_OTHER_OVERRIDES[site];
+                const isSelected = selectedSites.includes(site);
+                return (
+                  <button
+                    key={site}
+                    onClick={() => toggleSite(site)}
+                    className={`flex items-center justify-between text-left rounded-xl border-2 px-4 py-2.5 transition-all cursor-pointer ${
+                      isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <span className={`text-sm font-semibold ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>{site}</span>
+                    {inOther && !isSelected && (
+                      <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 shrink-0 ml-2">In {inOther}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Conflict modal */}
+          {siteConflict && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/30" onClick={() => setSiteConflict(null)} />
+              <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[440px]">
+                <h2 className="text-[16px] font-bold text-gray-900 mb-2">Site already in another override</h2>
+                <p className="text-sm text-gray-500 mb-6">
+                  <strong>{siteConflict}</strong> is currently in <strong>{SITES_IN_OTHER_OVERRIDES[siteConflict]}</strong>. Would you like to move it to this group instead?
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => setSiteConflict(null)} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Keep in current group</button>
+                  <button
+                    onClick={() => {
+                      setSelectedSites((prev) => [...prev, siteConflict!]);
+                      setSiteConflict(null);
+                    }}
+                    className="h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-sm font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                  >
+                    Move to this group
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Rating Windows */}
       <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
         <h2 className="text-2xl font-bold text-gray-900 mb-1">Rating Windows</h2>
         <p className="text-[14px] text-gray-500 mb-6">
-          Set the number of assessment windows and their start dates for this school year.
+          Each period is called a rating window — you'll see this term throughout your reports and data filters. Choose based on your school's calendar and how often you want to track progress. Common setups range from 2 to 4 windows per year.
         </p>
 
         {/* Window count dropdown */}
@@ -500,70 +796,231 @@ export default function EditSetupPage() {
 
       </div>
 
-      {/* Conditional assignment */}
-      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">Conditional Assessment</h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Automatically follow up a screener with a full assessment for students who score below a threshold.
-        </p>
-        <div className="space-y-4">
-          <label className="flex items-start gap-3 cursor-pointer group">
-            <div
-              onClick={() => setConditionalAssignment(!conditionalAssignment)}
-              className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center mt-0.5 transition-colors cursor-pointer ${
-                conditionalAssignment ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"
-              }`}
-            >
-              {conditionalAssignment && (
-                <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                  <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </div>
-            <div>
-              <span className="text-[14px] font-semibold text-gray-800 block mb-1">
-                Assign a full assessment when a student scores below the T-Score threshold
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">T-Score threshold</span>
-                <input
-                  type="number"
-                  value={tScore}
-                  onChange={(e) => setTScore(e.target.value)}
-                  disabled={!conditionalAssignment}
-                  className="w-16 h-8 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
-                />
-                <span className="text-sm text-gray-500">or below</span>
+      {/* Conditional assignment — only shown when screener is selected */}
+      <AnimatePresence initial={false}>
+        {assessment === "screener" && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Screener Configuration</h2>
+              <p className="text-sm text-gray-500 mb-6">
+                The DESSA screener gives a quick overall score. You can still require a full DESSA for students who score below a set threshold.
+              </p>
+              <div className="space-y-6">
+                {/* Conditional threshold */}
+                <div>
+                  <p className="text-[14px] font-semibold text-gray-800 mb-1">
+                    Should students who score below a threshold automatically require a full DESSA?
+                  </p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    If a student's screener score falls below the number you set, their educator will be prompted to complete a full DESSA. We recommend a threshold of 40, which indicates a Need For Instruction.
+                  </p>
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div
+                      onClick={() => setConditionalAssignment(!conditionalAssignment)}
+                      className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center mt-0.5 transition-colors cursor-pointer ${
+                        conditionalAssignment ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"
+                      }`}
+                    >
+                      {conditionalAssignment && (
+                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                          <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[14px] font-semibold text-gray-800 block mb-1">
+                        Yes — assign a full DESSA when a student's T-Score is at or below
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={tScore}
+                          onChange={(e) => setTScore(e.target.value)}
+                          disabled={!conditionalAssignment}
+                          className="w-16 h-8 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
+                        />
+                        <span className="text-sm text-gray-500">T-Score</span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Reset behavior — only shown when conditional is enabled */}
+                <AnimatePresence initial={false}>
+                  {conditionalAssignment && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="border-t border-[#f0f4f8] pt-5">
+                        <p className="text-[14px] font-semibold text-gray-800 mb-1">
+                          If a student previously scored below the threshold, what should happen in the next rating window?
+                        </p>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Re-screening lets teachers do a quick check first. Going straight to the full DESSA gives you richer data on any student who has previously reached the needs level.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                          {([
+                            { value: "rescreen", label: "Re-screen them", sublabel: "Start with the screener — they may have improved since the last window." },
+                            { value: "skip",     label: "Skip to full DESSA", sublabel: "Go straight to the full assessment for any student who previously scored below the threshold." },
+                          ] as const).map(({ value, label, sublabel }) => (
+                            <button
+                              key={value}
+                              onClick={() => setResetBehavior(value)}
+                              className={`text-left rounded-xl border-2 px-4 py-3 transition-all cursor-pointer ${
+                                resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"
+                              }`}
+                            >
+                              <p className={`text-[14px] font-bold mb-1 ${resetBehavior === value ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
+                              <p className="text-sm text-gray-500 leading-snug">{sublabel}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Same config for all windows */}
+                <div className="border-t border-[#f0f4f8] pt-5">
+                  <p className="text-[14px] font-semibold text-gray-800 mb-1">
+                    Do all rating windows share the same configuration?
+                  </p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    If your assessment schedule or threshold changes across windows, you can configure each window independently.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    {([
+                      { value: true,  label: "Yes, same for all windows" },
+                      { value: false, label: "No, configure each window" },
+                    ] as const).map(({ value, label }) => (
+                      <button
+                        key={String(value)}
+                        onClick={() => setSameConfigAllWindows(value)}
+                        className={`text-left rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
+                          sameConfigAllWindows === value ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]" : "border-[#e8ecf0] bg-white text-gray-700 hover:border-gray-300"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Per-window config */}
+                  <AnimatePresence initial={false}>
+                    {!sameConfigAllWindows && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="space-y-4 pt-2">
+                          {windowConfigs.map((cfg, i) => {
+                            const winLabel = WINDOW_OPTIONS.find((o) => o.count === windowCount)!.labels[i];
+                            return (
+                              <div key={i} className="rounded-xl border border-[#e8ecf0] p-4">
+                                <p className="text-[14px] font-bold text-gray-800 mb-3">{winLabel}</p>
+                                <div className="space-y-3">
+                                  <label className="flex items-center gap-3 cursor-pointer group">
+                                    <div
+                                      onClick={() => updateWindowConfig(i, { conditionalAssignment: !cfg.conditionalAssignment })}
+                                      className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors cursor-pointer ${
+                                        cfg.conditionalAssignment ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"
+                                      }`}
+                                    >
+                                      {cfg.conditionalAssignment && (
+                                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                                          <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm text-gray-700">Assign full DESSA at or below T-Score</span>
+                                      <input
+                                        type="number"
+                                        value={cfg.tScore}
+                                        onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
+                                        disabled={!cfg.conditionalAssignment}
+                                        className="w-16 h-7 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                                      />
+                                    </div>
+                                  </label>
+                                  {cfg.conditionalAssignment && (
+                                    <div className="grid grid-cols-2 gap-2 pl-7">
+                                      {([
+                                        { value: "rescreen", label: "Re-screen them" },
+                                        { value: "skip",     label: "Skip to full DESSA" },
+                                      ] as const).map(({ value, label }) => (
+                                        <button
+                                          key={value}
+                                          onClick={() => updateWindowConfig(i, { resetBehavior: value })}
+                                          className={`text-left rounded-lg border-2 px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                                            cfg.resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]" : "border-[#e8ecf0] bg-white text-gray-700 hover:border-gray-300"
+                                          }`}
+                                        >
+                                          {label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
-          </label>
-          <Checkbox
-            checked={resetEachWindow}
-            onChange={setResetEachWindow}
-            label="Start each rating window with a screener"
-            sublabel="Students will complete a screener at the start of every window before a full assessment is conditionally assigned."
-          />
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Student Completed Assessments */}
       <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Student Completed Assessments</h2>
-        <div className="flex items-start gap-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-lg px-4 py-3 mb-4">
-          <Info size={15} className="text-[#1d4ed8] shrink-0 mt-0.5" />
-          <p className="text-[14px] text-[#1e40af] leading-relaxed">
-            If your program has enabled student completed assessments, they will automatically be available
-            for students to complete unless you de-activate them.{" "}
-            <a href="#" className="underline font-medium cursor-pointer">
-              Learn more about managing student completed assessments
-            </a>
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Student Completed Assessments</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          If your program has enabled student completed assessments, they will automatically be available for students to complete unless you de-activate them.
+        </p>
+
+        <div>
+          <p className="text-[14px] font-semibold text-gray-800 mb-1">
+            Should Site Leaders be able to control when students can access their assessments within each rating window?
           </p>
+          <p className="text-sm text-gray-500 mb-3">
+            This gives Site Leaders control over when students can access their self-assessment within a rating window. For example, a Site Leader might open the teacher assessment first, then turn on the student assessment later in the window — or do the reverse.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {([
+              { value: true,  label: "Yes", sublabel: "Site Leaders can open and close student access at their sites independently." },
+              { value: false, label: "No",  sublabel: "Student assessments open automatically at the start of each rating window." },
+            ] as const).map(({ value, label, sublabel }) => (
+              <button
+                key={String(value)}
+                onClick={() => setSiteLeaderManage(value)}
+                className={`text-left rounded-xl border-2 px-4 py-3 transition-all cursor-pointer ${
+                  siteLeaderManage === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"
+                }`}
+              >
+                <p className={`text-[14px] font-bold mb-1 ${siteLeaderManage === value ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
+                <p className="text-sm text-gray-500 leading-snug">{sublabel}</p>
+              </button>
+            ))}
+          </div>
         </div>
-        <Checkbox
-          checked={siteLeaderManage}
-          onChange={setSiteLeaderManage}
-          label="Allow Site Leaders to manage when students can complete assessments at their assigned sites"
-        />
       </div>
       </div>
     </div>
