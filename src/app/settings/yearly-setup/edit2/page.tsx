@@ -11,7 +11,6 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
 import { SuccessToast } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/client";
-import { DessaLogo } from "@/components/layout/DessaLogo";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -840,21 +839,6 @@ function EditSetupPage() {
       )}
       {showLastYear && <LastYearModal onClose={() => setShowLastYear(false)} onUse={applyLastYear} />}
 
-      {/* Top bar */}
-      <header className="h-16 shrink-0 flex items-center justify-between px-8 border-b border-[#e8ecf0] bg-white">
-        <DessaLogo />
-        <div className="flex items-center gap-5">
-          {existingId && (
-            <button onClick={() => setShowDeleteConfirm(true)} className="text-[13px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-              Delete Setup
-            </button>
-          )}
-          <button onClick={handleCancel} className="text-[13px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer">
-            Cancel
-          </button>
-        </div>
-      </header>
-
       {/* Two-column body */}
       <div className="flex flex-1 overflow-hidden">
 
@@ -869,22 +853,53 @@ function EditSetupPage() {
               <div key={step.id} className="flex gap-4">
                 {/* Circle + connector */}
                 <div className="flex flex-col items-center">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors duration-200 ${isCompleted || isActive ? "bg-[#1a4e8a]" : "bg-[#e8ecf0]"}`}>
-                    {isCompleted
-                      ? <Check size={15} className="text-white" strokeWidth={2.5} />
-                      : <Icon size={15} className={isActive ? "text-white" : "text-gray-400"} strokeWidth={1.75} />
-                    }
-                  </div>
+                  <motion.div
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    animate={{
+                      backgroundColor: isCompleted || isActive ? "#1a4e8a" : "#e8ecf0",
+                      scale: isActive ? [1, 1.14, 1] : 1,
+                    }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                  >
+                    <AnimatePresence mode="wait" initial={false}>
+                      {isCompleted ? (
+                        <motion.span
+                          key="check"
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                        >
+                          <Check size={15} className="text-white" strokeWidth={2.5} />
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key={step.id}
+                          initial={{ scale: 0.6, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.6, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                        >
+                          <Icon size={15} className={isActive ? "text-white" : "text-gray-400"} strokeWidth={1.75} />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
                   {!isLast && (
-                    <div className={`w-px my-2 transition-colors duration-200 ${isCompleted ? "bg-[#1a4e8a]" : "bg-[#d1d9e0]"}`} style={{ height: 44 }} />
+                    <motion.div
+                      className="w-px my-2"
+                      animate={{ backgroundColor: isCompleted ? "#1a4e8a" : "#d1d9e0" }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      style={{ height: 44 }}
+                    />
                   )}
                 </div>
                 {/* Text */}
                 <div className={!isLast ? "pb-[44px]" : ""} style={{ paddingTop: 6 }}>
-                  <p className={`text-[13.5px] font-semibold leading-snug ${isActive ? "text-gray-900" : isCompleted ? "text-gray-600" : "text-gray-400"}`}>
+                  <p className={`text-[13.5px] font-semibold leading-snug transition-colors duration-200 ${isActive ? "text-gray-900" : isCompleted ? "text-gray-600" : "text-gray-400"}`}>
                     {step.label}
                   </p>
-                  <p className={`text-[12px] mt-0.5 leading-snug ${isActive || isCompleted ? "text-gray-400" : "text-gray-300"}`}>
+                  <p className={`text-[12px] mt-0.5 leading-snug transition-colors duration-200 ${isActive || isCompleted ? "text-gray-400" : "text-gray-300"}`}>
                     {step.desc}
                   </p>
                 </div>
@@ -895,28 +910,37 @@ function EditSetupPage() {
 
         {/* Right panel — step content */}
         <main className="flex-1 overflow-y-auto bg-white">
-          <div className="max-w-[640px] mx-auto px-14 py-12 flex flex-col min-h-full">
-            <div className="flex-1">
-              <p className="text-[11px] font-bold text-[#1a4e8a] uppercase tracking-widest mb-4">
-                Step {currentStepIndex + 1} of {totalSteps}
-              </p>
-              <h1 className="text-[30px] font-bold text-gray-900 leading-tight mb-2">
-                {currentStepDef.title}
-              </h1>
-              <p className="text-[14px] text-gray-500 mb-10 leading-relaxed max-w-[520px]">
-                {currentStepDef.subtitle}
-              </p>
-              {renderStepContent()}
-            </div>
+          <div className="max-w-[800px] mx-auto py-8">
+            <p className="text-[11px] font-bold text-[#1a4e8a] uppercase tracking-widest mb-4">
+              Step {currentStepIndex + 1} of {totalSteps}
+            </p>
+            <h1 className="text-[30px] font-bold text-gray-900 leading-tight mb-2">
+              {currentStepDef.title}
+            </h1>
+            <p className="text-[14px] text-gray-500 mb-10 leading-relaxed max-w-[560px]">
+              {currentStepDef.subtitle}
+            </p>
+            {renderStepContent()}
 
             {/* Step footer */}
-            <div className="flex items-center justify-between pt-10 mt-10 border-t border-[#f0f4f8]">
-              {!isFirstStep ? (
-                <button onClick={handlePrev} className="flex items-center gap-1.5 text-[13.5px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer">
-                  <ArrowLeft size={14} strokeWidth={2} />
-                  Back
-                </button>
-              ) : <div />}
+            <div className="flex items-center justify-between pt-8 mt-8 border-t border-[#f0f4f8]">
+              <div className="flex items-center gap-4">
+                {!isFirstStep ? (
+                  <button onClick={handlePrev} className="flex items-center gap-1.5 text-[13.5px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer">
+                    <ArrowLeft size={14} strokeWidth={2} />
+                    Back
+                  </button>
+                ) : (
+                  <button onClick={handleCancel} className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
+                    Cancel
+                  </button>
+                )}
+                {existingId && isFirstStep && (
+                  <button onClick={() => setShowDeleteConfirm(true)} className="text-[13px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+                    Delete Setup
+                  </button>
+                )}
+              </div>
               <button
                 onClick={handleNext}
                 className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
