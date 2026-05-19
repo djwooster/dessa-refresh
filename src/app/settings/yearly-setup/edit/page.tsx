@@ -148,9 +148,9 @@ const LAST_YEAR = {
   windowCount: 3,
   windowDesc: "Pre, Mid & Post Assessment",
   windows: [
-    { label: "Pre-Assessment",  date: "Aug 1, 2024" },
-    { label: "Mid-Assessment",  date: "Jan 1, 2025" },
-    { label: "Post-Assessment", date: "May 28, 2025" },
+    { label: "Pre-Assessment",  date: "Aug 1, 2024", iso: "2024-08-01" },
+    { label: "Mid-Assessment",  date: "Jan 1, 2025", iso: "2025-01-01" },
+    { label: "Post-Assessment", date: "May 28, 2025", iso: "2025-05-28" },
   ],
   assessment: "Screener",
   assessmentDesc: "DESSA 2 mini, DESSA HSE-mini",
@@ -248,39 +248,6 @@ function LastYearModal({
   );
 }
 
-function Checkbox({
-  checked,
-  onChange,
-  label,
-  sublabel,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  label: React.ReactNode;
-  sublabel?: string;
-}) {
-  return (
-    <label className="flex items-start gap-3 cursor-pointer group">
-      <div
-        onClick={() => onChange(!checked)}
-        className={`mt-0.5 w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors cursor-pointer ${
-          checked ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"
-        }`}
-      >
-        {checked && (
-          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-            <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </div>
-      <div>
-        <span className="text-[14px] text-gray-700">{label}</span>
-        {sublabel && <p className="text-sm text-gray-400 mt-0.5">{sublabel}</p>}
-      </div>
-    </label>
-  );
-}
-
 const MOCK_SITES = [
   "Lincoln Elementary", "Roosevelt Middle", "Washington High",
   "Jefferson Elementary", "Adams Middle", "Madison High", "Monroe Elementary",
@@ -328,19 +295,7 @@ function EditSetupPage() {
   const [saving, setSaving] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
-  const initialStateRef = useRef({
-    windowCount: DEFAULT_STATE.windowCount,
-    dates: DEFAULT_STATE.dates,
-    assessment: DEFAULT_STATE.assessment as "screener" | "full",
-    conditionalAssignment: DEFAULT_STATE.conditionalAssignment,
-    tScore: DEFAULT_STATE.tScore,
-    resetBehavior: DEFAULT_STATE.resetBehavior as "rescreen" | "skip",
-    sameConfigAllWindows: DEFAULT_STATE.sameConfigAllWindows,
-    windowConfigs: DEFAULT_STATE.windowConfigs,
-    siteLeaderManage: DEFAULT_STATE.siteLeaderManage,
-    overrideName: "",
-    selectedSites: [] as string[],
-  });
+  const initialStateRef = useRef({ ...DEFAULT_STATE, overrideName: "", selectedSites: [] as string[] });
 
   // Load existing setup when editing
   useEffect(() => {
@@ -468,11 +423,7 @@ function EditSetupPage() {
 
   const applyLastYear = () => {
     setWindowCount(LAST_YEAR.windowCount);
-    setDates(LAST_YEAR.windows.map((w) => {
-      const [month, day, year] = w.date.split(" ");
-      const months: Record<string, string> = { Jan:"01",Feb:"02",Mar:"03",Apr:"04",May:"05",Jun:"06",Jul:"07",Aug:"08",Sep:"09",Oct:"10",Nov:"11",Dec:"12" };
-      return `${year}-${months[month]}-${day.replace(",","").padStart(2,"0")}`;
-    }));
+    setDates(LAST_YEAR.windows.map((w) => w.iso));
     setAssessment("screener");
     setConditionalAssignment(LAST_YEAR.conditionalAssignment);
     setTScore(LAST_YEAR.tScore);
@@ -608,7 +559,6 @@ function EditSetupPage() {
           >
             <div style={{ padding: "2px" }}>
             <div className="relative rounded-xl flex items-center justify-between gap-4 px-4 py-3" style={{ background: "#eef2f8", animation: "border-glow 3s ease-in-out infinite" }}>
-              <style>{`@keyframes border-glow { 0%, 100% { box-shadow: 0 0 0 1px #c7d7ee; } 50% { box-shadow: 0 0 0 1px #1a4e8a, 0 0 10px 3px rgba(26,78,138,0.2); } }`}</style>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-[#1a4e8a] flex items-center justify-center shrink-0">
                   <CalendarClock size={15} className="text-white" strokeWidth={1.75} />

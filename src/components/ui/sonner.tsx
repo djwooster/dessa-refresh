@@ -35,7 +35,7 @@ function SuccessToast({ id, title, description, actionLabel, onAction }: Success
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={() => toast.dismiss(id)}
-          className="text-[12px] font-semibold text-gray-400 border border-gray-200 rounded-lg px-3 h-8 hover:bg-gray-50 transition-colors cursor-pointer"
+          className="text-[12px] font-semibold text-gray-500 rounded-lg px-3 h-8 hover:bg-gray-50 transition-colors cursor-pointer"
         >
           Dismiss
         </button>
