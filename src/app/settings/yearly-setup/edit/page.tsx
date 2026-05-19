@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Info, Zap, ClipboardList, ChevronDown, X, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Info, Zap, ClipboardList, ChevronDown, X, CheckCircle2, CalendarClock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
@@ -120,7 +120,7 @@ function LastYearModal({
 
           {/* Assessments */}
           <div className="border-t border-[#f0f4f8] pt-5">
-            <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Assessments</p>
+            <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Teacher Completed Assessments</p>
             <div className="space-y-2">
               <div className="flex justify-between items-baseline">
                 <span className="text-[14px] font-semibold text-gray-700">Type</span>
@@ -213,6 +213,7 @@ export default function EditSetupPage() {
   const [siteLeaderManage, setSiteLeaderManage] = useState(DEFAULT_STATE.siteLeaderManage);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showLastYear, setShowLastYear] = useState(false);
+  const [showBanner, setShowBanner] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -322,12 +323,6 @@ export default function EditSetupPage() {
               Cancel
             </button>
             <button
-              onClick={() => setShowLastYear(true)}
-              className="h-9 px-4 rounded-lg border border-[#1a4e8a] text-sm font-medium text-[#1a4e8a] hover:bg-[#dce8f5] transition-colors cursor-pointer"
-            >
-              View Previous Setup
-            </button>
-            <button
               onClick={() => {
                 toast.success("Setup saved", {
                   description: "Your yearly setup changes have been saved.",
@@ -344,6 +339,48 @@ export default function EditSetupPage() {
 
       {/* Page content */}
       <div className="px-6 pb-6">
+
+      {/* Previous setup banner */}
+      <AnimatePresence initial={false}>
+        {showBanner && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-[#1a4e8a] flex items-center justify-center shrink-0">
+                  <CalendarClock size={15} className="text-white" strokeWidth={1.75} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#1a4e8a]">{LAST_YEAR.year} setup available</p>
+                  <p className="text-xs text-[#3a6ea8] mt-0.5">
+                    {LAST_YEAR.windowCount} windows &middot; {LAST_YEAR.assessment} &middot;{" "}
+                    {LAST_YEAR.windows[0].date} – {LAST_YEAR.windows[LAST_YEAR.windows.length - 1].date}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setShowLastYear(true)}
+                  className="h-8 px-3 rounded-lg border border-[#1a4e8a] text-xs font-semibold text-[#1a4e8a] hover:bg-[#dce8f5] transition-colors cursor-pointer"
+                >
+                  Review &amp; Apply
+                </button>
+                <button
+                  onClick={() => setShowBanner(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-[#3a6ea8] hover:bg-[#dce8f5] transition-colors cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Rating Windows */}
       <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
@@ -388,7 +425,7 @@ export default function EditSetupPage() {
 
       {/* Assessments */}
       <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Assessments</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Teacher Completed Assessments</h2>
 
         {/* Assessment type */}
         <div>

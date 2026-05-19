@@ -143,21 +143,20 @@ export function AppSidebar() {
         <DessaLogo />
       </div>
 
-      {/* Nav — scrollable middle section */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-        {PRIMARY_NAV.map((item) =>
-          item.children ? (
-            <TrainingAccordion key={item.href} item={item} />
-          ) : (
-            <NavLink key={item.href} item={item} />
-          )
-        )}
-      </nav>
-
-      {/* Settings — pinned to bottom */}
-      <div className="px-3 py-3 border-t border-[#e8ecf0]">
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3">
+        <div className="space-y-0.5">
+          {PRIMARY_NAV.map((item) =>
+            item.children ? (
+              <TrainingAccordion key={item.href} item={item} />
+            ) : (
+              <NavLink key={item.href} item={item} />
+            )
+          )}
+        </div>
+        <div className="my-2 border-t border-gray-100" />
         <NavLink item={SETTINGS_NAV} />
-      </div>
+      </nav>
 
     </aside>
   );
