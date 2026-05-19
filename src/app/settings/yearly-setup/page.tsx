@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SuccessToast } from "@/components/ui/sonner";
 import { Pencil, CalendarClock, Zap, ClipboardList, Plus, Trash2 } from "lucide-react";
 import { ConceptC } from "@/components/dashboard/timeline/ConceptC";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +21,7 @@ export default function YearlySetupPage() {
   const [overrides, setOverrides] = useState<SetupWithSites[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
 
   useEffect(() => {
     async function load() {
@@ -55,6 +57,11 @@ export default function YearlySetupPage() {
   }
 
   return (
+    <>
+    {/* TEMP: toast preview */}
+    <div className="fixed top-4 right-4 z-[9999] w-[520px]">
+      <SuccessToast id="preview" title="Setup saved" description="Don't forget to configure rating window reminder emails." actionLabel="Set reminders" onAction={() => {}} />
+    </div>
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900 mb-1">Yearly Setup</h1>
@@ -233,5 +240,6 @@ export default function YearlySetupPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

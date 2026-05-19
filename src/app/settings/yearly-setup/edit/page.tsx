@@ -6,6 +6,7 @@ import { ArrowLeft, Info, Zap, ClipboardList, ChevronDown, X, CheckCircle2, Cale
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
+import { SuccessToast } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/client";
 
 const WINDOW_OPTIONS = [
@@ -521,10 +522,15 @@ function EditSetupPage() {
           onSave={async () => {
             await saveToSupabase();
             setShowReview(false);
-            toast.success("Setup saved", {
-              description: "Don't forget to configure rating window reminder emails.",
-              action: { label: "Set reminders", onClick: () => router.push("/settings/rating-window-reminders") },
-            });
+            toast.custom((t) => (
+              <SuccessToast
+                id={t}
+                title="Setup saved"
+                description="Don't forget to configure rating window reminder emails."
+                actionLabel="Set reminders"
+                onAction={() => router.push("/settings/rating-window-reminders")}
+              />
+            ));
             router.push("/settings/yearly-setup");
           }}
           saving={saving}
