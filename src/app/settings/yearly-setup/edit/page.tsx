@@ -289,10 +289,12 @@ function EditSetupPage() {
   const [windowConfigs, setWindowConfigs] = useState<WindowConfig[]>(DEFAULT_STATE.windowConfigs);
   const [siteLeaderManage, setSiteLeaderManage] = useState(DEFAULT_STATE.siteLeaderManage);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLastYear, setShowLastYear] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
   const [showReview, setShowReview] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const initialStateRef = useRef({ ...DEFAULT_STATE, overrideName: "", selectedSites: [] as string[] });
@@ -437,6 +439,18 @@ function EditSetupPage() {
     else router.back();
   };
 
+  const handleDelete = async () => {
+    if (!existingId) return;
+    setDeleting(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any;
+    await db.from("yearly_setup_window_configs").delete().eq("setup_id", existingId);
+    await db.from("yearly_setup_sites").delete().eq("setup_id", existingId);
+    await db.from("yearly_setups").delete().eq("id", existingId);
+    setDeleting(false);
+    router.push("/settings/yearly-setup");
+  };
+
   const handleCountChange = (count: number) => {
     setWindowCount(count);
     setDates(DEFAULT_DATES[count]);
@@ -461,6 +475,25 @@ function EditSetupPage() {
           onDiscard={() => router.back()}
           onKeep={() => setShowConfirm(false)}
         />
+      )}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[400px]">
+            <h2 className="text-[16px] font-bold text-gray-900 mb-2">Delete this setup?</h2>
+            <p className="text-[14px] text-gray-500 mb-6">
+              All data for this setup will be permanently deleted. This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowDeleteConfirm(false)} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting} className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60">
+                {deleting ? "Deleting…" : "Delete Setup"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {showReview && (
         <ReviewPanel
@@ -528,6 +561,14 @@ function EditSetupPage() {
             <p className="text-[14px] text-gray-500">2025–2026 School Year</p>
           </div>
           <div className="flex items-center gap-2">
+            {existingId && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="h-9 px-4 rounded-lg text-sm font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+              >
+                Delete Setup
+              </button>
+            )}
             <button
               onClick={handleBack}
               className="h-9 px-4 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
@@ -547,7 +588,8 @@ function EditSetupPage() {
       {/* Page content */}
       <div className="px-6 pb-6">
 
-      {/* Previous setup banner */}
+      {/* Previous setup banner — hidden for progressive disclosure redesign */}
+      {false && (
       <AnimatePresence initial={false}>
         {showBanner && (
           <motion.div
@@ -590,6 +632,7 @@ function EditSetupPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      )}
 
       {/* Step 0 — Site selection (override only) */}
       {isOverride && (
@@ -705,8 +748,8 @@ function EditSetupPage() {
         </div>
       </div>
 
-      {/* Assessments */}
-      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
+      {/* Assessments — hidden for progressive disclosure redesign */}
+      {false && (<div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6 mb-4">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Teacher Completed Assessments</h2>
 
         {/* Assessment type */}
@@ -780,10 +823,10 @@ function EditSetupPage() {
           })()}
         </div>
 
-      </div>
+      </div>)}
 
-      {/* Conditional assignment — only shown when screener is selected */}
-      <AnimatePresence initial={false}>
+      {/* Conditional assignment — hidden for progressive disclosure redesign */}
+      {false && (<AnimatePresence initial={false}>
         {assessment === "screener" && (
           <motion.div
             initial={{ opacity: 0, height: 0, marginBottom: 0 }}
@@ -973,10 +1016,10 @@ function EditSetupPage() {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>)}
 
-      {/* Student Completed Assessments */}
-      <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6">
+      {/* Student Completed Assessments — hidden for progressive disclosure redesign */}
+      {false && (<div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-1">Student Completed Assessments</h2>
         <p className="text-sm text-gray-500 mb-6">
           If your program has enabled student completed assessments, they will automatically be available for students to complete unless you de-activate them.
@@ -1007,7 +1050,7 @@ function EditSetupPage() {
             ))}
           </div>
         </div>
-      </div>
+      </div>)}
       </div>
     </div>
   );

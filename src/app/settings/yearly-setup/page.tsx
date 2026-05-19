@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SuccessToast } from "@/components/ui/sonner";
 import { Pencil, CalendarClock, Zap, ClipboardList, Plus, Trash2 } from "lucide-react";
 import { ConceptC } from "@/components/dashboard/timeline/ConceptC";
 import { createClient } from "@/lib/supabase/client";
@@ -43,7 +42,11 @@ export default function YearlySetupPage() {
     if (!confirmDeleteId) return;
     setDeleting(true);
     await supabase.from("yearly_setups").delete().eq("id", confirmDeleteId);
-    setOverrides((prev) => prev.filter((o) => o.id !== confirmDeleteId));
+    if (confirmDeleteId === defaultSetup?.id) {
+      setDefaultSetup(null);
+    } else {
+      setOverrides((prev) => prev.filter((o) => o.id !== confirmDeleteId));
+    }
     setConfirmDeleteId(null);
     setDeleting(false);
   };
@@ -57,17 +60,23 @@ export default function YearlySetupPage() {
   }
 
   return (
-    <>
-    {/* TEMP: toast preview */}
-    <div className="fixed top-4 right-4 z-[9999] w-[520px]">
-      <SuccessToast id="preview" title="Setup saved" description="Don't forget to configure rating window reminder emails." actionLabel="Set reminders" onAction={() => {}} />
-    </div>
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-[22px] font-bold text-gray-900 mb-1">Yearly Setup</h1>
-        <p className="text-[13.5px] text-gray-500">
-          Plan your year ahead and set rating window timeframes for each school year.
-        </p>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-[22px] font-bold text-gray-900 mb-1">Yearly Setup</h1>
+          <p className="text-[13.5px] text-gray-500">
+            Plan your year ahead and set rating window timeframes for each school year.
+          </p>
+        </div>
+        {defaultSetup && (
+          <button
+            onClick={() => setConfirmDeleteId(defaultSetup.id)}
+            className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-400 hover:text-red-500 transition-colors cursor-pointer mt-1"
+          >
+            <Trash2 size={12} strokeWidth={1.75} />
+            Delete Setup
+          </button>
+        )}
       </div>
 
       {/* Default config */}
@@ -82,7 +91,7 @@ export default function YearlySetupPage() {
               Define your rating windows and assessment configuration to get started.
             </p>
             <button
-              onClick={() => router.push("/settings/yearly-setup/edit")}
+              onClick={() => router.push("/settings/yearly-setup/edit2")}
               className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
             >
               <Pencil size={13} strokeWidth={1.75} />
@@ -99,7 +108,7 @@ export default function YearlySetupPage() {
                 <p className="text-[13.5px] text-gray-700">Applies to all sites unless overridden</p>
               </div>
               <button
-                onClick={() => router.push(`/settings/yearly-setup/edit?id=${defaultSetup.id}`)}
+                onClick={() => router.push(`/settings/yearly-setup/edit2?id=${defaultSetup.id}`)}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
               >
                 <Pencil size={13} strokeWidth={1.75} />
@@ -154,7 +163,7 @@ export default function YearlySetupPage() {
                 <p className="text-sm text-gray-500 mt-0.5">Groups of sites that follow a different schedule than the default.</p>
               </div>
               <button
-                onClick={() => router.push("/settings/yearly-setup/edit?override=true")}
+                onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
               >
                 <Plus size={13} strokeWidth={2} />
@@ -179,7 +188,7 @@ export default function YearlySetupPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => router.push(`/settings/yearly-setup/edit?id=${override.id}&override=true`)}
+                          onClick={() => router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`)}
                           className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#1a4e8a] text-white text-[12px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                         >
                           <Pencil size={11} strokeWidth={1.75} />
@@ -224,22 +233,25 @@ export default function YearlySetupPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setConfirmDeleteId(null)} />
           <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[400px]">
-            <h2 className="text-[16px] font-bold text-gray-900 mb-2">Delete override?</h2>
+            <h2 className="text-[16px] font-bold text-gray-900 mb-2">
+              {confirmDeleteId === defaultSetup?.id ? "Delete this setup?" : "Delete override?"}
+            </h2>
             <p className="text-[14px] text-gray-500 mb-6">
-              Sites in this group will revert to the default yearly setup. This cannot be undone.
+              {confirmDeleteId === defaultSetup?.id
+                ? "All data for this setup will be permanently deleted. This cannot be undone."
+                : "Sites in this group will revert to the default yearly setup. This cannot be undone."}
             </p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setConfirmDeleteId(null)} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
                 Cancel
               </button>
               <button onClick={handleDelete} disabled={deleting} className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60">
-                {deleting ? "Deleting…" : "Delete Override"}
+                {deleting ? "Deleting…" : confirmDeleteId === defaultSetup?.id ? "Delete Setup" : "Delete Override"}
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
-    </>
   );
 }

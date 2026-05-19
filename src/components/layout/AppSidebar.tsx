@@ -21,7 +21,7 @@ import { DessaLogo } from "./DessaLogo";
 interface NavItem {
   label: string;
   href: string;
-  icon: React.ElementType;
+  icon?: React.ElementType;
   children?: NavItem[];
 }
 
@@ -36,7 +36,22 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Training",       href: "/training",  icon: GraduationCap },
 ];
 
-const SETTINGS_NAV: NavItem = { label: "Settings", href: "/settings", icon: Settings };
+const SETTINGS_NAV: NavItem = {
+  label: "Settings",
+  href: "/settings",
+  icon: Settings,
+  children: [
+    { label: "Imports",                 href: "/settings/imports" },
+    { label: "Sites",                   href: "/settings/sites" },
+    { label: "Students",                href: "/settings/students" },
+    { label: "Staff",                   href: "/settings/staff" },
+    { label: "Yearly Setup",            href: "/settings/yearly-setup" },
+    { label: "Assignment Review",       href: "/settings/assignment-review" },
+    { label: "Student Self-Report",     href: "/settings/student-self-report" },
+    { label: "Rating Window Reminders", href: "/settings/rating-window-reminders" },
+    { label: "Parent/Guardian Rating",  href: "/settings/parent-guardian-rating" },
+  ],
+};
 
 
 // ─── Shared item styles ───────────────────────────────────────────────────────
@@ -57,11 +72,13 @@ function NavLink({ item }: { item: NavItem }) {
 
   return (
     <Link href={item.href} className={`${itemBase} ${isActive ? itemActive : ""}`}>
-      <Icon
-        size={15}
-        className={`shrink-0 ${isActive ? "text-gray-700" : "text-gray-400 group-hover:text-gray-600"}`}
-        strokeWidth={1.75}
-      />
+      {Icon && (
+        <Icon
+          size={15}
+          className={`shrink-0 ${isActive ? "text-gray-700" : "text-gray-400 group-hover:text-gray-600"}`}
+          strokeWidth={1.75}
+        />
+      )}
       <span>{item.label}</span>
     </Link>
   );
@@ -71,7 +88,7 @@ function NavLink({ item }: { item: NavItem }) {
 
 function TrainingAccordion({ item }: { item: NavItem }) {
   const pathname = usePathname();
-  const isChildActive = item.children?.some((c) => pathname === c.href) ?? false;
+  const isChildActive = item.children?.some((c) => pathname === c.href || pathname.startsWith(c.href + "/")) ?? false;
   const [open, setOpen] = useState<boolean>(isChildActive);
   const Icon = item.icon;
   const isActive = pathname === item.href;
@@ -82,11 +99,11 @@ function TrainingAccordion({ item }: { item: NavItem }) {
         onClick={() => setOpen((o) => !o)}
         className={`${itemBase} ${isActive ? itemActive : ""}`}
       >
-        <Icon
+        {Icon && <Icon
           size={15}
           className={`shrink-0 ${isActive ? "text-gray-700" : "text-gray-400 group-hover:text-gray-600"}`}
           strokeWidth={1.75}
-        />
+        />}
         <span className="flex-1 text-left">{item.label}</span>
         <motion.span
           animate={{ rotate: open ? 0 : -90 }}
@@ -108,7 +125,7 @@ function TrainingAccordion({ item }: { item: NavItem }) {
           >
             <div className="mt-0.5 ml-1 pl-4 border-l border-gray-200 space-y-0.5">
               {item.children?.map((child) => {
-                const isChildItemActive = pathname === child.href;
+                const isChildItemActive = pathname === child.href || pathname.startsWith(child.href + "/");
                 return (
                   <Link
                     key={child.href}
@@ -155,7 +172,7 @@ export function AppSidebar() {
           )}
         </div>
         <div className="my-2 border-t border-gray-100" />
-        <NavLink item={SETTINGS_NAV} />
+        <TrainingAccordion item={SETTINGS_NAV} />
       </nav>
 
     </aside>
