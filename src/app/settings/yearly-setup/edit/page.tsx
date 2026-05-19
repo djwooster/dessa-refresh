@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Info, Zap, ClipboardList, ChevronDown, X, CheckCircle2, CalendarClock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -290,7 +290,7 @@ const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {
   "Adams Middle": "North Region Group",
 };
 
-export default function EditSetupPage() {
+function EditSetupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isOverride = searchParams.get("override") === "true";
@@ -1054,5 +1054,13 @@ export default function EditSetupPage() {
       </div>
       </div>
     </div>
+  );
+}
+
+export default function EditSetupPageWrapper() {
+  return (
+    <Suspense>
+      <EditSetupPage />
+    </Suspense>
   );
 }
