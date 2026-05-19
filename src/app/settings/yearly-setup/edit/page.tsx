@@ -327,6 +327,19 @@ export default function EditSetupPage() {
   const [saving, setSaving] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
+  const initialStateRef = useRef({
+    windowCount: DEFAULT_STATE.windowCount,
+    dates: DEFAULT_STATE.dates,
+    assessment: DEFAULT_STATE.assessment as "screener" | "full",
+    conditionalAssignment: DEFAULT_STATE.conditionalAssignment,
+    tScore: DEFAULT_STATE.tScore,
+    resetBehavior: DEFAULT_STATE.resetBehavior as "rescreen" | "skip",
+    sameConfigAllWindows: DEFAULT_STATE.sameConfigAllWindows,
+    windowConfigs: DEFAULT_STATE.windowConfigs,
+    siteLeaderManage: DEFAULT_STATE.siteLeaderManage,
+    overrideName: "",
+    selectedSites: [] as string[],
+  });
 
   // Load existing setup when editing
   useEffect(() => {
@@ -340,6 +353,14 @@ export default function EditSetupPage() {
       if (!raw) return;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = raw as any;
+      const loadedConfigs = [...Array(data.window_count)].map((_, i) => {
+        const wc = data.yearly_setup_window_configs?.find((c: { window_index: number }) => c.window_index === i);
+        return wc
+          ? { conditionalAssignment: wc.conditional_assignment, tScore: wc.t_score, resetBehavior: wc.reset_behavior as "rescreen" | "skip" }
+          : { ...DEFAULT_WINDOW_CONFIG };
+      });
+      const loadedSites = data.yearly_setup_sites?.map((s: { site_name: string }) => s.site_name) ?? [];
+      const loadedOverrideName = data.group_name ?? "";
       setWindowCount(data.window_count);
       setDates(data.dates);
       setAssessment(data.assessment_type as "screener" | "full");
@@ -348,19 +369,22 @@ export default function EditSetupPage() {
       setResetBehavior(data.reset_behavior as "rescreen" | "skip");
       setSameConfigAllWindows(data.same_config_all_windows);
       setSiteLeaderManage(data.site_leader_manage);
-      if (data.yearly_setup_sites?.length) {
-        setSelectedSites(data.yearly_setup_sites.map((s: { site_name: string }) => s.site_name));
-        setOverrideName(data.group_name ?? "");
-      }
-      if (data.yearly_setup_window_configs?.length) {
-        const configs = [...Array(data.window_count)].map((_, i) => {
-          const wc = data.yearly_setup_window_configs.find((c: { window_index: number }) => c.window_index === i);
-          return wc
-            ? { conditionalAssignment: wc.conditional_assignment, tScore: wc.t_score, resetBehavior: wc.reset_behavior as "rescreen" | "skip" }
-            : { ...DEFAULT_WINDOW_CONFIG };
-        });
-        setWindowConfigs(configs);
-      }
+      setWindowConfigs(loadedConfigs);
+      setSelectedSites(loadedSites);
+      setOverrideName(loadedOverrideName);
+      initialStateRef.current = {
+        windowCount: data.window_count,
+        dates: data.dates,
+        assessment: data.assessment_type as "screener" | "full",
+        conditionalAssignment: data.conditional_assignment,
+        tScore: data.t_score,
+        resetBehavior: data.reset_behavior as "rescreen" | "skip",
+        sameConfigAllWindows: data.same_config_all_windows,
+        windowConfigs: loadedConfigs,
+        siteLeaderManage: data.site_leader_manage,
+        overrideName: loadedOverrideName,
+        selectedSites: loadedSites,
+      };
     }
     load();
   }, [existingId]);
@@ -427,16 +451,19 @@ export default function EditSetupPage() {
     return () => el!.removeEventListener("scroll", handler);
   }, []);
 
+  const initial = initialStateRef.current;
   const isDirty =
-    windowCount !== DEFAULT_STATE.windowCount ||
-    JSON.stringify(dates) !== JSON.stringify(DEFAULT_STATE.dates) ||
-    assessment !== DEFAULT_STATE.assessment ||
-    conditionalAssignment !== DEFAULT_STATE.conditionalAssignment ||
-    tScore !== DEFAULT_STATE.tScore ||
-    resetBehavior !== DEFAULT_STATE.resetBehavior ||
-    sameConfigAllWindows !== DEFAULT_STATE.sameConfigAllWindows ||
-    JSON.stringify(windowConfigs) !== JSON.stringify(DEFAULT_STATE.windowConfigs) ||
-    siteLeaderManage !== DEFAULT_STATE.siteLeaderManage;
+    windowCount !== initial.windowCount ||
+    JSON.stringify(dates) !== JSON.stringify(initial.dates) ||
+    assessment !== initial.assessment ||
+    conditionalAssignment !== initial.conditionalAssignment ||
+    tScore !== initial.tScore ||
+    resetBehavior !== initial.resetBehavior ||
+    sameConfigAllWindows !== initial.sameConfigAllWindows ||
+    JSON.stringify(windowConfigs) !== JSON.stringify(initial.windowConfigs) ||
+    siteLeaderManage !== initial.siteLeaderManage ||
+    overrideName !== initial.overrideName ||
+    JSON.stringify([...selectedSites].sort()) !== JSON.stringify([...initial.selectedSites].sort());
 
   const applyLastYear = () => {
     setWindowCount(LAST_YEAR.windowCount);
@@ -498,7 +525,7 @@ export default function EditSetupPage() {
               description: "Don't forget to configure rating window reminder emails.",
               action: { label: "Set reminders", onClick: () => router.push("/settings/rating-window-reminders") },
             });
-            router.back();
+            router.push("/settings/yearly-setup");
           }}
           saving={saving}
         />
@@ -573,7 +600,9 @@ export default function EditSetupPage() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="flex items-center justify-between gap-4 rounded-xl bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3">
+            <div style={{ padding: "2px" }}>
+            <div className="relative rounded-xl flex items-center justify-between gap-4 px-4 py-3" style={{ background: "#eef2f8", animation: "border-glow 3s ease-in-out infinite" }}>
+              <style>{`@keyframes border-glow { 0%, 100% { box-shadow: 0 0 0 1px #c7d7ee; } 50% { box-shadow: 0 0 0 1px #1a4e8a, 0 0 10px 3px rgba(26,78,138,0.2); } }`}</style>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-[#1a4e8a] flex items-center justify-center shrink-0">
                   <CalendarClock size={15} className="text-white" strokeWidth={1.75} />
@@ -600,6 +629,7 @@ export default function EditSetupPage() {
                   <X size={14} />
                 </button>
               </div>
+            </div>
             </div>
           </motion.div>
         )}
