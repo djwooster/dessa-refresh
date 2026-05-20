@@ -96,14 +96,14 @@ export default function YearlySetupPage() {
                 className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[13px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
               >
                 <Pencil size={13} strokeWidth={1.75} />
-                Start Setup (v1)
+                Setup1
               </button>
               <button
                 onClick={() => router.push("/settings/yearly-setup/edit2")}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
               >
                 <Pencil size={13} strokeWidth={1.75} />
-                Start Setup
+                Setup2
               </button>
               <button
                 onClick={() => router.push("/settings/yearly-setup/edit3")}
@@ -129,14 +129,14 @@ export default function YearlySetupPage() {
                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[13px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
                 >
                   <Pencil size={13} strokeWidth={1.75} />
-                  Edit Setup (v1)
+                  Setup1
                 </button>
                 <button
                   onClick={() => router.push(`/settings/yearly-setup/edit2?id=${defaultSetup.id}`)}
                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                 >
                   <Pencil size={13} strokeWidth={1.75} />
-                  Edit Setup
+                  Setup2
                 </button>
                 <button
                   onClick={() => router.push(`/settings/yearly-setup/edit3?id=${defaultSetup.id}`)}
