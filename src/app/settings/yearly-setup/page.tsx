@@ -195,6 +195,13 @@ export default function YearlySetupPage() {
                   <Plus size={13} strokeWidth={2} />
                   Add Override
                 </button>
+                <button
+                  onClick={() => router.push("/settings/yearly-setup/edit3?override=true")}
+                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
+                >
+                  <Plus size={13} strokeWidth={2} />
+                  Setup3
+                </button>
               </div>
             </div>
 

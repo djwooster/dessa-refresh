@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, Info, Zap, ClipboardList, X,
@@ -200,7 +200,7 @@ const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {
   "Adams Middle": "North Region Group",
 };
 
-// ─── Shared modals (identical to /edit) ───────────────────────────────────────
+// ─── Shared modals ────────────────────────────────────────────────────────────
 
 function ReviewPanel({
   windowCount, dates, labels, assessment, conditionalAssignment, tScore, resetBehavior,
@@ -858,7 +858,7 @@ function EditSetupPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-white">
+    <div className="bg-white">
 
       {/* Modals */}
       {showConfirm && (
@@ -903,24 +903,20 @@ function EditSetupPage() {
       )}
       {showLastYear && <LastYearModal onClose={() => setShowLastYear(false)} onUse={applyLastYear} />}
 
-      {/* Two-column body */}
-      <div className="flex flex-1 overflow-hidden">
-
-        {/* Left panel — step list */}
-        <aside className="w-[300px] shrink-0 bg-[#f8fafc] border-r border-[#e8ecf0] px-8 py-10 overflow-y-auto">
+      {/* Horizontal stepper */}
+      <div className="sticky top-0 z-10 bg-[#f8fafc] border-b border-[#e8ecf0] px-10 py-6">
+        <div className="flex items-start max-w-[800px] mx-auto">
           {visibleSteps.map((step, idx) => {
             const isCompleted = idx < currentStepIndex;
             const isActive = idx === currentStepIndex;
             const isLast = idx === visibleSteps.length - 1;
             const Icon = step.icon;
             return (
-              <div
-                key={step.id}
-                className={`flex gap-4 -mx-4 px-4 rounded-xl transition-colors duration-150 ${isCompleted ? "cursor-pointer group hover:bg-[#e8f0f9]" : ""}`}
-                onClick={isCompleted ? () => setCurrentStepIndex(idx) : undefined}
-              >
-                {/* Circle + connector */}
-                <div className="flex flex-col items-center">
+              <React.Fragment key={step.id}>
+                <div
+                  className={`flex flex-col items-center gap-2 ${isCompleted ? "cursor-pointer group" : ""}`}
+                  onClick={isCompleted ? () => setCurrentStepIndex(idx) : undefined}
+                >
                   <motion.div
                     className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                     animate={{
@@ -953,73 +949,67 @@ function EditSetupPage() {
                       )}
                     </AnimatePresence>
                   </motion.div>
-                  {!isLast && (
-                    <motion.div
-                      className="w-px my-2"
-                      animate={{ backgroundColor: isCompleted ? "#1a4e8a" : "#d1d9e0" }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      style={{ height: 44 }}
-                    />
-                  )}
-                </div>
-                {/* Text */}
-                <div className={!isLast ? "pb-[44px]" : ""} style={{ paddingTop: 6 }}>
-                  <p className={`text-[13.5px] font-semibold leading-snug transition-colors duration-200 ${isActive ? "text-gray-900" : isCompleted ? "text-gray-600 group-hover:text-gray-900" : "text-gray-400"}`}>
+                  <p className={`text-[12px] font-semibold text-center leading-tight max-w-[80px] transition-colors duration-200 ${isActive ? "text-gray-900" : isCompleted ? "text-gray-500 group-hover:text-gray-900" : "text-gray-400"}`}>
                     {step.label}
                   </p>
-                  <p className={`text-[12px] mt-0.5 leading-snug transition-colors duration-200 ${isActive ? "text-gray-400" : isCompleted ? "text-gray-400 group-hover:text-gray-500" : "text-gray-300"}`}>
-                    {step.desc}
-                  </p>
                 </div>
-              </div>
+                {!isLast && (
+                  <motion.div
+                    className="flex-1 h-px mx-4"
+                    style={{ marginTop: 18 }}
+                    animate={{ backgroundColor: isCompleted ? "#1a4e8a" : "#d1d9e0" }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
+                )}
+              </React.Fragment>
             );
           })}
-        </aside>
-
-        {/* Right panel — step content */}
-        <main className="flex-1 overflow-y-auto bg-[#fcfcfc]">
-          <div className="max-w-[800px] mx-auto py-8">
-            <p className="text-[11px] font-bold text-[#1a4e8a] uppercase tracking-widest mb-4">
-              Step {currentStepIndex + 1} of {totalSteps}
-            </p>
-            <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">
-              {currentStepDef.title}
-            </h1>
-            <p className="text-[16px] text-gray-500 mb-10 leading-relaxed max-w-[750px]">
-              {currentStepDef.subtitle}
-            </p>
-            {renderStepContent()}
-
-            {/* Step footer */}
-            <div className="flex items-center justify-between pt-8 mt-8 border-t border-[#f0f4f8]">
-              <div className="flex items-center gap-4">
-                {!isFirstStep ? (
-                  <button onClick={handlePrev} className="flex items-center gap-1.5 text-[13.5px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer">
-                    <ArrowLeft size={14} strokeWidth={2} />
-                    Back
-                  </button>
-                ) : (
-                  <button onClick={handleCancel} className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
-                    Cancel
-                  </button>
-                )}
-                {existingId && isFirstStep && (
-                  <button onClick={() => setShowDeleteConfirm(true)} className="text-[13px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-                    Delete Setup
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={handleNext}
-                className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-              >
-                {isLastStep ? "Review & Save" : "Save and continue"}
-              </button>
-            </div>
-          </div>
-        </main>
-
+        </div>
       </div>
+
+      {/* Main content */}
+      <main className="bg-[#fcfcfc]">
+        <div className="max-w-[800px] mx-auto py-8">
+          <p className="text-[11px] font-bold text-[#1a4e8a] uppercase tracking-widest mb-4">
+            Step {currentStepIndex + 1} of {totalSteps}
+          </p>
+          <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">
+            {currentStepDef.title}
+          </h1>
+          <p className="text-[16px] text-gray-500 mb-10 leading-relaxed max-w-[750px]">
+            {currentStepDef.subtitle}
+          </p>
+          {renderStepContent()}
+
+          {/* Step footer */}
+          <div className="flex items-center justify-between pt-8 mt-8 border-t border-[#f0f4f8]">
+            <div className="flex items-center gap-4">
+              {!isFirstStep ? (
+                <button onClick={handlePrev} className="flex items-center gap-1.5 text-[13.5px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer">
+                  <ArrowLeft size={14} strokeWidth={2} />
+                  Back
+                </button>
+              ) : (
+                <button onClick={handleCancel} className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
+                  Cancel
+                </button>
+              )}
+              {existingId && isFirstStep && (
+                <button onClick={() => setShowDeleteConfirm(true)} className="text-[13px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+                  Delete Setup
+                </button>
+              )}
+            </div>
+            <button
+              onClick={handleNext}
+              className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+            >
+              {isLastStep ? "Review & Save" : "Save and continue"}
+            </button>
+          </div>
+        </div>
+      </main>
+
     </div>
   );
 }

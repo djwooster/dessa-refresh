@@ -42,7 +42,7 @@ const DEFAULT_WINDOW_CONFIG: WindowConfig = {
 const DEFAULT_STATE = {
   windowCount: DEFAULT_COUNT,
   dates: DEFAULT_DATES[DEFAULT_COUNT],
-  assessment: "screener" as const,
+  assessment: "screener" as "screener" | "full",
   conditionalAssignment: true,
   tScore: "40",
   resetBehavior: "rescreen" as "rescreen" | "skip",
