@@ -973,7 +973,7 @@ function EditSetupPage() {
           <p className="text-[11px] font-bold text-[#1a4e8a] uppercase tracking-widest mb-4">
             Step {currentStepIndex + 1} of {totalSteps}
           </p>
-          <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">
+          <h1 className="text-[28px] font-bold text-gray-900 leading-tight mb-2">
             {currentStepDef.title}
           </h1>
           <p className="text-[16px] text-gray-500 mb-10 leading-relaxed max-w-[750px]">

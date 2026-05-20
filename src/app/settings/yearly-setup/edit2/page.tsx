@@ -17,11 +17,11 @@ import { createClient } from "@/lib/supabase/client";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const WINDOW_OPTIONS = [
-  { count: 1, desc: "Annual Assessment",                         labels: ["Annual Assessment"] },
-  { count: 2, desc: "Pre & Post Assessment",                     labels: ["Pre-Assessment", "Post-Assessment"] },
-  { count: 3, desc: "Pre, Mid & Post Assessment",                labels: ["Pre-Assessment", "Mid-Assessment", "Post-Assessment"] },
-  { count: 4, desc: "Pre, Mid 1, Mid 2 & Post Assessment",       labels: ["Pre-Assessment", "Mid 1 Assessment", "Mid 2 Assessment", "Post-Assessment"] },
-  { count: 5, desc: "Pre, Mid 1, Mid 2, Mid 3 & Post Assessment",labels: ["Pre-Assessment", "Mid 1 Assessment", "Mid 2 Assessment", "Mid 3 Assessment", "Post-Assessment"] },
+  { count: 1, desc: "Annual Assessment", labels: ["Annual Assessment"] },
+  { count: 2, desc: "Pre & Post Assessment", labels: ["Pre-Assessment", "Post-Assessment"] },
+  { count: 3, desc: "Pre, Mid & Post Assessment", labels: ["Pre-Assessment", "Mid-Assessment", "Post-Assessment"] },
+  { count: 4, desc: "Pre, Mid 1, Mid 2 & Post Assessment", labels: ["Pre-Assessment", "Mid 1 Assessment", "Mid 2 Assessment", "Post-Assessment"] },
+  { count: 5, desc: "Pre, Mid 1, Mid 2, Mid 3 & Post Assessment", labels: ["Pre-Assessment", "Mid 1 Assessment", "Mid 2 Assessment", "Mid 3 Assessment", "Post-Assessment"] },
 ];
 
 const DEFAULT_DATES: Record<number, string[]> = {
@@ -66,7 +66,7 @@ const BAND_COLORS = [
   { bg: "#fce7f3", text: "#9d174d" },
 ];
 
-const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function WizardTimeline({ dates, labels }: { dates: string[]; labels: string[] }) {
   const parsed = dates.map(d => d ? new Date(d + "T00:00:00") : null);
@@ -97,8 +97,8 @@ function WizardTimeline({ dates, labels }: { dates: string[]; labels: string[] }
               className="absolute text-[12px] text-gray-400"
               style={
                 isFirst ? { left: 0 } :
-                isLast  ? { right: 0 } :
-                { left: `${(i / (ticks.length - 1)) * 100}%`, transform: "translateX(-50%)" }
+                  isLast ? { right: 0 } :
+                    { left: `${(i / (ticks.length - 1)) * 100}%`, transform: "translateX(-50%)" }
               }
             >
               {MONTH_NAMES[m.getMonth()]}
@@ -199,8 +199,8 @@ const LAST_YEAR = {
   windowCount: 3,
   windowDesc: "Pre, Mid & Post Assessment",
   windows: [
-    { label: "Pre-Assessment",  date: "Aug 1, 2024",  iso: "2024-08-01" },
-    { label: "Mid-Assessment",  date: "Jan 1, 2025",  iso: "2025-01-01" },
+    { label: "Pre-Assessment", date: "Aug 1, 2024", iso: "2024-08-01" },
+    { label: "Mid-Assessment", date: "Jan 1, 2025", iso: "2025-01-01" },
     { label: "Post-Assessment", date: "May 28, 2025", iso: "2025-05-28" },
   ],
   assessment: "Screener",
@@ -723,8 +723,8 @@ function EditSetupPage() {
             {assessment === "screener" && (
               <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-[#4a5c9c]">
                 <Info />
-                <AlertTitle className="text-blue-900">Why you&apos;re seeing this</AlertTitle>
-                <AlertDescription className="text-[#4a5c9c]">
+                <AlertTitle className="text-[#132d78]">Why you&apos;re seeing this</AlertTitle>
+                <AlertDescription className="text-[#132d78] opacity-80">
                   Because you selected Screener, the section below lets you automatically escalate students who score below a set threshold — so anyone who may need more support gets a complete picture.
                 </AlertDescription>
               </Alert>
@@ -734,12 +734,12 @@ function EditSetupPage() {
             {assessment === "screener" && (
               <div>
                 <h2 className="text-[20px] font-semibold text-gray-800 mb-4">Additional attention</h2>
-                <p className="text-[14px] font-semibold text-gray-800 mb-1">Should students who score below a threshold automatically require a full DESSA?</p>
-                <p className="text-sm text-gray-500 mb-3">We recommend a threshold of 40, which indicates a Need For Instruction.</p>
+                <p className="text-[16px] font-semibold text-gray-800 mb-1">Should students who score below a threshold automatically require a full DESSA?</p>
+                <p className="text-sm text-gray-500 mb-6">We recommend a threshold of 40, which indicates a Need For Instruction.</p>
                 <RadioGroup
                   value={conditionalAssignment ? "yes" : "no"}
                   onValueChange={(v) => setConditionalAssignment(v === "yes")}
-                  className="gap-3"
+                  className="gap-5"
                 >
                   <label className="flex items-start gap-3 cursor-pointer">
                     <RadioGroupItem value="yes" className="mt-0.5 shrink-0" />
@@ -778,8 +778,8 @@ function EditSetupPage() {
                     <p className="text-sm text-gray-500 mb-3">Re-screening lets teachers do a quick check first. Going straight to the full DESSA gives you richer data.</p>
                     <div className="grid grid-cols-2 gap-3">
                       {([
-                        { value: "rescreen", label: "Re-screen them",    sublabel: "Start with the screener — they may have improved since the last window." },
-                        { value: "skip",     label: "Skip to full DESSA", sublabel: "Go straight to the full assessment for any student who previously scored below the threshold." },
+                        { value: "rescreen", label: "Re-screen them", sublabel: "Start with the screener — they may have improved since the last window." },
+                        { value: "skip", label: "Skip to full DESSA", sublabel: "Go straight to the full assessment for any student who previously scored below the threshold." },
                       ] as const).map(({ value, label, sublabel }) => (
                         <button key={value} onClick={() => setResetBehavior(value)}
                           className={`text-left rounded-xl border-2 px-4 py-3 transition-all cursor-pointer ${resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
@@ -799,7 +799,7 @@ function EditSetupPage() {
               <p className="text-sm text-gray-500 mb-3">If your threshold changes across windows, you can configure each one independently.</p>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {([
-                  { value: true,  label: "Yes, same for all windows" },
+                  { value: true, label: "Yes, same for all windows" },
                   { value: false, label: "No, configure each window" },
                 ] as const).map(({ value, label }) => (
                   <button key={String(value)} onClick={() => setSameConfigAllWindows(value)}
@@ -838,7 +838,7 @@ function EditSetupPage() {
                               <div className="grid grid-cols-2 gap-2 pl-7">
                                 {([
                                   { value: "rescreen", label: "Re-screen them" },
-                                  { value: "skip",     label: "Skip to full DESSA" },
+                                  { value: "skip", label: "Skip to full DESSA" },
                                 ] as const).map(({ value, label }) => (
                                   <button key={value} onClick={() => updateWindowConfig(i, { resetBehavior: value })}
                                     className={`text-left rounded-lg border-2 px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${cfg.resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]" : "border-[#e8ecf0] bg-white text-gray-700 hover:border-gray-300"}`}
@@ -866,8 +866,8 @@ function EditSetupPage() {
             <p className="text-sm text-gray-500 mb-4">This gives Site Leaders control over when students can access their self-assessment within a rating window.</p>
             <div className="grid grid-cols-2 gap-3">
               {([
-                { value: true,  label: "Yes", sublabel: "Site Leaders can open and close student access at their sites independently." },
-                { value: false, label: "No",  sublabel: "Student assessments open automatically at the start of each rating window." },
+                { value: true, label: "Yes", sublabel: "Site Leaders can open and close student access at their sites independently." },
+                { value: false, label: "No", sublabel: "Student assessments open automatically at the start of each rating window." },
               ] as const).map(({ value, label, sublabel }) => (
                 <button key={String(value)} onClick={() => setSiteLeaderManage(value)}
                   className={`text-left rounded-xl border-2 px-4 py-3 transition-all cursor-pointer ${siteLeaderManage === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
@@ -888,7 +888,7 @@ function EditSetupPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-white">
+    <div className="h-full flex flex-col overflow-hidden bg-white">
 
       {/* Modals */}
       {showConfirm && (
@@ -943,7 +943,7 @@ function EditSetupPage() {
               Step {currentStepIndex + 1} of {totalSteps}
             </p>
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-[32px] font-bold text-gray-900 leading-tight">
+              <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
                 {currentStepDef.title}
               </h1>
               {currentStepId === "dates" && (
