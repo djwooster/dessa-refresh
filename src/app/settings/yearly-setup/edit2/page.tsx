@@ -721,11 +721,11 @@ function EditSetupPage() {
 
             {/* Why conditional assignment appears */}
             {assessment === "screener" && (
-              <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-blue-600">
+              <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-[#4a5c9c]">
                 <Info />
                 <AlertTitle className="text-blue-900">Why you&apos;re seeing this</AlertTitle>
-                <AlertDescription className="text-blue-700">
-                  Because you selected Screener, students will receive a short 7-question form rather than the full assessment. The section below lets you automatically escalate students who score below a set threshold — so anyone who may need more support gets a complete picture.
+                <AlertDescription className="text-[#4a5c9c]">
+                  Because you selected Screener, the section below lets you automatically escalate students who score below a set threshold — so anyone who may need more support gets a complete picture.
                 </AlertDescription>
               </Alert>
             )}
