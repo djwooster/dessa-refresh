@@ -803,9 +803,9 @@ function EditSetupPage() {
                   <div className="mt-4 flex items-start gap-3 rounded-lg bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3">
                     <Info size={15} className="text-[#1a4e8a] shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#1a4e8a] mb-2">{selected.summary}</p>
+                      <p className="text-sm text-[#1a4e8a] mb-2">{selected?.summary}</p>
                       <div className="flex flex-wrap gap-2">
-                        {selected.items.map((item) => (
+                        {selected?.items.map((item) => (
                           <span key={item} className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1a4e8a] bg-white border border-[#c7d7ee] rounded-full px-2.5 py-1">
                             <svg width="10" height="10" viewBox="0 0 14 14" fill="none" className="shrink-0">
                               <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
