@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { SuccessToast } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -718,6 +719,17 @@ function EditSetupPage() {
               })}
             </div>
 
+            {/* Why conditional assignment appears */}
+            {assessment === "screener" && (
+              <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-blue-600">
+                <Info />
+                <AlertTitle className="text-blue-900">Why you&apos;re seeing this</AlertTitle>
+                <AlertDescription className="text-blue-700">
+                  Because you selected Screener, students will receive a short 7-question form rather than the full assessment. The section below lets you automatically escalate students who score below a set threshold — so anyone who may need more support gets a complete picture.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Conditional assignment — first section of screener config */}
             {assessment === "screener" && (
               <div>
@@ -758,39 +770,10 @@ function EditSetupPage() {
       case "screener":
         return (
           <div className="space-y-6">
-            <div>
-              <p className="text-[14px] font-semibold text-gray-800 mb-1">Should students who score below a threshold automatically require a full DESSA?</p>
-              <p className="text-sm text-gray-500 mb-3">We recommend a threshold of 40, which indicates a Need For Instruction.</p>
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <div
-                  onClick={() => setConditionalAssignment(!conditionalAssignment)}
-                  className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center mt-0.5 transition-colors cursor-pointer ${conditionalAssignment ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"}`}
-                >
-                  {conditionalAssignment && (
-                    <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                      <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </div>
-                <div>
-                  <span className="text-[14px] font-semibold text-gray-800 block mb-1">Yes — assign a full DESSA when a student's T-Score is at or below</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number" value={tScore}
-                      onChange={(e) => setTScore(e.target.value)}
-                      disabled={!conditionalAssignment}
-                      className="w-16 h-8 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-sm text-gray-500">T-Score</span>
-                  </div>
-                </div>
-              </label>
-            </div>
-
             <AnimatePresence initial={false}>
               {conditionalAssignment && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18, ease: "easeOut" }} className="overflow-hidden">
-                  <div className="border-t border-[#f0f4f8] pt-5">
+                  <div>
                     <p className="text-[14px] font-semibold text-gray-800 mb-1">If a student previously scored below the threshold, what should happen next window?</p>
                     <p className="text-sm text-gray-500 mb-3">Re-screening lets teachers do a quick check first. Going straight to the full DESSA gives you richer data.</p>
                     <div className="grid grid-cols-2 gap-3">
