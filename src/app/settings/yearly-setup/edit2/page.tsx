@@ -4,10 +4,11 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, Info, Zap, ClipboardList, X,
-  CheckCircle2, CalendarClock, Users, Check, Building2,
+  CheckCircle2, CalendarClock, Calendar, Users, Check, Building2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { SuccessToast } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -86,11 +87,23 @@ function WizardTimeline({ dates, labels }: { dates: string[]; labels: string[] }
   return (
     <div className="flex flex-col gap-3">
       <div className="relative h-4">
-        {ticks.map((m, i) => (
-          <span key={i} className="absolute text-[12px] text-gray-400 -translate-x-1/2" style={{ left: `${(i / (ticks.length - 1)) * 100}%` }}>
-            {MONTH_NAMES[m.getMonth()]}
-          </span>
-        ))}
+        {ticks.map((m, i) => {
+          const isFirst = i === 0;
+          const isLast = i === ticks.length - 1;
+          return (
+            <span
+              key={i}
+              className="absolute text-[12px] text-gray-400"
+              style={
+                isFirst ? { left: 0 } :
+                isLast  ? { right: 0 } :
+                { left: `${(i / (ticks.length - 1)) * 100}%`, transform: "translateX(-50%)" }
+              }
+            >
+              {MONTH_NAMES[m.getMonth()]}
+            </span>
+          );
+        })}
       </div>
       <div className="relative h-9 rounded-lg overflow-hidden flex">
         {parsed.map((date, i) => {
@@ -131,7 +144,7 @@ const ASSESSMENT_OPTIONS = [
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
-type StepId = "sites" | "windows" | "assessment" | "screener" | "students";
+type StepId = "sites" | "windows" | "dates" | "assessment" | "screener" | "students";
 
 const STEP_DEFS: Record<StepId, { label: string; desc: string; icon: React.ElementType; title: string; subtitle: string }> = {
   sites: {
@@ -143,10 +156,17 @@ const STEP_DEFS: Record<StepId, { label: string; desc: string; icon: React.Eleme
   },
   windows: {
     label: "Rating Windows",
-    desc: "Set your schedule and window dates",
+    desc: "Choose how many windows per year",
     icon: CalendarClock,
     title: "Rating Windows",
     subtitle: "Each period is called a rating window — you'll see this term throughout your reports and data filters. Choose based on your school's calendar and how often you want to track progress.",
+  },
+  dates: {
+    label: "Window Dates",
+    desc: "Set the start date for each window",
+    icon: Calendar,
+    title: "Window Start Dates",
+    subtitle: "Set the opening date for each rating window. These dates determine when teachers can begin submitting assessments for that period.",
   },
   assessment: {
     label: "Teacher Assessments",
@@ -494,7 +514,7 @@ function EditSetupPage() {
   const getStepSequence = (): StepId[] => {
     const seq: StepId[] = [];
     if (isOverride) seq.push("sites");
-    seq.push("windows", "assessment");
+    seq.push("windows", "dates", "assessment");
     if (assessment === "screener") seq.push("screener");
     seq.push("students");
     return seq;
@@ -625,30 +645,30 @@ function EditSetupPage() {
 
       case "windows":
         return (
+          <div className="grid grid-cols-5 gap-2">
+            {WINDOW_OPTIONS.map(({ count, desc }) => {
+              const isSelected = windowCount === count;
+              return (
+                <button key={count} onClick={() => handleCountChange(count)}
+                  className={`text-left rounded-xl border-2 p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}>
+                    {count}
+                  </div>
+                  <p className={`text-[13px] font-bold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-900"}`}>
+                    {count === 1 ? "1 Window" : `${count} Windows`}
+                  </p>
+                  <p className="text-[11px] text-gray-500 leading-snug">{desc}</p>
+                </button>
+              );
+            })}
+          </div>
+        );
+
+      case "dates":
+        return (
           <div className="space-y-16">
             <div>
-              <p className="text-[20px] font-semibold text-gray-800 mb-3">Number of rating windows</p>
-              <div className="grid grid-cols-5 gap-2">
-                {WINDOW_OPTIONS.map(({ count, desc }) => {
-                  const isSelected = windowCount === count;
-                  return (
-                    <button key={count} onClick={() => handleCountChange(count)}
-                      className={`text-left rounded-xl border-2 p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                    >
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}>
-                        {count}
-                      </div>
-                      <p className={`text-[13px] font-bold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-900"}`}>
-                        {count === 1 ? "1 Window" : `${count} Windows`}
-                      </p>
-                      <p className="text-[11px] text-gray-500 leading-snug">{desc}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <p className="text-[20px] font-semibold text-gray-800 mb-3">Window start dates</p>
               <div className="flex flex-wrap gap-6">
                 {dates.map((date, i) => (
                   <div key={i} className="flex flex-col gap-1" style={{ width: 140 }}>
@@ -658,7 +678,7 @@ function EditSetupPage() {
                 ))}
               </div>
             </div>
-            <div>
+            <div style={{ padding: 12, backgroundColor: "white", border: "1px solid #dbdbdb", borderRadius: 12 }}>
               <p className="text-[20px] font-semibold text-gray-800 mb-3">Year at a glance</p>
               <WizardTimeline dates={dates} labels={labels} />
             </div>
@@ -666,10 +686,22 @@ function EditSetupPage() {
         );
 
       case "assessment": {
-        const selected = ASSESSMENT_OPTIONS.find((o) => o.value === assessment);
         return (
-          <div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="space-y-8">
+            {/* Explainer */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[13.5px] font-semibold text-gray-800 mb-1">Screener</p>
+                <p className="text-[13px] text-gray-500 leading-snug">A quick 7-question form teachers fill out on behalf of each student. Fast to complete, great for identifying who needs a closer look.</p>
+              </div>
+              <div>
+                <p className="text-[13.5px] font-semibold text-gray-800 mb-1">Full Assessment</p>
+                <p className="text-[13px] text-gray-500 leading-snug">A 40+ question form completed by teachers that measures eight social-emotional competencies. Richer data, more time to complete.</p>
+              </div>
+            </div>
+
+            {/* Cards */}
+            <div className="grid grid-cols-2 gap-3">
               {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc }) => {
                 const isSelected = assessment === value;
                 return (
@@ -685,23 +717,38 @@ function EditSetupPage() {
                 );
               })}
             </div>
-            {selected && (
-              <div className="flex items-start gap-3 rounded-lg bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3">
-                <Info size={15} className="text-[#1a4e8a] shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#1a4e8a] mb-2">{selected.summary}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selected.items.map((item) => (
-                      <span key={item} className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1a4e8a] bg-white border border-[#c7d7ee] rounded-full px-2.5 py-1">
-                        <svg width="10" height="10" viewBox="0 0 14 14" fill="none" className="shrink-0">
-                          <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
-                          <path d="M4.5 7l1.75 1.75L9.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+
+            {/* Conditional assignment — first section of screener config */}
+            {assessment === "screener" && (
+              <div>
+                <h2 className="text-[20px] font-semibold text-gray-800 mb-4">Additional attention</h2>
+                <p className="text-[14px] font-semibold text-gray-800 mb-1">Should students who score below a threshold automatically require a full DESSA?</p>
+                <p className="text-sm text-gray-500 mb-3">We recommend a threshold of 40, which indicates a Need For Instruction.</p>
+                <RadioGroup
+                  value={conditionalAssignment ? "yes" : "no"}
+                  onValueChange={(v) => setConditionalAssignment(v === "yes")}
+                  className="gap-3"
+                >
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <RadioGroupItem value="yes" className="mt-0.5 shrink-0" />
+                    <div>
+                      <span className="text-[14px] font-semibold text-gray-800 block mb-1">Yes — assign a full DESSA when a student's T-Score is at or below</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number" value={tScore}
+                          onChange={(e) => setTScore(e.target.value)}
+                          disabled={!conditionalAssignment}
+                          className="w-16 h-8 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
+                        />
+                        <span className="text-sm text-gray-500">T-Score</span>
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <RadioGroupItem value="no" className="mt-0.5 shrink-0" />
+                    <span className="text-[14px] font-semibold text-gray-800">No — all students complete only the screener</span>
+                  </label>
+                </RadioGroup>
               </div>
             )}
           </div>
@@ -906,8 +953,58 @@ function EditSetupPage() {
       {/* Two-column body */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Left panel — step list */}
-        <aside className="w-[300px] shrink-0 bg-[#f8fafc] border-r border-[#e8ecf0] px-8 py-10 overflow-y-auto">
+        {/* Right panel — step content */}
+        <main className="flex-1 overflow-y-auto bg-[#fcfcfc]">
+          <div className="max-w-[800px] mx-auto py-8">
+            <p className="text-[11px] font-bold text-[#1a4e8a] uppercase tracking-widest mb-4">
+              Step {currentStepIndex + 1} of {totalSteps}
+            </p>
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-[32px] font-bold text-gray-900 leading-tight">
+                {currentStepDef.title}
+              </h1>
+              {currentStepId === "dates" && (
+                <span className="shrink-0 text-[12px] font-medium text-[#1a4e8a] bg-[#1676b712] border border-[#c7d7ee] rounded-md px-2 py-1">
+                  {windowCount} {windowCount === 1 ? "window" : "windows"} selected
+                </span>
+              )}
+            </div>
+            <p className="text-[16px] text-gray-500 mb-10 leading-relaxed max-w-[750px]">
+              {currentStepDef.subtitle}
+            </p>
+            {renderStepContent()}
+
+            {/* Step footer */}
+            <div className="flex items-center justify-between pt-8 mt-8 border-t border-[#f0f4f8]">
+              <div className="flex items-center gap-4">
+                {!isFirstStep ? (
+                  <button onClick={handlePrev} className="flex items-center gap-1.5 text-[13.5px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer">
+                    <ArrowLeft size={14} strokeWidth={2} />
+                    Back
+                  </button>
+                ) : (
+                  <button onClick={handleCancel} className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
+                    Cancel
+                  </button>
+                )}
+                {existingId && isFirstStep && (
+                  <button onClick={() => setShowDeleteConfirm(true)} className="text-[13px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+                    Delete Setup
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={handleNext}
+                className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+              >
+                {isLastStep ? "Review & Save" : "Save and continue"}
+              </button>
+            </div>
+          </div>
+        </main>
+
+        {/* Right panel — step list */}
+        <aside className="w-[300px] shrink-0 bg-[#f8fafc] border-l border-[#e8ecf0] px-8 py-10 overflow-y-auto">
           {visibleSteps.map((step, idx) => {
             const isCompleted = idx < currentStepIndex;
             const isActive = idx === currentStepIndex;
@@ -975,49 +1072,6 @@ function EditSetupPage() {
             );
           })}
         </aside>
-
-        {/* Right panel — step content */}
-        <main className="flex-1 overflow-y-auto bg-[#fcfcfc]">
-          <div className="max-w-[800px] mx-auto py-8">
-            <p className="text-[11px] font-bold text-[#1a4e8a] uppercase tracking-widest mb-4">
-              Step {currentStepIndex + 1} of {totalSteps}
-            </p>
-            <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">
-              {currentStepDef.title}
-            </h1>
-            <p className="text-[16px] text-gray-500 mb-10 leading-relaxed max-w-[750px]">
-              {currentStepDef.subtitle}
-            </p>
-            {renderStepContent()}
-
-            {/* Step footer */}
-            <div className="flex items-center justify-between pt-8 mt-8 border-t border-[#f0f4f8]">
-              <div className="flex items-center gap-4">
-                {!isFirstStep ? (
-                  <button onClick={handlePrev} className="flex items-center gap-1.5 text-[13.5px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer">
-                    <ArrowLeft size={14} strokeWidth={2} />
-                    Back
-                  </button>
-                ) : (
-                  <button onClick={handleCancel} className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
-                    Cancel
-                  </button>
-                )}
-                {existingId && isFirstStep && (
-                  <button onClick={() => setShowDeleteConfirm(true)} className="text-[13px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-                    Delete Setup
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={handleNext}
-                className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-              >
-                {isLastStep ? "Review & Save" : "Save and continue"}
-              </button>
-            </div>
-          </div>
-        </main>
 
       </div>
     </div>
