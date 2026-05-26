@@ -1059,8 +1059,8 @@ function EditSetupPage() {
                           <div className="border-t border-[#f0f4f8] pt-4 space-y-4">
                             {/* Conditional assignment */}
                             <div>
-                              <p className="text-sm font-semibold text-gray-700 mb-3">
-                                Require full DESSA for students below a threshold?
+                              <p className="text-base font-semibold text-gray-700 mb-3">
+                                Should students who score below a threshold receive the full DESSA?
                               </p>
                               <RadioGroup
                                 value={cfg.conditionalAssignment ? "yes" : "no"}
@@ -1070,7 +1070,7 @@ function EditSetupPage() {
                                 <label className="flex items-start gap-2.5 cursor-pointer">
                                   <RadioGroupItem value="yes" className="mt-0.5 shrink-0" />
                                   <div>
-                                    <span className="text-sm font-semibold text-gray-800 block mb-1.5">
+                                    <span className="text-sm text-gray-600 block mb-1.5">
                                       Yes — assign full DESSA at or below T-Score
                                     </span>
                                     <div className="flex items-center gap-2">
@@ -1081,13 +1081,12 @@ function EditSetupPage() {
                                         disabled={!cfg.conditionalAssignment}
                                         className="w-16 h-7 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
                                       />
-                                      <span className="text-xs text-gray-500">T-Score</span>
                                     </div>
                                   </div>
                                 </label>
                                 <label className="flex items-start gap-2.5 cursor-pointer">
                                   <RadioGroupItem value="no" className="mt-0.5 shrink-0" />
-                                  <span className="text-sm font-semibold text-gray-800">
+                                  <span className="text-sm text-gray-600">
                                     No — all students complete only the screener
                                   </span>
                                 </label>
@@ -1097,8 +1096,8 @@ function EditSetupPage() {
                             {/* Reset behavior — only relevant with multiple windows */}
                             {cfg.conditionalAssignment && windowCount > 1 && (
                               <div>
-                                <p className="text-sm font-semibold text-gray-700 mb-2.5">
-                                  Students who scored below the threshold in a prior window:
+                                <p className="text-base font-semibold text-gray-700 mb-2.5">
+                                  If a student scored below the threshold last window, next time:
                                 </p>
                                 <div className="grid grid-cols-2 gap-2">
                                   {([

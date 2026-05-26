@@ -11,6 +11,13 @@ import {
   Trash2,
   AlertTriangle,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ConceptC } from "@/components/dashboard/timeline/ConceptC";
 import { createClient } from "@/lib/supabase/client";
 import type { YearlySetup, YearlySetupSite } from "@/lib/supabase/types";
@@ -18,6 +25,11 @@ import type { YearlySetup, YearlySetupSite } from "@/lib/supabase/types";
 type SetupWithSites = YearlySetup & { yearly_setup_sites: YearlySetupSite[] };
 
 const ASSESSMENTS = ["Teacher DESSA", "Student DESSA", "SEIR"];
+
+const SCHOOL_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
+const CURRENT_YEAR = "2025-2026";
+
+const formatYear = (y: string) => y.replace("-", "–");
 
 function crossesAugReset(dates: string[]): boolean {
   const months = dates.map((d) => new Date(d + "T00:00:00").getMonth());
@@ -29,8 +41,8 @@ export default function YearlySetupPage() {
   const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
-  const [defaultSetup, setDefaultSetup] = useState<SetupWithSites | null>(null);
-  const [overrides, setOverrides] = useState<SetupWithSites[]>([]);
+  const [allSetups, setAllSetups] = useState<SetupWithSites[]>([]);
+  const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -40,13 +52,7 @@ export default function YearlySetupPage() {
         .from("yearly_setups")
         .select("*, yearly_setup_sites(*)")
         .order("created_at", { ascending: true });
-
-      if (data) {
-        setDefaultSetup(
-          (data as SetupWithSites[]).find((s) => s.is_default) ?? null,
-        );
-        setOverrides((data as SetupWithSites[]).filter((s) => !s.is_default));
-      }
+      if (data) setAllSetups(data as SetupWithSites[]);
       setLoading(false);
     }
     load();
@@ -56,14 +62,14 @@ export default function YearlySetupPage() {
     if (!confirmDeleteId) return;
     setDeleting(true);
     await supabase.from("yearly_setups").delete().eq("id", confirmDeleteId);
-    if (confirmDeleteId === defaultSetup?.id) {
-      setDefaultSetup(null);
-    } else {
-      setOverrides((prev) => prev.filter((o) => o.id !== confirmDeleteId));
-    }
+    setAllSetups((prev) => prev.filter((s) => s.id !== confirmDeleteId));
     setConfirmDeleteId(null);
     setDeleting(false);
   };
+
+  // Derived
+  const defaultSetup = allSetups.find((s) => s.is_default && s.year === selectedYear) ?? null;
+  const overrides = allSetups.filter((s) => !s.is_default && s.year === selectedYear);
 
   if (loading) {
     return (
@@ -97,46 +103,37 @@ export default function YearlySetupPage() {
       {/* Default config */}
       {!defaultSetup ? (
         <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
+          {/* Year switcher in empty state header */}
+          <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
+            <YearSelect selectedYear={selectedYear} onSelect={setSelectedYear} />
+          </div>
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
             <div className="w-12 h-12 rounded-xl bg-[#eef2f8] flex items-center justify-center mb-4">
-              <CalendarClock
-                size={32}
-                className="text-[#1a4e8a]"
-                strokeWidth={1.5}
-              />
+              <CalendarClock size={32} className="text-[#1a4e8a]" strokeWidth={1.5} />
             </div>
             <h3 className="text-[20px] font-semibold text-gray-800 mb-1">
-              No yearly setup yet
+              No setup for {formatYear(selectedYear)}
             </h3>
             <p className="text-[16px] text-gray-500 max-w-sm mb-6">
-              Define your rating windows and assessment configuration to get
-              started.
+              Define your rating windows and assessment configuration to get started.
             </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => router.push("/settings/yearly-setup/edit2")}
-                className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[16px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-              >
-                Setup
-              </button>
-            </div>
+            <button
+              onClick={() => router.push(`/settings/yearly-setup/edit2?year=${selectedYear}`)}
+              className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[16px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+            >
+              Setup
+            </button>
           </div>
         </div>
       ) : (
         <>
           <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden mb-4">
             <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
-              <div>
-                <p className="text-[18px] font-semibold text-gray-700 uppercase">
-                  2025–2026
-                </p>
-              </div>
+              <YearSelect selectedYear={selectedYear} onSelect={setSelectedYear} />
               <div className="flex items-center gap-2">
                 <button
                   onClick={() =>
-                    router.push(
-                      `/settings/yearly-setup/edit2?id=${defaultSetup.id}`,
-                    )
+                    router.push(`/settings/yearly-setup/edit2?id=${defaultSetup.id}&year=${selectedYear}`)
                   }
                   className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                 >
@@ -164,23 +161,13 @@ export default function YearlySetupPage() {
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
                       {defaultSetup.assessment_type === "screener" ? (
-                        <Zap
-                          size={12}
-                          className="text-white"
-                          strokeWidth={1.75}
-                        />
+                        <Zap size={12} className="text-white" strokeWidth={1.75} />
                       ) : (
-                        <ClipboardList
-                          size={12}
-                          className="text-white"
-                          strokeWidth={1.75}
-                        />
+                        <ClipboardList size={12} className="text-white" strokeWidth={1.75} />
                       )}
                     </div>
                     <span className="text-sm font-semibold text-gray-800">
-                      {defaultSetup.assessment_type === "screener"
-                        ? "Screener"
-                        : "Full Assessment"}
+                      {defaultSetup.assessment_type === "screener" ? "Screener" : "Full Assessment"}
                     </span>
                   </div>
                 </div>
@@ -236,24 +223,18 @@ export default function YearlySetupPage() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h2 className="text-[15px] font-bold text-gray-900">
-                  Custom Schedules
-                </h2>
+                <h2 className="text-[15px] font-bold text-gray-900">Custom Schedules</h2>
                 <p className="text-sm text-gray-500 mt-0.5">
                   Sites whose rating windows don't align with the default schedule.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    router.push("/settings/yearly-setup/edit2?override=true")
-                  }
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                >
-                  <Plus size={13} strokeWidth={2} />
-                  Add Custom Schedule
-                </button>
-              </div>
+              <button
+                onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
+              >
+                <Plus size={13} strokeWidth={2} />
+                Add Custom Schedule
+              </button>
             </div>
 
             {overrides.length === 0 ? (
@@ -265,27 +246,18 @@ export default function YearlySetupPage() {
             ) : (
               <div className="space-y-3">
                 {overrides.map((override) => (
-                  <div
-                    key={override.id}
-                    className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden"
-                  >
+                  <div key={override.id} className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
                     <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
                       <div>
-                        <p className="text-[14px] font-bold text-gray-900">
-                          {override.group_name}
-                        </p>
+                        <p className="text-[14px] font-bold text-gray-900">{override.group_name}</p>
                         <p className="text-[12px] text-gray-400 mt-0.5">
-                          {override.yearly_setup_sites
-                            .map((s) => s.site_name)
-                            .join(", ")}
+                          {override.yearly_setup_sites.map((s) => s.site_name).join(", ")}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() =>
-                            router.push(
-                              `/settings/yearly-setup/edit2?id=${override.id}&override=true`,
-                            )
+                            router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`)
                           }
                           className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#1a4e8a] text-white text-[12px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                         >
@@ -303,27 +275,17 @@ export default function YearlySetupPage() {
                     <div className="px-6 py-4">
                       <div className="flex gap-6 text-sm">
                         <div>
-                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                            Windows
-                          </p>
+                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Windows</p>
+                          <p className="font-semibold text-gray-800">{override.window_count}</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Assessment</p>
                           <p className="font-semibold text-gray-800">
-                            {override.window_count}
+                            {override.assessment_type === "screener" ? "Screener" : "Full Assessment"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                            Assessment
-                          </p>
-                          <p className="font-semibold text-gray-800">
-                            {override.assessment_type === "screener"
-                              ? "Screener"
-                              : "Full Assessment"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                            Threshold
-                          </p>
+                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Threshold</p>
                           <p className="font-semibold text-gray-800">
                             {override.conditional_assignment
                               ? `T-Score ≤ ${override.t_score}`
@@ -343,15 +305,10 @@ export default function YearlySetupPage() {
       {/* Delete confirmation */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setConfirmDeleteId(null)}
-          />
+          <div className="absolute inset-0 bg-black/30" onClick={() => setConfirmDeleteId(null)} />
           <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[400px]">
             <h2 className="text-[16px] font-bold text-gray-900 mb-2">
-              {confirmDeleteId === defaultSetup?.id
-                ? "Delete this setup?"
-                : "Delete custom schedule?"}
+              {confirmDeleteId === defaultSetup?.id ? "Delete this setup?" : "Delete custom schedule?"}
             </h2>
             <p className="text-[14px] text-gray-500 mb-6">
               {confirmDeleteId === defaultSetup?.id
@@ -381,5 +338,24 @@ export default function YearlySetupPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Year select ──────────────────────────────────────────────────────────────
+
+function YearSelect({ selectedYear, onSelect }: { selectedYear: string; onSelect: (y: string) => void }) {
+  return (
+    <Select value={selectedYear} onValueChange={(v) => v && onSelect(v)}>
+      <SelectTrigger className="w-auto gap-2 h-9 px-3 bg-white border border-[#d1d5db] rounded-lg text-[15px] font-semibold text-gray-700 cursor-pointer">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {SCHOOL_YEARS.map((y) => (
+          <SelectItem key={y} value={y} className="text-[14px] font-semibold cursor-pointer">
+            {formatYear(y)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
