@@ -92,25 +92,10 @@ export default function YearlySetupPage() {
             </p>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => router.push("/settings/yearly-setup/edit")}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[13px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
-              >
-                <Pencil size={13} strokeWidth={1.75} />
-                Setup1
-              </button>
-              <button
                 onClick={() => router.push("/settings/yearly-setup/edit2")}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
               >
-                <Pencil size={13} strokeWidth={1.75} />
-                Setup2
-              </button>
-              <button
-                onClick={() => router.push("/settings/yearly-setup/edit3")}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-              >
-                <Pencil size={13} strokeWidth={1.75} />
-                Setup3
+                Setup
               </button>
             </div>
           </div>
@@ -125,25 +110,10 @@ export default function YearlySetupPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => router.push(`/settings/yearly-setup/edit?id=${defaultSetup.id}`)}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[13px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                >
-                  <Pencil size={13} strokeWidth={1.75} />
-                  Setup1
-                </button>
-                <button
                   onClick={() => router.push(`/settings/yearly-setup/edit2?id=${defaultSetup.id}`)}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                  className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                 >
-                  <Pencil size={13} strokeWidth={1.75} />
-                  Setup2
-                </button>
-                <button
-                  onClick={() => router.push(`/settings/yearly-setup/edit3?id=${defaultSetup.id}`)}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-                >
-                  <Pencil size={13} strokeWidth={1.75} />
-                  Setup3
+                  Setup
                 </button>
               </div>
             </div>
@@ -196,25 +166,11 @@ export default function YearlySetupPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => router.push("/settings/yearly-setup/edit?override=true")}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                >
-                  <Plus size={13} strokeWidth={2} />
-                  Add Override (v1)
-                </button>
-                <button
                   onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
                 >
                   <Plus size={13} strokeWidth={2} />
                   Add Override
-                </button>
-                <button
-                  onClick={() => router.push("/settings/yearly-setup/edit3?override=true")}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                >
-                  <Plus size={13} strokeWidth={2} />
-                  Setup3
                 </button>
               </div>
             </div>
@@ -235,13 +191,6 @@ export default function YearlySetupPage() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => router.push(`/settings/yearly-setup/edit?id=${override.id}&override=true`)}
-                          className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[12px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                        >
-                          <Pencil size={11} strokeWidth={1.75} />
-                          Edit (v1)
-                        </button>
                         <button
                           onClick={() => router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`)}
                           className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#1a4e8a] text-white text-[12px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
