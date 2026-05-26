@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, CalendarClock, Zap, ClipboardList, Plus, Trash2 } from "lucide-react";
+import {
+  Pencil,
+  CalendarClock,
+  Zap,
+  ClipboardList,
+  Plus,
+  Trash2,
+  AlertTriangle,
+} from "lucide-react";
 import { ConceptC } from "@/components/dashboard/timeline/ConceptC";
 import { createClient } from "@/lib/supabase/client";
 import type { YearlySetup, YearlySetupSite } from "@/lib/supabase/types";
@@ -10,6 +18,11 @@ import type { YearlySetup, YearlySetupSite } from "@/lib/supabase/types";
 type SetupWithSites = YearlySetup & { yearly_setup_sites: YearlySetupSite[] };
 
 const ASSESSMENTS = ["Teacher DESSA", "Student DESSA", "SEIR"];
+
+function crossesAugReset(dates: string[]): boolean {
+  const months = dates.map((d) => new Date(d + "T00:00:00").getMonth());
+  return months.some((m) => m <= 6) && months.some((m) => m >= 7);
+}
 
 export default function YearlySetupPage() {
   const router = useRouter();
@@ -21,7 +34,6 @@ export default function YearlySetupPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-
   useEffect(() => {
     async function load() {
       const { data } = await supabase
@@ -30,7 +42,9 @@ export default function YearlySetupPage() {
         .order("created_at", { ascending: true });
 
       if (data) {
-        setDefaultSetup((data as SetupWithSites[]).find((s) => s.is_default) ?? null);
+        setDefaultSetup(
+          (data as SetupWithSites[]).find((s) => s.is_default) ?? null,
+        );
         setOverrides((data as SetupWithSites[]).filter((s) => !s.is_default));
       }
       setLoading(false);
@@ -63,9 +77,10 @@ export default function YearlySetupPage() {
     <div className="p-6">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-[22px] font-bold text-gray-900 mb-1">Yearly Setup</h1>
-          <p className="text-[13.5px] text-gray-500">
-            Plan your year ahead and set rating window timeframes for each school year.
+          <h1 className="text-[24px] font-bold text-gray-900">Yearly Setup</h1>
+          <p className="text-[16px] text-gray-500">
+            Plan your year ahead and set rating window timeframes for each
+            school year.
           </p>
         </div>
         {defaultSetup && (
@@ -84,33 +99,25 @@ export default function YearlySetupPage() {
         <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
             <div className="w-12 h-12 rounded-xl bg-[#eef2f8] flex items-center justify-center mb-4">
-              <CalendarClock size={22} className="text-[#1a4e8a]" strokeWidth={1.5} />
+              <CalendarClock
+                size={32}
+                className="text-[#1a4e8a]"
+                strokeWidth={1.5}
+              />
             </div>
-            <h3 className="text-[15px] font-semibold text-gray-800 mb-1">No yearly setup yet</h3>
-            <p className="text-sm text-gray-500 max-w-xs mb-6">
-              Define your rating windows and assessment configuration to get started.
+            <h3 className="text-[20px] font-semibold text-gray-800 mb-1">
+              No yearly setup yet
+            </h3>
+            <p className="text-[16px] text-gray-500 max-w-sm mb-6">
+              Define your rating windows and assessment configuration to get
+              started.
             </p>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => router.push("/settings/yearly-setup/edit")}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[13px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
-              >
-                <Pencil size={13} strokeWidth={1.75} />
-                Setup1
-              </button>
-              <button
                 onClick={() => router.push("/settings/yearly-setup/edit2")}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[16px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
               >
-                <Pencil size={13} strokeWidth={1.75} />
-                Setup2
-              </button>
-              <button
-                onClick={() => router.push("/settings/yearly-setup/edit3")}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-              >
-                <Pencil size={13} strokeWidth={1.75} />
-                Setup3
+                Setup
               </button>
             </div>
           </div>
@@ -120,66 +127,85 @@ export default function YearlySetupPage() {
           <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden mb-4">
             <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
               <div>
-                <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Default Setup</p>
-                <p className="text-[13.5px] text-gray-700">Applies to all sites unless overridden</p>
+                <p className="text-[18px] font-semibold text-gray-700 uppercase">
+                  2025–2026
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => router.push(`/settings/yearly-setup/edit?id=${defaultSetup.id}`)}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[13px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
+                  onClick={() =>
+                    router.push(
+                      `/settings/yearly-setup/edit2?id=${defaultSetup.id}`,
+                    )
+                  }
+                  className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                 >
-                  <Pencil size={13} strokeWidth={1.75} />
-                  Setup1
-                </button>
-                <button
-                  onClick={() => router.push(`/settings/yearly-setup/edit2?id=${defaultSetup.id}`)}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-                >
-                  <Pencil size={13} strokeWidth={1.75} />
-                  Setup2
-                </button>
-                <button
-                  onClick={() => router.push(`/settings/yearly-setup/edit3?id=${defaultSetup.id}`)}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-                >
-                  <Pencil size={13} strokeWidth={1.75} />
-                  Setup3
+                  Edit Setup
                 </button>
               </div>
             </div>
 
             <div className="px-6 py-5 border-b border-[#f0f4f8]">
-              <h3 className="text-[13.5px] font-semibold text-gray-800 mb-4">Rating windows</h3>
+              <h3 className="text-[13.5px] font-semibold text-gray-800 mb-4">
+                Rating windows
+              </h3>
               <ConceptC showYearLabel={false} />
             </div>
 
             <div className="px-6 py-5">
-              <h3 className="text-[13.5px] font-semibold text-gray-800 mb-4">Assessment configuration</h3>
+              <h3 className="text-[13.5px] font-semibold text-gray-800 mb-4">
+                Assessment configuration
+              </h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Starting Assessment</p>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    Starting Assessment
+                  </p>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
-                      {defaultSetup.assessment_type === "screener"
-                        ? <Zap size={12} className="text-white" strokeWidth={1.75} />
-                        : <ClipboardList size={12} className="text-white" strokeWidth={1.75} />}
+                      {defaultSetup.assessment_type === "screener" ? (
+                        <Zap
+                          size={12}
+                          className="text-white"
+                          strokeWidth={1.75}
+                        />
+                      ) : (
+                        <ClipboardList
+                          size={12}
+                          className="text-white"
+                          strokeWidth={1.75}
+                        />
+                      )}
                     </div>
                     <span className="text-sm font-semibold text-gray-800">
-                      {defaultSetup.assessment_type === "screener" ? "Screener" : "Full Assessment"}
+                      {defaultSetup.assessment_type === "screener"
+                        ? "Screener"
+                        : "Full Assessment"}
                     </span>
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Conditional Full DESSA</p>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    Conditional Full DESSA
+                  </p>
                   <p className="text-sm font-semibold text-gray-800">
-                    {defaultSetup.conditional_assignment ? `T-Score ≤ ${defaultSetup.t_score}` : "Disabled"}
+                    {defaultSetup.conditional_assignment
+                      ? `T-Score ≤ ${defaultSetup.t_score}`
+                      : "Disabled"}
                   </p>
                 </div>
                 <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Assessments</p>
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    Assessments
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {ASSESSMENTS.map((a) => (
-                      <span key={a} className="inline-block text-[11px] font-medium text-gray-600 bg-white border border-[#e8ecf0] rounded-full px-2 py-0.5">{a}</span>
+                      <span
+                        key={a}
+                        className="inline-block text-[11px] font-medium text-gray-600 bg-white border border-[#e8ecf0] rounded-full px-2 py-0.5"
+                      >
+                        {a}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -187,63 +213,80 @@ export default function YearlySetupPage() {
             </div>
           </div>
 
-          {/* Site overrides */}
+          {/* Aug 1 reset callout */}
+          {crossesAugReset(defaultSetup.dates) && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+              <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" strokeWidth={1.75} />
+              <div>
+                <p className="text-[13.5px] font-semibold text-amber-800">Some sites may have a window that crosses the DESSA system reset on Aug 1</p>
+                <p className="text-[13px] text-amber-700 mt-0.5">
+                  Ratings submitted after August 1st are classified as pre-assessments by DESSA, even if they fall within your post-window. Set up a custom schedule for affected sites to keep their reporting accurate.
+                </p>
+                <button
+                  onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                  className="mt-3 text-[12.5px] font-semibold text-amber-800 underline underline-offset-2 cursor-pointer hover:text-amber-900 transition-colors"
+                >
+                  Set up a custom schedule →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Custom Schedules */}
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h2 className="text-[15px] font-bold text-gray-900">Site Overrides</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Groups of sites that follow a different schedule than the default.</p>
+                <h2 className="text-[15px] font-bold text-gray-900">
+                  Custom Schedules
+                </h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Sites whose rating windows don't align with the default schedule.
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => router.push("/settings/yearly-setup/edit?override=true")}
+                  onClick={() =>
+                    router.push("/settings/yearly-setup/edit2?override=true")
+                  }
                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
                 >
                   <Plus size={13} strokeWidth={2} />
-                  Add Override (v1)
-                </button>
-                <button
-                  onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                >
-                  <Plus size={13} strokeWidth={2} />
-                  Add Override
-                </button>
-                <button
-                  onClick={() => router.push("/settings/yearly-setup/edit3?override=true")}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                >
-                  <Plus size={13} strokeWidth={2} />
-                  Setup3
+                  Add Custom Schedule
                 </button>
               </div>
             </div>
 
             {overrides.length === 0 ? (
               <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm px-6 py-10 text-center">
-                <p className="text-sm text-gray-400">No site overrides. All sites use the default setup.</p>
+                <p className="text-sm text-gray-400">
+                  No custom schedules. All sites follow the default setup.
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {overrides.map((override) => (
-                  <div key={override.id} className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
+                  <div
+                    key={override.id}
+                    className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden"
+                  >
                     <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
                       <div>
-                        <p className="text-[14px] font-bold text-gray-900">{override.group_name}</p>
+                        <p className="text-[14px] font-bold text-gray-900">
+                          {override.group_name}
+                        </p>
                         <p className="text-[12px] text-gray-400 mt-0.5">
-                          {override.yearly_setup_sites.map((s) => s.site_name).join(", ")}
+                          {override.yearly_setup_sites
+                            .map((s) => s.site_name)
+                            .join(", ")}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => router.push(`/settings/yearly-setup/edit?id=${override.id}&override=true`)}
-                          className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[12px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                        >
-                          <Pencil size={11} strokeWidth={1.75} />
-                          Edit (v1)
-                        </button>
-                        <button
-                          onClick={() => router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`)}
+                          onClick={() =>
+                            router.push(
+                              `/settings/yearly-setup/edit2?id=${override.id}&override=true`,
+                            )
+                          }
                           className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#1a4e8a] text-white text-[12px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                         >
                           <Pencil size={11} strokeWidth={1.75} />
@@ -260,17 +303,31 @@ export default function YearlySetupPage() {
                     <div className="px-6 py-4">
                       <div className="flex gap-6 text-sm">
                         <div>
-                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Windows</p>
-                          <p className="font-semibold text-gray-800">{override.window_count}</p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Assessment</p>
-                          <p className="font-semibold text-gray-800">{override.assessment_type === "screener" ? "Screener" : "Full Assessment"}</p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Threshold</p>
+                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            Windows
+                          </p>
                           <p className="font-semibold text-gray-800">
-                            {override.conditional_assignment ? `T-Score ≤ ${override.t_score}` : "Disabled"}
+                            {override.window_count}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            Assessment
+                          </p>
+                          <p className="font-semibold text-gray-800">
+                            {override.assessment_type === "screener"
+                              ? "Screener"
+                              : "Full Assessment"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            Threshold
+                          </p>
+                          <p className="font-semibold text-gray-800">
+                            {override.conditional_assignment
+                              ? `T-Score ≤ ${override.t_score}`
+                              : "Disabled"}
                           </p>
                         </div>
                       </div>
@@ -286,10 +343,15 @@ export default function YearlySetupPage() {
       {/* Delete confirmation */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setConfirmDeleteId(null)} />
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setConfirmDeleteId(null)}
+          />
           <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[400px]">
             <h2 className="text-[16px] font-bold text-gray-900 mb-2">
-              {confirmDeleteId === defaultSetup?.id ? "Delete this setup?" : "Delete override?"}
+              {confirmDeleteId === defaultSetup?.id
+                ? "Delete this setup?"
+                : "Delete custom schedule?"}
             </h2>
             <p className="text-[14px] text-gray-500 mb-6">
               {confirmDeleteId === defaultSetup?.id
@@ -297,11 +359,22 @@ export default function YearlySetupPage() {
                 : "Sites in this group will revert to the default yearly setup. This cannot be undone."}
             </p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setConfirmDeleteId(null)} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
                 Cancel
               </button>
-              <button onClick={handleDelete} disabled={deleting} className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60">
-                {deleting ? "Deleting…" : confirmDeleteId === defaultSetup?.id ? "Delete Setup" : "Delete Override"}
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60"
+              >
+                {deleting
+                  ? "Deleting…"
+                  : confirmDeleteId === defaultSetup?.id
+                    ? "Delete Setup"
+                    : "Delete Schedule"}
               </button>
             </div>
           </div>
