@@ -121,11 +121,8 @@ export default function YearlySetupPage() {
           <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden mb-4">
             <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
               <div>
-                <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-wide mb-0.5">
-                  Default Setup
-                </p>
-                <p className="text-[13.5px] text-gray-700">
-                  Applies to all sites unless overridden
+                <p className="text-[18px] font-semibold text-gray-700 uppercase">
+                  2025–2026
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -137,7 +134,7 @@ export default function YearlySetupPage() {
                   }
                   className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                 >
-                  Setup
+                  Edit Setup
                 </button>
               </div>
             </div>
