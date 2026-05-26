@@ -72,12 +72,14 @@ const DEFAULT_DATES: Record<number, string[]> = {
 const DEFAULT_COUNT = 3;
 
 type WindowConfig = {
+  assessment: "screener" | "full";
   conditionalAssignment: boolean;
   tScore: string;
   resetBehavior: "rescreen" | "skip";
 };
 
 const DEFAULT_WINDOW_CONFIG: WindowConfig = {
+  assessment: "screener",
   conditionalAssignment: true,
   tScore: "40",
   resetBehavior: "rescreen",
@@ -236,7 +238,6 @@ type StepId =
   | "windows"
   | "dates"
   | "assessment"
-  | "screener"
   | "students";
 
 const STEP_DEFS: Record<
@@ -275,19 +276,11 @@ const STEP_DEFS: Record<
   },
   assessment: {
     label: "Teacher Assessments",
-    desc: "Choose the starting assessment type",
+    desc: "Configure assessment per window",
     icon: ClipboardList,
     title: "Teacher Completed Assessments",
     subtitle:
-      "Select the starting assessment type for teachers. The screener is a quick rating form, while the full assessment measures eight social-emotional competencies in depth.",
-  },
-  screener: {
-    label: "Screener Configuration",
-    desc: "Set thresholds and window behavior",
-    icon: Zap,
-    title: "Screener Configuration",
-    subtitle:
-      "The DESSA screener gives a quick overall score. You can still require a full DESSA for students who score below a set threshold.",
+      "Choose the assessment type for each rating window. Each window can use a different form, and screener windows can automatically escalate students who score below a threshold.",
   },
   students: {
     label: "Student Assessments",
@@ -395,10 +388,12 @@ function ReviewPanel({
               <p className="text-[18px] font-semibold text-gray-800">Teacher Completed Assessments</p>
               <button onClick={() => onGoToStep("assessment")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
             </div>
-            {row("Starting assessment", assessment === "screener" ? "Screener" : "Full Assessment")}
-            {assessment === "screener" && row("Conditional full DESSA", conditionalAssignment ? `T-Score ≤ ${tScore}` : "Disabled")}
-            {assessment === "screener" && conditionalAssignment && row("If previously below threshold", resetBehavior === "rescreen" ? "Re-screen them" : "Skip to full DESSA")}
-            {assessment === "screener" && row("Per-window config", sameConfigAllWindows ? "Same for all windows" : "Configured per window")}
+            {windowConfigs.map((wc, i) => {
+              const wLabel = labels[i];
+              const typeLabel = wc.assessment === "screener" ? "Screener" : "Full Assessment";
+              const threshold = wc.assessment === "screener" && wc.conditionalAssignment ? ` · Full DESSA ≤ ${wc.tScore}` : wc.assessment === "screener" ? " · No escalation" : "";
+              return row(wLabel, `${typeLabel}${threshold}`);
+            })}
           </div>
           <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
             <p className="text-[18px] font-semibold text-gray-800 mb-2">Student Completed Assessments</p>
@@ -645,11 +640,12 @@ function EditSetupPage() {
         );
         return wc
           ? {
+              assessment: (wc.assessment_type ?? data.assessment_type ?? "screener") as "screener" | "full",
               conditionalAssignment: wc.conditional_assignment,
               tScore: wc.t_score,
               resetBehavior: wc.reset_behavior as "rescreen" | "skip",
             }
-          : { ...DEFAULT_WINDOW_CONFIG };
+          : { ...DEFAULT_WINDOW_CONFIG, assessment: (data.assessment_type ?? "screener") as "screener" | "full" };
       });
       const loadedSites =
         data.yearly_setup_sites?.map(
@@ -688,17 +684,18 @@ function EditSetupPage() {
 
   const saveToSupabase = async () => {
     setSaving(true);
+    const derivedAssessment = windowConfigs.some((wc) => wc.assessment === "screener") ? "screener" : "full";
     const payload = {
       is_default: !isOverride,
       group_name: isOverride ? overrideName || null : null,
       year: "2025-2026",
       window_count: windowCount,
       dates,
-      assessment_type: assessment,
-      conditional_assignment: conditionalAssignment,
-      t_score: tScore,
-      reset_behavior: resetBehavior,
-      same_config_all_windows: sameConfigAllWindows,
+      assessment_type: derivedAssessment,
+      conditional_assignment: windowConfigs.some((wc) => wc.conditionalAssignment),
+      t_score: windowConfigs[0]?.tScore ?? tScore,
+      reset_behavior: windowConfigs[0]?.resetBehavior ?? resetBehavior,
+      same_config_all_windows: false,
       site_leader_manage: siteLeaderManage,
     };
     let setupId = existingId;
@@ -733,17 +730,15 @@ function EditSetupPage() {
         .from("yearly_setup_window_configs")
         .delete()
         .eq("setup_id", setupId);
-      if (!sameConfigAllWindows) {
-        await db.from("yearly_setup_window_configs").insert(
-          windowConfigs.map((wc, i) => ({
-            setup_id: setupId,
-            window_index: i,
-            conditional_assignment: wc.conditionalAssignment,
-            t_score: wc.tScore,
-            reset_behavior: wc.resetBehavior,
-          })),
-        );
-      }
+      await db.from("yearly_setup_window_configs").insert(
+        windowConfigs.map((wc, i) => ({
+          setup_id: setupId,
+          window_index: i,
+          conditional_assignment: wc.conditionalAssignment,
+          t_score: wc.tScore,
+          reset_behavior: wc.resetBehavior,
+        })),
+      );
     }
     setSaving(false);
   };
@@ -754,11 +749,6 @@ function EditSetupPage() {
   const isDirty =
     windowCount !== initial.windowCount ||
     JSON.stringify(dates) !== JSON.stringify(initial.dates) ||
-    assessment !== initial.assessment ||
-    conditionalAssignment !== initial.conditionalAssignment ||
-    tScore !== initial.tScore ||
-    resetBehavior !== initial.resetBehavior ||
-    sameConfigAllWindows !== initial.sameConfigAllWindows ||
     JSON.stringify(windowConfigs) !== JSON.stringify(initial.windowConfigs) ||
     siteLeaderManage !== initial.siteLeaderManage ||
     overrideName !== initial.overrideName ||
@@ -768,9 +758,7 @@ function EditSetupPage() {
   const getStepSequence = (): StepId[] => {
     const seq: StepId[] = [];
     if (isOverride) seq.push("sites");
-    seq.push("windows", "dates", "assessment");
-    if (assessment === "screener") seq.push("screener");
-    seq.push("students");
+    seq.push("windows", "dates", "assessment", "students");
     return seq;
   };
 
@@ -854,6 +842,14 @@ function EditSetupPage() {
     setTScore(LAST_YEAR.tScore);
     setResetBehavior(LAST_YEAR.resetEachWindow ? "rescreen" : "skip");
     setSiteLeaderManage(LAST_YEAR.siteLeaderManage);
+    setWindowConfigs(
+      Array(LAST_YEAR.windowCount).fill(null).map(() => ({
+        assessment: "screener" as const,
+        conditionalAssignment: LAST_YEAR.conditionalAssignment,
+        tScore: LAST_YEAR.tScore,
+        resetBehavior: LAST_YEAR.resetEachWindow ? "rescreen" as const : "skip" as const,
+      })),
+    );
     setShowLastYear(false);
   };
 
@@ -1016,233 +1012,122 @@ function EditSetupPage() {
 
       case "assessment": {
         return (
-          <div className="space-y-8">
-            {/* Explainer */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-[13.5px] font-semibold text-gray-800 mb-1">
-                  Screener
-                </p>
-                <p className="text-[13px] text-gray-500 leading-snug">
-                  A quick 7-question form teachers fill out on behalf of each
-                  student. Fast to complete, great for identifying who needs a
-                  closer look.
-                </p>
-              </div>
-              <div>
-                <p className="text-[13.5px] font-semibold text-gray-800 mb-1">
-                  Full Assessment
-                </p>
-                <p className="text-[13px] text-gray-500 leading-snug">
-                  A 40+ question form completed by teachers that measures eight
-                  social-emotional competencies. Richer data, more time to
-                  complete.
-                </p>
-              </div>
-            </div>
-
-            {/* Cards */}
-            <div className="grid grid-cols-2 gap-3">
-              {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc }) => {
-                const isSelected = assessment === value;
-                return (
-                  <button
-                    key={value}
-                    onClick={() => setAssessment(value as "screener" | "full")}
-                    className={`text-left rounded-xl border-2 p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}
-                    >
-                      <Icon
-                        size={18}
-                        className={isSelected ? "text-white" : "text-gray-500"}
-                        strokeWidth={1.75}
-                      />
-                    </div>
-                    <p className={`text-base font-semibold mb-1 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
-                    <p className="text-base text-gray-500 leading-snug">{desc}</p>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Why conditional assignment appears */}
-            {assessment === "screener" && (
-              <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-[#4a5c9c]">
-                <Info />
-                <AlertTitle className="text-[#132d78]">
-                  Why you&apos;re seeing this
-                </AlertTitle>
-                <AlertDescription className="text-[#132d78] opacity-80">
-                  Because you selected Screener, the section below lets you
-                  automatically escalate students who score below a set
-                  threshold — so anyone who may need more support gets a
-                  complete picture.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Conditional assignment — first section of screener config */}
-            {assessment === "screener" && (
-              <div>
-                <h2 className="text-[20px] font-semibold text-gray-800 mb-4">
-                  Additional Attention
-                </h2>
-                <p className="text-[16px] font-semibold text-gray-800 mb-1">
-                  Should students who score below a threshold automatically
-                  require a full DESSA?
-                </p>
-                <p className="text-base text-gray-500 mb-6">
-                  We recommend a threshold of 40, which indicates a Need For
-                  Instruction.
-                </p>
-                <RadioGroup
-                  value={conditionalAssignment ? "yes" : "no"}
-                  onValueChange={(v) => setConditionalAssignment(v === "yes")}
-                  className="gap-5"
-                >
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <RadioGroupItem value="yes" className="mt-0.5 shrink-0" />
-                    <div>
-                      <span className="text-base font-semibold text-gray-800 block mb-1">
-                        Yes — assign a full DESSA when a student's T-Score is at
-                        or below
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={tScore}
-                          onChange={(e) => setTScore(e.target.value)}
-                          disabled={!conditionalAssignment}
-                          className="w-16 h-8 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
-                        />
-                        <span className="text-sm text-gray-500">T-Score</span>
-                      </div>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <RadioGroupItem value="no" className="mt-0.5 shrink-0" />
-                    <span className="text-base font-semibold text-gray-800">
-                      No — all students complete only the screener
+          <div className="space-y-4">
+            {windowConfigs.map((cfg, i) => {
+              const color = BAND_COLORS[i % BAND_COLORS.length];
+              return (
+                <div key={i} className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+                  {/* Window header */}
+                  <div className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b border-[#f0f4f8]" style={{ borderLeftWidth: 4, borderLeftColor: color.text, borderLeftStyle: "solid" }}>
+                    <p className="text-[15px] font-bold text-gray-800">{labels[i]}</p>
+                    <span className="text-sm text-gray-400">
+                      {dates[i] ? `Opens ${new Date(dates[i] + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "—"}
                     </span>
-                  </label>
-                </RadioGroup>
-              </div>
-            )}
+                  </div>
+
+                  <div className="px-5 py-4 space-y-5">
+                    {/* Screener / Full picker */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc }) => {
+                        const isSelected = cfg.assessment === value;
+                        return (
+                          <button
+                            key={value}
+                            onClick={() => updateWindowConfig(i, { assessment: value as "screener" | "full" })}
+                            className={`text-left rounded-xl border-2 p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                          >
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
+                              <Icon size={15} className={isSelected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
+                            </div>
+                            <p className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
+                            <p className="text-xs text-gray-500 leading-snug">{desc}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Screener-only settings */}
+                    <AnimatePresence initial={false}>
+                      {cfg.assessment === "screener" && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.18, ease: "easeOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div className="border-t border-[#f0f4f8] pt-4 space-y-4">
+                            {/* Conditional assignment */}
+                            <div>
+                              <p className="text-sm font-semibold text-gray-700 mb-3">
+                                Require full DESSA for students below a threshold?
+                              </p>
+                              <RadioGroup
+                                value={cfg.conditionalAssignment ? "yes" : "no"}
+                                onValueChange={(v) => updateWindowConfig(i, { conditionalAssignment: v === "yes" })}
+                                className="gap-3"
+                              >
+                                <label className="flex items-start gap-2.5 cursor-pointer">
+                                  <RadioGroupItem value="yes" className="mt-0.5 shrink-0" />
+                                  <div>
+                                    <span className="text-sm font-semibold text-gray-800 block mb-1.5">
+                                      Yes — assign full DESSA at or below T-Score
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="number"
+                                        value={cfg.tScore}
+                                        onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
+                                        disabled={!cfg.conditionalAssignment}
+                                        className="w-16 h-7 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
+                                      />
+                                      <span className="text-xs text-gray-500">T-Score</span>
+                                    </div>
+                                  </div>
+                                </label>
+                                <label className="flex items-start gap-2.5 cursor-pointer">
+                                  <RadioGroupItem value="no" className="mt-0.5 shrink-0" />
+                                  <span className="text-sm font-semibold text-gray-800">
+                                    No — all students complete only the screener
+                                  </span>
+                                </label>
+                              </RadioGroup>
+                            </div>
+
+                            {/* Reset behavior — only relevant with multiple windows */}
+                            {cfg.conditionalAssignment && windowCount > 1 && (
+                              <div>
+                                <p className="text-sm font-semibold text-gray-700 mb-2.5">
+                                  Students who scored below the threshold in a prior window:
+                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {([
+                                    { value: "rescreen", label: "Re-screen them", sublabel: "Start with the screener — they may have improved." },
+                                    { value: "skip", label: "Skip to full DESSA", sublabel: "Go straight to the full assessment." },
+                                  ] as const).map(({ value, label, sublabel }) => (
+                                    <button
+                                      key={value}
+                                      onClick={() => updateWindowConfig(i, { resetBehavior: value })}
+                                      className={`text-left rounded-lg border-2 px-3 py-2.5 transition-all cursor-pointer ${cfg.resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                                    >
+                                      <p className={`text-sm font-semibold mb-0.5 ${cfg.resetBehavior === value ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
+                                      <p className="text-xs text-gray-500 leading-snug">{sublabel}</p>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         );
       }
-
-      case "screener":
-        return (
-          <div className="space-y-6">
-            <AnimatePresence initial={false}>
-              {conditionalAssignment && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
-                  className="overflow-hidden"
-                >
-                  <div>
-                    <p className="text-[16px] font-semibold text-gray-800 mb-1">If a student previously scored below the threshold, what should happen next window?</p>
-                    <p className="text-base text-gray-500 mb-5">Re-screening lets teachers do a quick check first. Going straight to the full DESSA gives you richer data.</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {(
-                        [
-                          {
-                            value: "rescreen",
-                            label: "Re-screen them",
-                            sublabel:
-                              "Start with the screener — they may have improved since the last window.",
-                          },
-                          {
-                            value: "skip",
-                            label: "Skip to full DESSA",
-                            sublabel:
-                              "Go straight to the full assessment for any student who previously scored below the threshold.",
-                          },
-                        ] as const
-                      ).map(({ value, label, sublabel }) => (
-                        <button
-                          key={value}
-                          onClick={() => setResetBehavior(value)}
-                          className={`text-left rounded-xl border-2 px-4 py-3 transition-all cursor-pointer ${resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                        >
-                          <p className={`text-base font-semibold mb-1 ${resetBehavior === value ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
-                          <p className="text-base text-gray-500 leading-snug">{sublabel}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="border-t border-[#f0f4f8] pt-5">
-              <p className="text-[16px] font-semibold text-gray-800 mb-1">Should all windows use the same settings?</p>
-              <p className="text-base text-gray-500 mb-5">Each window can have its own threshold if your needs change throughout the year.</p>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {([
-                  { value: true, label: "Yes, same for all windows" },
-                  { value: false, label: "No, configure each window" },
-                ] as const).map(({ value, label }) => (
-                  <button key={String(value)} onClick={() => setSameConfigAllWindows(value)}
-                    className={`text-left rounded-xl border-2 px-4 py-2.5 text-base font-semibold transition-all cursor-pointer ${sameConfigAllWindows === value ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]" : "border-[#e8ecf0] bg-white text-gray-600 hover:border-gray-300"}`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <AnimatePresence initial={false}>
-                {!sameConfigAllWindows && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="overflow-hidden"
-                  >
-                    <div className="space-y-4 pt-2">
-                      {windowConfigs.map((cfg, i) => (
-                        <div
-                          key={i}
-                          className="rounded-xl border border-[#e8ecf0] p-4"
-                        >
-                          <p className="text-base font-bold text-gray-800 mb-3">
-                            {labels[i]}
-                          </p>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-700">Assign full DESSA at or below T-Score</span>
-                              <input type="number" value={cfg.tScore} onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
-                                className="w-16 h-7 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30"
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              {([
-                                { value: "rescreen", label: "Re-screen them" },
-                                { value: "skip", label: "Skip to full DESSA" },
-                              ] as const).map(({ value, label }) => (
-                                <button key={value} onClick={() => updateWindowConfig(i, { resetBehavior: value })}
-                                  className={`text-left rounded-lg border-2 px-3 py-2 text-[14px] font-semibold transition-all cursor-pointer ${cfg.resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]" : "border-[#e8ecf0] bg-white text-gray-700 hover:border-gray-300"}`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        );
 
       case "students":
         return (
