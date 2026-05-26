@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, Info, Zap, ClipboardList, X,
-  CheckCircle2, CalendarClock, Calendar, Users, Check, Building2,
+  CheckCircle2, CalendarClock, Calendar, Users, Check, Building2, Ban,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -225,25 +225,25 @@ const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {
 
 function ReviewPanel({
   windowCount, dates, labels, assessment, conditionalAssignment, tScore, resetBehavior,
-  sameConfigAllWindows, windowConfigs, siteLeaderManage, onBack, onSave, saving,
+  sameConfigAllWindows, windowConfigs, siteLeaderManage, onBack, onGoToStep, onSave, saving,
 }: {
   windowCount: number; dates: string[]; labels: string[]; assessment: "screener" | "full";
   conditionalAssignment: boolean; tScore: string; resetBehavior: "rescreen" | "skip";
   sameConfigAllWindows: boolean; windowConfigs: WindowConfig[]; siteLeaderManage: boolean;
-  onBack: () => void; onSave: () => void; saving?: boolean;
+  onBack: () => void; onGoToStep: (stepId: StepId) => void; onSave: () => void; saving?: boolean;
 }) {
   const windowDesc = WINDOW_OPTIONS.find((o) => o.count === windowCount)!.desc;
   const row = (label: string, value: React.ReactNode) => (
-    <div key={label} className="flex justify-between items-baseline gap-6 py-2.5 border-b border-[#f0f4f8] last:border-0">
-      <span className="text-sm font-semibold text-gray-700 shrink-0">{label}</span>
-      <span className="text-sm text-gray-500 text-right">{value}</span>
+    <div key={label} className="flex flex-col gap-1 py-2.5 border-b border-[#f0f4f8] last:border-0">
+      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+      <span className="text-sm font-medium text-gray-700">{value}</span>
     </div>
   );
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onBack} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#e8ecf0]">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8ecf0]">
           <div>
             <h2 className="text-[16px] font-bold text-gray-900">Review your setup</h2>
             <p className="text-sm text-gray-500 mt-0.5">2025–2026 School Year</p>
@@ -252,25 +252,41 @@ function ReviewPanel({
             <X size={16} />
           </button>
         </div>
-        <div className="px-6 py-4 overflow-y-auto max-h-[60vh] space-y-5">
-          <div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Rating Windows</p>
+        <div className="px-8 py-6 overflow-y-auto max-h-[75vh] space-y-4 bg-[#f8fafc]">
+          <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[18px] font-semibold text-gray-800">Rating Windows</p>
+              <button onClick={() => onGoToStep("windows")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
+            </div>
             {row("Schedule", `${windowCount} windows — ${windowDesc}`)}
-            {dates.map((d, i) => row(labels[i], d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"))}
+            <div className="mt-4 mb-3">
+              <WizardTimeline dates={dates} labels={labels} />
+            </div>
+            <div className="flex justify-between pt-1">
+              {dates.map((d, i) => (
+                <div key={i} className={`flex flex-col gap-1 flex-1 ${i === dates.length - 1 ? "items-end" : ""}`}>
+                  <span className="text-[12px] font-semibold text-gray-400">{labels[i]}</span>
+                  <span className="text-sm font-semibold text-gray-700">{d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Teacher Completed Assessments</p>
+          <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[18px] font-semibold text-gray-800">Teacher Completed Assessments</p>
+              <button onClick={() => onGoToStep("assessment")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
+            </div>
             {row("Starting assessment", assessment === "screener" ? "Screener" : "Full Assessment")}
             {assessment === "screener" && row("Conditional full DESSA", conditionalAssignment ? `T-Score ≤ ${tScore}` : "Disabled")}
             {assessment === "screener" && conditionalAssignment && row("If previously below threshold", resetBehavior === "rescreen" ? "Re-screen them" : "Skip to full DESSA")}
             {assessment === "screener" && row("Per-window config", sameConfigAllWindows ? "Same for all windows" : "Configured per window")}
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Student Completed Assessments</p>
+          <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
+            <p className="text-[18px] font-semibold text-gray-800 mb-2">Student Completed Assessments</p>
             {row("Site Leader access control", siteLeaderManage ? "Enabled" : "Disabled")}
           </div>
         </div>
-        <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-t border-[#e8ecf0]">
+        <div className="flex items-center justify-between px-8 py-5 bg-[#f8fafc] border-t border-[#e8ecf0]">
           <button onClick={onBack} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
             Back to Edit
           </button>
@@ -656,10 +672,10 @@ function EditSetupPage() {
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}>
                     {count}
                   </div>
-                  <p className={`text-[13px] font-bold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-900"}`}>
+                  <p className={`text-base font-semibold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>
                     {count === 1 ? "1 Window" : `${count} Windows`}
                   </p>
-                  <p className="text-[11px] text-gray-500 leading-snug">{desc}</p>
+                  <p className="text-sm text-gray-500 leading-snug">{desc}</p>
                 </button>
               );
             })}
@@ -712,8 +728,8 @@ function EditSetupPage() {
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
                       <Icon size={18} className={isSelected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
                     </div>
-                    <p className={`text-[14px] font-bold mb-1 ${isSelected ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
-                    <p className="text-sm text-gray-500 leading-snug">{desc}</p>
+                    <p className={`text-base font-semibold mb-1 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
+                    <p className="text-base text-gray-500 leading-snug">{desc}</p>
                   </button>
                 );
               })}
@@ -774,8 +790,8 @@ function EditSetupPage() {
               {conditionalAssignment && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18, ease: "easeOut" }} className="overflow-hidden">
                   <div>
-                    <p className="text-[14px] font-semibold text-gray-800 mb-1">If a student previously scored below the threshold, what should happen next window?</p>
-                    <p className="text-sm text-gray-500 mb-3">Re-screening lets teachers do a quick check first. Going straight to the full DESSA gives you richer data.</p>
+                    <p className="text-[16px] font-semibold text-gray-800 mb-1">If a student previously scored below the threshold, what should happen next window?</p>
+                    <p className="text-base text-gray-500 mb-5">Re-screening lets teachers do a quick check first. Going straight to the full DESSA gives you richer data.</p>
                     <div className="grid grid-cols-2 gap-3">
                       {([
                         { value: "rescreen", label: "Re-screen them", sublabel: "Start with the screener — they may have improved since the last window." },
@@ -784,8 +800,8 @@ function EditSetupPage() {
                         <button key={value} onClick={() => setResetBehavior(value)}
                           className={`text-left rounded-xl border-2 px-4 py-3 transition-all cursor-pointer ${resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
                         >
-                          <p className={`text-[14px] font-bold mb-1 ${resetBehavior === value ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
-                          <p className="text-sm text-gray-500 leading-snug">{sublabel}</p>
+                          <p className={`text-base font-semibold mb-1 ${resetBehavior === value ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
+                          <p className="text-base text-gray-500 leading-snug">{sublabel}</p>
                         </button>
                       ))}
                     </div>
@@ -795,15 +811,15 @@ function EditSetupPage() {
             </AnimatePresence>
 
             <div className="border-t border-[#f0f4f8] pt-5">
-              <p className="text-[14px] font-semibold text-gray-800 mb-1">Do all rating windows share the same configuration?</p>
-              <p className="text-sm text-gray-500 mb-3">If your threshold changes across windows, you can configure each one independently.</p>
+              <p className="text-[16px] font-semibold text-gray-800 mb-1">Should all windows use the same settings?</p>
+              <p className="text-base text-gray-500 mb-5">Each window can have its own threshold if your needs change throughout the year.</p>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {([
                   { value: true, label: "Yes, same for all windows" },
                   { value: false, label: "No, configure each window" },
                 ] as const).map(({ value, label }) => (
                   <button key={String(value)} onClick={() => setSameConfigAllWindows(value)}
-                    className={`text-left rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition-all cursor-pointer ${sameConfigAllWindows === value ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]" : "border-[#e8ecf0] bg-white text-gray-700 hover:border-gray-300"}`}
+                    className={`text-left rounded-xl border-2 px-4 py-2.5 text-base font-semibold transition-all cursor-pointer ${sameConfigAllWindows === value ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]" : "border-[#e8ecf0] bg-white text-gray-600 hover:border-gray-300"}`}
                   >
                     {label}
                   </button>
@@ -817,37 +833,24 @@ function EditSetupPage() {
                         <div key={i} className="rounded-xl border border-[#e8ecf0] p-4">
                           <p className="text-[14px] font-bold text-gray-800 mb-3">{labels[i]}</p>
                           <div className="space-y-3">
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                              <div onClick={() => updateWindowConfig(i, { conditionalAssignment: !cfg.conditionalAssignment })}
-                                className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors cursor-pointer ${cfg.conditionalAssignment ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300 group-hover:border-gray-400"}`}
-                              >
-                                {cfg.conditionalAssignment && (
-                                  <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                                    <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-700">Assign full DESSA at or below T-Score</span>
-                                <input type="number" value={cfg.tScore} onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })} disabled={!cfg.conditionalAssignment}
-                                  className="w-16 h-7 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 disabled:opacity-40 disabled:cursor-not-allowed"
-                                />
-                              </div>
-                            </label>
-                            {cfg.conditionalAssignment && (
-                              <div className="grid grid-cols-2 gap-2 pl-7">
-                                {([
-                                  { value: "rescreen", label: "Re-screen them" },
-                                  { value: "skip", label: "Skip to full DESSA" },
-                                ] as const).map(({ value, label }) => (
-                                  <button key={value} onClick={() => updateWindowConfig(i, { resetBehavior: value })}
-                                    className={`text-left rounded-lg border-2 px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${cfg.resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]" : "border-[#e8ecf0] bg-white text-gray-700 hover:border-gray-300"}`}
-                                  >
-                                    {label}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-700">Assign full DESSA at or below T-Score</span>
+                              <input type="number" value={cfg.tScore} onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
+                                className="w-16 h-7 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {([
+                                { value: "rescreen", label: "Re-screen them" },
+                                { value: "skip", label: "Skip to full DESSA" },
+                              ] as const).map(({ value, label }) => (
+                                <button key={value} onClick={() => updateWindowConfig(i, { resetBehavior: value })}
+                                  className={`text-left rounded-lg border-2 px-3 py-2 text-[14px] font-semibold transition-all cursor-pointer ${cfg.resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8] text-[#1a4e8a]" : "border-[#e8ecf0] bg-white text-gray-700 hover:border-gray-300"}`}
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -861,21 +864,33 @@ function EditSetupPage() {
 
       case "students":
         return (
-          <div>
-            <p className="text-[14px] font-semibold text-gray-800 mb-1">Should Site Leaders be able to control when students can access their assessments?</p>
-            <p className="text-sm text-gray-500 mb-4">This gives Site Leaders control over when students can access their self-assessment within a rating window.</p>
+          <div className="space-y-8">
+            <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-[#4a5c9c]">
+              <Info />
+              <AlertTitle className="text-[#132d78]">About this setting</AlertTitle>
+              <AlertDescription className="text-[#132d78] opacity-80">
+                When Site Leaders control access, students can only submit assessments during open rating windows, keeping your data clean and tied to the right time period.
+              </AlertDescription>
+            </Alert>
+            <div>
+            <p className="text-[16px] font-semibold text-gray-800 mb-1">Should Site Leaders be able to control when students can access their assessments?</p>
+            <p className="text-base text-gray-500 mb-5">This gives Site Leaders control over when students can access their self-assessment within a rating window.</p>
             <div className="grid grid-cols-2 gap-3">
               {([
-                { value: true, label: "Yes", sublabel: "Site Leaders can open and close student access at their sites independently." },
-                { value: false, label: "No", sublabel: "Student assessments open automatically at the start of each rating window." },
-              ] as const).map(({ value, label, sublabel }) => (
+                { value: true, icon: Check, label: "Yes", sublabel: "Site Leaders can open and close student access at their sites independently." },
+                { value: false, icon: Ban, label: "No", sublabel: "Student assessments open automatically at the start of each rating window." },
+              ] as const).map(({ value, icon: Icon, label, sublabel }) => (
                 <button key={String(value)} onClick={() => setSiteLeaderManage(value)}
                   className={`text-left rounded-xl border-2 px-4 py-3 transition-all cursor-pointer ${siteLeaderManage === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
                 >
-                  <p className={`text-[14px] font-bold mb-1 ${siteLeaderManage === value ? "text-[#1a4e8a]" : "text-gray-900"}`}>{label}</p>
-                  <p className="text-sm text-gray-500 leading-snug">{sublabel}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon size={16} className={siteLeaderManage === value ? "text-[#1a4e8a]" : "text-gray-400"} strokeWidth={2} />
+                    <p className={`text-base font-semibold ${siteLeaderManage === value ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
+                  </div>
+                  <p className="text-base text-gray-500 leading-snug">{sublabel}</p>
                 </button>
               ))}
+            </div>
             </div>
           </div>
         );
@@ -920,6 +935,7 @@ function EditSetupPage() {
           sameConfigAllWindows={sameConfigAllWindows} windowConfigs={windowConfigs}
           siteLeaderManage={siteLeaderManage}
           onBack={() => setShowReview(false)}
+          onGoToStep={(stepId) => { setShowReview(false); setCurrentStepIndex(stepSequence.indexOf(stepId)); }}
           onSave={async () => {
             await saveToSupabase();
             setShowReview(false);
