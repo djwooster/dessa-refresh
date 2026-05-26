@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Plus,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { ConceptC } from "@/components/dashboard/timeline/ConceptC";
 import { createClient } from "@/lib/supabase/client";
@@ -17,6 +18,11 @@ import type { YearlySetup, YearlySetupSite } from "@/lib/supabase/types";
 type SetupWithSites = YearlySetup & { yearly_setup_sites: YearlySetupSite[] };
 
 const ASSESSMENTS = ["Teacher DESSA", "Student DESSA", "SEIR"];
+
+function crossesAugReset(dates: string[]): boolean {
+  const months = dates.map((d) => new Date(d + "T00:00:00").getMonth());
+  return months.some((m) => m <= 6) && months.some((m) => m >= 7);
+}
 
 export default function YearlySetupPage() {
   const router = useRouter();
@@ -207,16 +213,34 @@ export default function YearlySetupPage() {
             </div>
           </div>
 
-          {/* Site overrides */}
+          {/* Aug 1 reset callout */}
+          {crossesAugReset(defaultSetup.dates) && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+              <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" strokeWidth={1.75} />
+              <div>
+                <p className="text-[13.5px] font-semibold text-amber-800">Some sites may have a window that crosses the DESSA system reset on Aug 1</p>
+                <p className="text-[13px] text-amber-700 mt-0.5">
+                  Ratings submitted after August 1st are classified as pre-assessments by DESSA, even if they fall within your post-window. Set up a custom schedule for affected sites to keep their reporting accurate.
+                </p>
+                <button
+                  onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                  className="mt-3 text-[12.5px] font-semibold text-amber-800 underline underline-offset-2 cursor-pointer hover:text-amber-900 transition-colors"
+                >
+                  Set up a custom schedule →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Custom Schedules */}
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-[15px] font-bold text-gray-900">
-                  Site Overrides
+                  Custom Schedules
                 </h2>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  Groups of sites that follow a different schedule than the
-                  default.
+                  Sites whose rating windows don't align with the default schedule.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -227,7 +251,7 @@ export default function YearlySetupPage() {
                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
                 >
                   <Plus size={13} strokeWidth={2} />
-                  Add Override
+                  Add Custom Schedule
                 </button>
               </div>
             </div>
@@ -235,7 +259,7 @@ export default function YearlySetupPage() {
             {overrides.length === 0 ? (
               <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm px-6 py-10 text-center">
                 <p className="text-sm text-gray-400">
-                  No site overrides. All sites use the default setup.
+                  No custom schedules. All sites follow the default setup.
                 </p>
               </div>
             ) : (
@@ -327,7 +351,7 @@ export default function YearlySetupPage() {
             <h2 className="text-[16px] font-bold text-gray-900 mb-2">
               {confirmDeleteId === defaultSetup?.id
                 ? "Delete this setup?"
-                : "Delete override?"}
+                : "Delete custom schedule?"}
             </h2>
             <p className="text-[14px] text-gray-500 mb-6">
               {confirmDeleteId === defaultSetup?.id
@@ -350,7 +374,7 @@ export default function YearlySetupPage() {
                   ? "Deleting…"
                   : confirmDeleteId === defaultSetup?.id
                     ? "Delete Setup"
-                    : "Delete Override"}
+                    : "Delete Schedule"}
               </button>
             </div>
           </div>
