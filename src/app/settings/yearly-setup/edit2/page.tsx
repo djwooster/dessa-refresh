@@ -134,12 +134,7 @@ function WizardTimeline({
   if (valid.length === 0) return null;
 
   const rangeStart = valid[0];
-  const last = valid[valid.length - 1];
-  const rangeEnd = new Date(
-    last.getFullYear() + (last.getMonth() >= 6 ? 1 : 0),
-    5,
-    30,
-  );
+  const rangeEnd = new Date(rangeStart.getFullYear() + 1, 7, 1);
 
   const rangeMs = rangeEnd.getTime() - rangeStart.getTime();
   const pct = (d: Date) =>
@@ -256,7 +251,7 @@ const STEP_DEFS: Record<
     icon: Building2,
     title: "Site Selection",
     subtitle:
-      "Choose which sites should follow this override schedule. Sites already assigned to another group will be flagged.",
+      "Choose which sites should follow this override schedule.",
   },
   windows: {
     label: "Rating Windows",
@@ -321,10 +316,7 @@ const MOCK_SITES = [
   "Monroe Elementary",
 ];
 
-const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {
-  "Jefferson Elementary": "North Region Group",
-  "Adams Middle": "North Region Group",
-};
+const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {};
 
 // ─── Shared modals (identical to /edit) ───────────────────────────────────────
 
@@ -334,13 +326,13 @@ function ReviewPanel({
 }: {
   windowCount: number; dates: string[]; labels: string[]; assessment: "screener" | "full";
   conditionalAssignment: boolean; tScore: string; resetBehavior: "rescreen" | "skip";
-  sameConfigAllWindows: boolean; windowConfigs: WindowConfig[]; siteLeaderManage: boolean;
+  sameConfigAllWindows: boolean; windowConfigs: WindowConfig[]; siteLeaderManage: boolean; isOverride: boolean;
   onBack: () => void; onGoToStep: (stepId: StepId) => void; onSave: () => void; saving?: boolean;
 }) {
   const windowDesc = WINDOW_OPTIONS.find((o) => o.count === windowCount)!.desc;
   const row = (label: string, value: React.ReactNode) => (
     <div key={label} className="flex flex-col gap-1 py-2.5 border-b border-[#f0f4f8] last:border-0">
-      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+      <span className="text-[12px] font-medium text-gray-400">{label}</span>
       <span className="text-sm font-medium text-gray-700">{value}</span>
     </div>
   );
@@ -350,12 +342,17 @@ function ReviewPanel({
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
         <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8ecf0]">
           <div>
-            <h2 className="text-[16px] font-bold text-gray-900">
+            <h2 className="text-[24px] font-bold text-gray-900">
               Review your setup
             </h2>
-            <p className="text-sm text-gray-500 mt-0.5">
-              2025–2026 School Year
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-sm text-gray-500">2025–2026 School Year</p>
+              {isOverride && (
+                <span className="text-[11px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-2 py-0.5">
+                  Custom schedule
+                </span>
+              )}
+            </div>
           </div>
           <button
             onClick={onBack}
@@ -377,7 +374,7 @@ function ReviewPanel({
             <div className="flex justify-between pt-1">
               {dates.map((d, i) => (
                 <div key={i} className={`flex flex-col gap-1 flex-1 ${i === dates.length - 1 ? "items-end" : ""}`}>
-                  <span className="text-[12px] font-semibold text-gray-400">{labels[i]}</span>
+                  <span className="text-[12px] font-medium text-gray-400">{labels[i]}</span>
                   <span className="text-sm font-semibold text-gray-700">{d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
                 </div>
               ))}
@@ -391,13 +388,23 @@ function ReviewPanel({
             {windowConfigs.map((wc, i) => {
               const wLabel = labels[i];
               const typeLabel = wc.assessment === "screener" ? "Screener" : "Full Assessment";
-              const threshold = wc.assessment === "screener" && wc.conditionalAssignment ? ` · Full DESSA ≤ ${wc.tScore}` : wc.assessment === "screener" ? " · No escalation" : "";
+              const threshold = wc.assessment === "screener" && wc.conditionalAssignment ? ` · Auto-assigns full DESSA when screener score is ${wc.tScore} or below` : wc.assessment === "screener" ? " · No auto-assignment" : "";
               return row(wLabel, `${typeLabel}${threshold}`);
             })}
           </div>
           <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
             <p className="text-[18px] font-semibold text-gray-800 mb-2">Student Completed Assessments</p>
-            {row("Site Leader access control", siteLeaderManage ? "Enabled" : "Disabled")}
+            <div className="flex items-center gap-2 py-2 text-sm text-gray-700">
+              {siteLeaderManage
+                ? <Check size={14} className="text-green-600 shrink-0" strokeWidth={2.5} />
+                : <Ban size={14} className="text-gray-400 shrink-0" strokeWidth={1.75} />
+              }
+              <span>
+                {siteLeaderManage
+                  ? "Site Leaders can control when students access their assessments"
+                  : "Student assessments open automatically at the start of each rating window"}
+              </span>
+            </div>
           </div>
         </div>
         <div className="flex items-center justify-between px-8 py-5 bg-[#f8fafc] border-t border-[#e8ecf0]">
@@ -581,7 +588,6 @@ function EditSetupPage() {
   // Override-specific state
   const [overrideName, setOverrideName] = useState("");
   const [selectedSites, setSelectedSites] = useState<string[]>([]);
-  const [siteConflict, setSiteConflict] = useState<string | null>(null);
 
   // Form state
   const [windowCount, setWindowCount] = useState(DEFAULT_STATE.windowCount);
@@ -824,11 +830,6 @@ function EditSetupPage() {
     setDates(dates.map((d, idx) => (idx === i ? date : d)));
 
   const toggleSite = (site: string) => {
-    const conflict = SITES_IN_OTHER_OVERRIDES[site];
-    if (conflict && !selectedSites.includes(site)) {
-      setSiteConflict(site);
-      return;
-    }
     setSelectedSites((prev) =>
       prev.includes(site) ? prev.filter((s) => s !== site) : [...prev, site],
     );
@@ -861,8 +862,37 @@ function EditSetupPage() {
         return (
           <div className="space-y-8">
             <div>
-              <p className="text-[14px] font-semibold text-gray-800 mb-2">
-                Group name
+              <p className="text-[14px] font-semibold text-gray-800 mb-1">
+                Which sites should follow this schedule?
+              </p>
+              <p className="text-sm text-gray-500 mb-3">
+                Select one or more sites.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {MOCK_SITES.filter((site) => !SITES_IN_OTHER_OVERRIDES[site] || selectedSites.includes(site)).map((site) => {
+                  const isSelected = selectedSites.includes(site);
+                  return (
+                    <button
+                      key={site}
+                      onClick={() => toggleSite(site)}
+                      className={`text-left rounded-xl border-2 px-4 py-2.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                    >
+                      <span className={`text-sm font-semibold ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>
+                        {site}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-gray-800 mb-1">
+                {selectedSites.length > 0
+                  ? `Name this group of ${selectedSites.length} ${selectedSites.length === 1 ? "site" : "sites"}`
+                  : "Name this group"}
+              </p>
+              <p className="text-sm text-gray-500 mb-2">
+                This name will appear in your Custom Schedules list.
               </p>
               <input
                 type="text"
@@ -872,74 +902,6 @@ function EditSetupPage() {
                 className="w-80 h-9 px-3 border border-[#d1d5db] rounded-lg text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0]"
               />
             </div>
-            <div>
-              <p className="text-[14px] font-semibold text-gray-800 mb-1">
-                Which sites should follow this schedule?
-              </p>
-              <p className="text-sm text-gray-500 mb-3">
-                Select one or more sites. Sites already in another override are
-                marked.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {MOCK_SITES.map((site) => {
-                  const inOther = SITES_IN_OTHER_OVERRIDES[site];
-                  const isSelected = selectedSites.includes(site);
-                  return (
-                    <button
-                      key={site}
-                      onClick={() => toggleSite(site)}
-                      className={`flex items-center justify-between text-left rounded-xl border-2 px-4 py-2.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                    >
-                      <span
-                        className={`text-sm font-semibold ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}
-                      >
-                        {site}
-                      </span>
-                      {inOther && !isSelected && (
-                        <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 shrink-0 ml-2">
-                          In {inOther}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {siteConflict && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center">
-                <div
-                  className="absolute inset-0 bg-black/30"
-                  onClick={() => setSiteConflict(null)}
-                />
-                <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[440px]">
-                  <h2 className="text-[16px] font-bold text-gray-900 mb-2">
-                    Site already in another override
-                  </h2>
-                  <p className="text-sm text-gray-500 mb-6">
-                    <strong>{siteConflict}</strong> is currently in{" "}
-                    <strong>{SITES_IN_OTHER_OVERRIDES[siteConflict]}</strong>.
-                    Move it to this group instead?
-                  </p>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => setSiteConflict(null)}
-                      className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-                    >
-                      Keep in current group
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedSites((prev) => [...prev, siteConflict!]);
-                        setSiteConflict(null);
-                      }}
-                      className="h-9 px-4 rounded-lg bg-[#1a4e8a] text-white text-sm font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-                    >
-                      Move to this group
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         );
 
@@ -1131,13 +1093,13 @@ function EditSetupPage() {
       case "students":
         return (
           <div className="space-y-8">
-            <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-[#4a5c9c]">
+            {/* <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-[#4a5c9c]">
               <Info />
               <AlertTitle className="text-[#132d78]">About this setting</AlertTitle>
               <AlertDescription className="text-[#132d78] opacity-80">
                 When Site Leaders control access, students can only submit assessments during open rating windows, keeping your data clean and tied to the right time period.
               </AlertDescription>
-            </Alert>
+            </Alert> */}
             <div>
             <p className="text-[16px] font-semibold text-gray-800 mb-1">Should Site Leaders be able to control when students can access their assessments?</p>
             <p className="text-base text-gray-500 mb-5">This gives Site Leaders control over when students can access their self-assessment within a rating window.</p>
@@ -1221,6 +1183,7 @@ function EditSetupPage() {
           sameConfigAllWindows={sameConfigAllWindows}
           windowConfigs={windowConfigs}
           siteLeaderManage={siteLeaderManage}
+          isOverride={isOverride}
           onBack={() => setShowReview(false)}
           onGoToStep={(stepId) => { setShowReview(false); setCurrentStepIndex(stepSequence.indexOf(stepId)); }}
           onSave={async () => {
@@ -1257,7 +1220,7 @@ function EditSetupPage() {
             <p className="text-[12px] font-bold text-[#1a4e8a] uppercase tracking-widest mb-4">
               Step {currentStepIndex + 1} of {totalSteps}
             </p>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-4">
               <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
                 {currentStepDef.title}
               </h1>
@@ -1268,9 +1231,11 @@ function EditSetupPage() {
                 </span>
               )}
             </div>
-            <p className="text-[16px] text-gray-500 mb-10 leading-relaxed max-w-[750px]">
-              {currentStepDef.subtitle}
-            </p>
+            {currentStepId !== "students" && (
+              <p className="text-[16px] text-gray-500 mb-10 leading-relaxed max-w-[750px]">
+                {currentStepDef.subtitle}
+              </p>
+            )}
             {renderStepContent()}
 
             {/* Step footer */}

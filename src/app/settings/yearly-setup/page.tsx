@@ -155,8 +155,8 @@ export default function YearlySetupPage() {
               </h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                    Starting Assessment
+                  <p className="text-[11px] font-semibold text-gray-400 tracking-wider mb-2">
+                    Current window starting assessment
                   </p>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
@@ -172,17 +172,17 @@ export default function YearlySetupPage() {
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                    Conditional Full DESSA
+                  <p className="text-[11px] font-semibold text-gray-400 tracking-wider mb-2">
+                    Auto-assign full DESSA
                   </p>
                   <p className="text-sm font-semibold text-gray-800">
                     {defaultSetup.conditional_assignment
-                      ? `T-Score ≤ ${defaultSetup.t_score}`
+                      ? `When screener score is ${defaultSetup.t_score} or below`
                       : "Disabled"}
                   </p>
                 </div>
                 <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  <p className="text-[11px] font-semibold text-gray-400 tracking-wider mb-2">
                     Assessments
                   </p>
                   <div className="flex flex-wrap gap-1">
@@ -228,76 +228,120 @@ export default function YearlySetupPage() {
                   Sites whose rating windows don't align with the default schedule.
                 </p>
               </div>
-              <button
-                onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
-              >
-                <Plus size={13} strokeWidth={2} />
-                Add Custom Schedule
-              </button>
+              {overrides.length > 0 && (
+                <button
+                  onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
+                >
+                  <Plus size={13} strokeWidth={2} />
+                  Add Custom Schedule
+                </button>
+              )}
             </div>
 
-            {overrides.length === 0 ? (
-              <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm px-6 py-10 text-center">
-                <p className="text-sm text-gray-400">
-                  No custom schedules. All sites follow the default setup.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {overrides.map((override) => (
-                  <div key={override.id} className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
-                      <div>
-                        <p className="text-[14px] font-bold text-gray-900">{override.group_name}</p>
-                        <p className="text-[12px] text-gray-400 mt-0.5">
-                          {override.yearly_setup_sites.map((s) => s.site_name).join(", ")}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() =>
-                            router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`)
-                          }
-                          className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#1a4e8a] text-white text-[12px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-                        >
-                          <Pencil size={11} strokeWidth={1.75} />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(override.id)}
-                          className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                        >
-                          <Trash2 size={14} strokeWidth={1.75} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="px-6 py-4">
-                      <div className="flex gap-6 text-sm">
-                        <div>
-                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Windows</p>
-                          <p className="font-semibold text-gray-800">{override.window_count}</p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Assessment</p>
-                          <p className="font-semibold text-gray-800">
-                            {override.assessment_type === "screener" ? "Screener" : "Full Assessment"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Threshold</p>
-                          <p className="font-semibold text-gray-800">
-                            {override.conditional_assignment
-                              ? `T-Score ≤ ${override.t_score}`
-                              : "Disabled"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+            <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
+              {overrides.length === 0 ? (
+                <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+                  <div className="w-28 h-28 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-5">
+                    <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* Back calendar page */}
+                      <rect x="18" y="16" width="36" height="40" rx="4" fill="#d1d5db" />
+                      <rect x="27" y="12" width="4" height="8" rx="2" fill="#9ca3af" />
+                      <rect x="41" y="12" width="4" height="8" rx="2" fill="#9ca3af" />
+                      {/* Front calendar page */}
+                      <rect x="14" y="20" width="36" height="40" rx="4" fill="#e5e7eb" />
+                      <rect x="23" y="16" width="4" height="8" rx="2" fill="#9ca3af" />
+                      <rect x="37" y="16" width="4" height="8" rx="2" fill="#9ca3af" />
+                      {/* Calendar header bar */}
+                      <rect x="14" y="20" width="36" height="10" rx="4" fill="#d1d5db" />
+                      <rect x="14" y="26" width="36" height="4" fill="#d1d5db" />
+                      {/* Dead face */}
+                      <rect x="20" y="38" width="24" height="16" rx="3" fill="white" />
+                      {/* X left eye */}
+                      <line x1="24" y1="42" x2="28" y2="46" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="28" y1="42" x2="24" y2="46" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                      {/* X right eye */}
+                      <line x1="36" y1="42" x2="40" y2="46" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="40" y1="42" x2="36" y2="46" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                      {/* Tongue */}
+                      <ellipse cx="32" cy="52" rx="4" ry="2.5" fill="#d1d5db" />
+                      {/* Sparkles */}
+                      <path d="M10 22 L11 19 L12 22 L11 25 Z" fill="#d1d5db" />
+                      <path d="M8 21 L11 20 L14 21 L11 22 Z" fill="#d1d5db" />
+                      <path d="M56 50 L57 47 L58 50 L57 53 Z" fill="#d1d5db" />
+                      <path d="M54 49 L57 48 L60 49 L57 50 Z" fill="#d1d5db" />
+                      <path d="M58 28 L58.8 26 L59.6 28 L58.8 30 Z" fill="#d1d5db" />
+                      <path d="M57 27 L58.8 26.4 L60.6 27 L58.8 27.6 Z" fill="#d1d5db" />
+                    </svg>
                   </div>
-                ))}
-              </div>
-            )}
+                  <h6 className="text-[15px] font-semibold text-gray-700 mb-1">No custom schedules</h6>
+                  <p className="text-sm text-gray-400 mb-5 max-w-sm">
+                    All sites are following the default setup. Add a custom schedule for sites that need different window dates.
+                  </p>
+                  <button
+                    onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                    className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
+                  >
+                    <Plus size={13} strokeWidth={2} />
+                    Add Custom Schedule
+                  </button>
+                </div>
+              ) : (
+                <div className="divide-y divide-[#e8ecf0]">
+                  {overrides.map((override) => (
+                    <div key={override.id}>
+                      <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
+                        <div>
+                          <p className="text-[14px] font-bold text-gray-900">{override.group_name}</p>
+                          <p className="text-[12px] text-gray-400 mt-0.5">
+                            {override.yearly_setup_sites.map((s) => s.site_name).join(", ")}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`)
+                            }
+                            className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#1a4e8a] text-white text-[12px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                          >
+                            <Pencil size={11} strokeWidth={1.75} />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(override.id)}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={14} strokeWidth={1.75} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="px-6 py-4">
+                        <div className="flex gap-6 text-sm">
+                          <div>
+                            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Windows</p>
+                            <p className="font-semibold text-gray-800">{override.window_count}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Assessment</p>
+                            <p className="font-semibold text-gray-800">
+                              {override.assessment_type === "screener" ? "Screener" : "Full Assessment"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Threshold</p>
+                            <p className="font-semibold text-gray-800">
+                              {override.conditional_assignment
+                                ? `T-Score ≤ ${override.t_score}`
+                                : "Disabled"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
