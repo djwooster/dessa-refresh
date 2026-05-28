@@ -322,7 +322,7 @@ const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {};
 
 function ReviewPanel({
   windowCount, dates, labels, assessment, conditionalAssignment, tScore, resetBehavior,
-  sameConfigAllWindows, windowConfigs, siteLeaderManage, onBack, onGoToStep, onSave, saving,
+  sameConfigAllWindows, windowConfigs, siteLeaderManage, isOverride, onBack, onGoToStep, onSave, saving,
 }: {
   windowCount: number; dates: string[]; labels: string[]; assessment: "screener" | "full";
   conditionalAssignment: boolean; tScore: string; resetBehavior: "rescreen" | "skip";
