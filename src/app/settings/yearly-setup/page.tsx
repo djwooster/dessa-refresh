@@ -31,6 +31,123 @@ const CURRENT_YEAR = "2025-2026";
 
 const formatYear = (y: string) => y.replace("-", "–");
 
+const PAST_YEAR_MOCK = {
+  windowCount: 3,
+  windows: [
+    { label: "Pre-Assessment", date: "Aug 1, 2024", iso: "2024-08-01" },
+    { label: "Mid-Assessment", date: "Jan 1, 2025", iso: "2025-01-01" },
+    { label: "Post-Assessment", date: "May 28, 2025", iso: "2025-05-28" },
+  ],
+  assessment_type: "screener" as const,
+  conditional_assignment: true,
+  t_score: "40",
+};
+
+const BAND_COLORS = [
+  { bg: "#dcf0e5", text: "#166534" },
+  { bg: "#dbeafe", text: "#1e40af" },
+  { bg: "#ede9fe", text: "#5b21b6" },
+  { bg: "#fef3c7", text: "#92400e" },
+  { bg: "#fce7f3", text: "#9d174d" },
+];
+
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function PastYearTimeline({
+  dates,
+  labels,
+}: {
+  dates: string[];
+  labels: string[];
+}) {
+  const parsed = dates.map((d) => (d ? new Date(d + "T00:00:00") : null));
+  const valid = parsed.filter(Boolean) as Date[];
+  if (valid.length === 0) return null;
+
+  const rangeStart = valid[0];
+  const rangeEnd = new Date(rangeStart.getFullYear() + 1, 7, 1);
+  const rangeMs = rangeEnd.getTime() - rangeStart.getTime();
+  const pct = (d: Date) =>
+    Math.max(
+      0,
+      Math.min(100, ((d.getTime() - rangeStart.getTime()) / rangeMs) * 100),
+    );
+
+  const ticks: Date[] = [];
+  const cur = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
+  const endM = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), 1);
+  while (cur <= endM) {
+    ticks.push(new Date(cur));
+    cur.setMonth(cur.getMonth() + 1);
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="relative h-4">
+        {ticks.map((m, i) => {
+          const isFirst = i === 0;
+          const isLast = i === ticks.length - 1;
+          return (
+            <span
+              key={i}
+              className="absolute text-[12px] text-gray-400"
+              style={
+                isFirst
+                  ? { left: 0 }
+                  : isLast
+                    ? { right: 0 }
+                    : {
+                        left: `${(i / (ticks.length - 1)) * 100}%`,
+                        transform: "translateX(-50%)",
+                      }
+              }
+            >
+              {MONTH_NAMES[m.getMonth()]}
+            </span>
+          );
+        })}
+      </div>
+      <div className="relative h-9 rounded-lg overflow-hidden flex">
+        {parsed.map((date, i) => {
+          if (!date) return null;
+          const next = parsed[i + 1];
+          const width = pct(next ?? rangeEnd) - pct(date);
+          const color = BAND_COLORS[i % BAND_COLORS.length];
+          const shortLabel =
+            labels[i]?.replace(/\s*-?\s*Assessment/i, "").trim() || `W${i + 1}`;
+          return (
+            <div
+              key={i}
+              className="flex items-center justify-center overflow-hidden shrink-0"
+              style={{ width: `${width}%`, backgroundColor: color.bg }}
+            >
+              <span
+                className="text-[10px] font-bold truncate px-1"
+                style={{ color: color.text }}
+              >
+                {shortLabel}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function crossesAugReset(dates: string[]): boolean {
   const months = dates.map((d) => new Date(d + "T00:00:00").getMonth());
   return months.some((m) => m <= 6) && months.some((m) => m >= 7);
@@ -68,8 +185,15 @@ export default function YearlySetupPage() {
   };
 
   // Derived
-  const defaultSetup = allSetups.find((s) => s.is_default && s.year === selectedYear) ?? null;
-  const overrides = allSetups.filter((s) => !s.is_default && s.year === selectedYear);
+  const defaultSetup =
+    allSetups.find((s) => s.is_default && s.year === selectedYear) ?? null;
+  const overrides = allSetups.filter(
+    (s) => !s.is_default && s.year === selectedYear,
+  );
+  const isPastYear = selectedYear < CURRENT_YEAR;
+  const currentYearHasSetup = allSetups.some(
+    (s) => s.is_default && s.year === CURRENT_YEAR,
+  );
 
   if (loading) {
     return (
@@ -101,39 +225,152 @@ export default function YearlySetupPage() {
       </div>
 
       {/* Default config */}
-      {!defaultSetup ? (
+      {isPastYear ? (
+        <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden mb-4">
+          <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
+            <YearSelect
+              selectedYear={selectedYear}
+              onSelect={setSelectedYear}
+            />
+            {!currentYearHasSetup && (
+              <button
+                onClick={() =>
+                  router.push("/settings/yearly-setup/edit2?fromPastYear=true")
+                }
+                className="flex items-center justify-center px-4 py-2 rounded-lg bg-[#1a4e8a] text-white text-[14px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer tracking-tight whitespace-nowrap"
+              >
+                Use for 2025–26
+              </button>
+            )}
+          </div>
+
+          <div className="px-6 py-5 border-b border-[#f0f4f8]">
+            <h3 className="text-[20px] font-semibold text-gray-800 mb-4">
+              Rating windows
+            </h3>
+            <div className="mb-6">
+              <PastYearTimeline
+                dates={PAST_YEAR_MOCK.windows.map((w) => w.iso)}
+                labels={PAST_YEAR_MOCK.windows.map((w) => w.label)}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {PAST_YEAR_MOCK.windows.map((w) => (
+                <div
+                  key={w.label}
+                  className="bg-[#f8fafc] rounded-lg px-4 py-3 border border-[#edf0f4]"
+                >
+                  <p className="text-[14px] font-medium text-gray-400 mb-1">
+                    {w.label}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {w.date}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="px-6 py-5">
+            <h3 className="text-[20px] font-semibold text-gray-800 mb-4">
+              Assessment configuration
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
+                <p className="text-[14px] font-medium text-gray-400 mb-1">
+                  Starting assessment
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
+                    <Zap size={12} className="text-white" strokeWidth={1.75} />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-800">
+                    Screener
+                  </span>
+                </div>
+              </div>
+              <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
+                <p className="text-[14px] font-medium text-gray-400 mb-1">
+                  Auto-assign full DESSA
+                </p>
+                <p className="text-sm font-semibold text-gray-800">
+                  When screener score is {PAST_YEAR_MOCK.t_score} or below
+                </p>
+              </div>
+              <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
+                <p className="text-[14px] font-medium text-gray-400 mb-1">
+                  Assessments
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {ASSESSMENTS.map((a) => (
+                    <span
+                      key={a}
+                      className="inline-block text-[11px] font-medium text-gray-600 bg-white border border-[#e8ecf0] rounded-full px-2 py-0.5"
+                    >
+                      {a}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : !defaultSetup ? (
         <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
           {/* Year switcher in empty state header */}
           <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
-            <YearSelect selectedYear={selectedYear} onSelect={setSelectedYear} />
+            <YearSelect
+              selectedYear={selectedYear}
+              onSelect={setSelectedYear}
+            />
           </div>
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
             <div className="w-12 h-12 rounded-xl bg-[#eef2f8] flex items-center justify-center mb-4">
-              <CalendarClock size={32} className="text-[#1a4e8a]" strokeWidth={1.5} />
+              <CalendarClock
+                size={32}
+                className="text-[#1a4e8a]"
+                strokeWidth={1.5}
+              />
             </div>
             <h3 className="text-[20px] font-semibold text-gray-800 mb-1">
               No setup for {formatYear(selectedYear)}
             </h3>
             <p className="text-[16px] text-gray-500 max-w-sm mb-6">
-              Define your rating windows and assessment configuration to get started.
+              Define your rating windows and assessment configuration to get
+              started.
             </p>
             <button
-              onClick={() => router.push(`/settings/yearly-setup/edit2?year=${selectedYear}`)}
-              className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[16px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+              onClick={() =>
+                router.push(`/settings/yearly-setup/edit2?year=${selectedYear}`)
+              }
+              className="flex items-center justify-center w-[120px] py-2 rounded-lg bg-[#1a4e8a] text-white text-[14px] font-medium hover:bg-[#15407a] transition-colors cursor-pointer"
             >
               Setup
             </button>
+            {/* edit3 disabled — edit2 is canonical
+            <button
+              onClick={() => router.push(`/settings/yearly-setup/edit3?year=${selectedYear}`)}
+              className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-gray-400 text-white text-[16px] font-semibold hover:bg-gray-500 transition-colors cursor-pointer"
+            >
+              Setup (edit3)
+            </button>
+            */}
           </div>
         </div>
       ) : (
         <>
           <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden mb-4">
             <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
-              <YearSelect selectedYear={selectedYear} onSelect={setSelectedYear} />
+              <YearSelect
+                selectedYear={selectedYear}
+                onSelect={setSelectedYear}
+              />
               <div className="flex items-center gap-2">
                 <button
                   onClick={() =>
-                    router.push(`/settings/yearly-setup/edit2?id=${defaultSetup.id}&year=${selectedYear}`)
+                    router.push(
+                      `/settings/yearly-setup/edit2?id=${defaultSetup.id}&year=${selectedYear}`,
+                    )
                   }
                   className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                 >
@@ -143,36 +380,46 @@ export default function YearlySetupPage() {
             </div>
 
             <div className="px-6 py-5 border-b border-[#f0f4f8]">
-              <h3 className="text-[13.5px] font-semibold text-gray-800 mb-4">
+              <h3 className="text-[20px] font-semibold text-gray-800 mb-4">
                 Rating windows
               </h3>
               <ConceptC showYearLabel={false} />
             </div>
 
             <div className="px-6 py-5">
-              <h3 className="text-[13.5px] font-semibold text-gray-800 mb-4">
+              <h3 className="text-[20px] font-semibold text-gray-800 mb-4">
                 Assessment configuration
               </h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-gray-400 tracking-wider mb-2">
+                  <p className="text-[14px] font-medium text-gray-400 mb-1">
                     Current window starting assessment
                   </p>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
                       {defaultSetup.assessment_type === "screener" ? (
-                        <Zap size={12} className="text-white" strokeWidth={1.75} />
+                        <Zap
+                          size={12}
+                          className="text-white"
+                          strokeWidth={1.75}
+                        />
                       ) : (
-                        <ClipboardList size={12} className="text-white" strokeWidth={1.75} />
+                        <ClipboardList
+                          size={12}
+                          className="text-white"
+                          strokeWidth={1.75}
+                        />
                       )}
                     </div>
                     <span className="text-sm font-semibold text-gray-800">
-                      {defaultSetup.assessment_type === "screener" ? "Screener" : "Full Assessment"}
+                      {defaultSetup.assessment_type === "screener"
+                        ? "Screener"
+                        : "Full Assessment"}
                     </span>
                   </div>
                 </div>
                 <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-gray-400 tracking-wider mb-2">
+                  <p className="text-[14px] font-medium text-gray-400 mb-1">
                     Auto-assign full DESSA
                   </p>
                   <p className="text-sm font-semibold text-gray-800">
@@ -182,7 +429,7 @@ export default function YearlySetupPage() {
                   </p>
                 </div>
                 <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-gray-400 tracking-wider mb-2">
+                  <p className="text-[14px] font-medium text-gray-400 mb-1">
                     Assessments
                   </p>
                   <div className="flex flex-wrap gap-1">
@@ -203,14 +450,26 @@ export default function YearlySetupPage() {
           {/* Aug 1 reset callout */}
           {crossesAugReset(defaultSetup.dates) && (
             <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-              <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" strokeWidth={1.75} />
+              <AlertTriangle
+                size={16}
+                className="text-amber-500 mt-0.5 shrink-0"
+                strokeWidth={1.75}
+              />
               <div>
-                <p className="text-[13.5px] font-semibold text-amber-800">Some sites may have a window that crosses the DESSA system reset on Aug 1</p>
+                <p className="text-[13.5px] font-semibold text-amber-800">
+                  Some sites may have a window that crosses the DESSA system
+                  reset on Aug 1
+                </p>
                 <p className="text-[13px] text-amber-700 mt-0.5">
-                  Ratings submitted after August 1st are classified as pre-assessments by DESSA, even if they fall within your post-window. Set up a custom schedule for affected sites to keep their reporting accurate.
+                  Ratings submitted after August 1st are classified as
+                  pre-assessments by DESSA, even if they fall within your
+                  post-window. Set up a custom schedule for affected sites to
+                  keep their reporting accurate.
                 </p>
                 <button
-                  onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                  onClick={() =>
+                    router.push("/settings/yearly-setup/edit2?override=true")
+                  }
                   className="mt-3 text-[12.5px] font-semibold text-amber-800 underline underline-offset-2 cursor-pointer hover:text-amber-900 transition-colors"
                 >
                   Set up a custom schedule →
@@ -223,14 +482,19 @@ export default function YearlySetupPage() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h2 className="text-[15px] font-bold text-gray-900">Custom Schedules</h2>
+                <h2 className="text-[15px] font-bold text-gray-900">
+                  Custom Schedules
+                </h2>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  Sites whose rating windows don't align with the default schedule.
+                  Sites whose rating windows don't align with the default
+                  schedule.
                 </p>
               </div>
               {overrides.length > 0 && (
                 <button
-                  onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                  onClick={() =>
+                    router.push("/settings/yearly-setup/edit2?override=true")
+                  }
                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
                 >
                   <Plus size={13} strokeWidth={2} />
@@ -243,26 +507,126 @@ export default function YearlySetupPage() {
               {overrides.length === 0 ? (
                 <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
                   <div className="w-28 h-28 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-5">
-                    <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg
+                      width="72"
+                      height="72"
+                      viewBox="0 0 72 72"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
                       {/* Back calendar page */}
-                      <rect x="18" y="16" width="36" height="40" rx="4" fill="#d1d5db" />
-                      <rect x="27" y="12" width="4" height="8" rx="2" fill="#9ca3af" />
-                      <rect x="41" y="12" width="4" height="8" rx="2" fill="#9ca3af" />
+                      <rect
+                        x="18"
+                        y="16"
+                        width="36"
+                        height="40"
+                        rx="4"
+                        fill="#d1d5db"
+                      />
+                      <rect
+                        x="27"
+                        y="12"
+                        width="4"
+                        height="8"
+                        rx="2"
+                        fill="#9ca3af"
+                      />
+                      <rect
+                        x="41"
+                        y="12"
+                        width="4"
+                        height="8"
+                        rx="2"
+                        fill="#9ca3af"
+                      />
                       {/* Front calendar page */}
-                      <rect x="14" y="20" width="36" height="40" rx="4" fill="#e5e7eb" />
-                      <rect x="23" y="16" width="4" height="8" rx="2" fill="#9ca3af" />
-                      <rect x="37" y="16" width="4" height="8" rx="2" fill="#9ca3af" />
+                      <rect
+                        x="14"
+                        y="20"
+                        width="36"
+                        height="40"
+                        rx="4"
+                        fill="#e5e7eb"
+                      />
+                      <rect
+                        x="23"
+                        y="16"
+                        width="4"
+                        height="8"
+                        rx="2"
+                        fill="#9ca3af"
+                      />
+                      <rect
+                        x="37"
+                        y="16"
+                        width="4"
+                        height="8"
+                        rx="2"
+                        fill="#9ca3af"
+                      />
                       {/* Calendar header bar */}
-                      <rect x="14" y="20" width="36" height="10" rx="4" fill="#d1d5db" />
-                      <rect x="14" y="26" width="36" height="4" fill="#d1d5db" />
+                      <rect
+                        x="14"
+                        y="20"
+                        width="36"
+                        height="10"
+                        rx="4"
+                        fill="#d1d5db"
+                      />
+                      <rect
+                        x="14"
+                        y="26"
+                        width="36"
+                        height="4"
+                        fill="#d1d5db"
+                      />
                       {/* Dead face */}
-                      <rect x="20" y="38" width="24" height="16" rx="3" fill="white" />
+                      <rect
+                        x="20"
+                        y="38"
+                        width="24"
+                        height="16"
+                        rx="3"
+                        fill="white"
+                      />
                       {/* X left eye */}
-                      <line x1="24" y1="42" x2="28" y2="46" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="28" y1="42" x2="24" y2="46" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                      <line
+                        x1="24"
+                        y1="42"
+                        x2="28"
+                        y2="46"
+                        stroke="#9ca3af"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="28"
+                        y1="42"
+                        x2="24"
+                        y2="46"
+                        stroke="#9ca3af"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
                       {/* X right eye */}
-                      <line x1="36" y1="42" x2="40" y2="46" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="40" y1="42" x2="36" y2="46" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                      <line
+                        x1="36"
+                        y1="42"
+                        x2="40"
+                        y2="46"
+                        stroke="#9ca3af"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="40"
+                        y1="42"
+                        x2="36"
+                        y2="46"
+                        stroke="#9ca3af"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
                       {/* Tongue */}
                       <ellipse cx="32" cy="52" rx="4" ry="2.5" fill="#d1d5db" />
                       {/* Sparkles */}
@@ -270,16 +634,27 @@ export default function YearlySetupPage() {
                       <path d="M8 21 L11 20 L14 21 L11 22 Z" fill="#d1d5db" />
                       <path d="M56 50 L57 47 L58 50 L57 53 Z" fill="#d1d5db" />
                       <path d="M54 49 L57 48 L60 49 L57 50 Z" fill="#d1d5db" />
-                      <path d="M58 28 L58.8 26 L59.6 28 L58.8 30 Z" fill="#d1d5db" />
-                      <path d="M57 27 L58.8 26.4 L60.6 27 L58.8 27.6 Z" fill="#d1d5db" />
+                      <path
+                        d="M58 28 L58.8 26 L59.6 28 L58.8 30 Z"
+                        fill="#d1d5db"
+                      />
+                      <path
+                        d="M57 27 L58.8 26.4 L60.6 27 L58.8 27.6 Z"
+                        fill="#d1d5db"
+                      />
                     </svg>
                   </div>
-                  <h6 className="text-[15px] font-semibold text-gray-700 mb-1">No custom schedules</h6>
+                  <h6 className="text-[15px] font-semibold text-gray-700 mb-1">
+                    No custom schedules
+                  </h6>
                   <p className="text-sm text-gray-400 mb-5 max-w-sm">
-                    All sites are following the default setup. Add a custom schedule for sites that need different window dates.
+                    All sites are following the default setup. Add a custom
+                    schedule for sites that need different window dates.
                   </p>
                   <button
-                    onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                    onClick={() =>
+                      router.push("/settings/yearly-setup/edit2?override=true")
+                    }
                     className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
                   >
                     <Plus size={13} strokeWidth={2} />
@@ -292,15 +667,21 @@ export default function YearlySetupPage() {
                     <div key={override.id}>
                       <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
                         <div>
-                          <p className="text-[14px] font-bold text-gray-900">{override.group_name}</p>
+                          <p className="text-[14px] font-bold text-gray-900">
+                            {override.group_name}
+                          </p>
                           <p className="text-[12px] text-gray-400 mt-0.5">
-                            {override.yearly_setup_sites.map((s) => s.site_name).join(", ")}
+                            {override.yearly_setup_sites
+                              .map((s) => s.site_name)
+                              .join(", ")}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() =>
-                              router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`)
+                              router.push(
+                                `/settings/yearly-setup/edit2?id=${override.id}&override=true`,
+                              )
                             }
                             className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#1a4e8a] text-white text-[12px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                           >
@@ -318,17 +699,27 @@ export default function YearlySetupPage() {
                       <div className="px-6 py-4">
                         <div className="flex gap-6 text-sm">
                           <div>
-                            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Windows</p>
-                            <p className="font-semibold text-gray-800">{override.window_count}</p>
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Assessment</p>
+                            <p className="text-[14px] font-medium text-gray-400 mb-1">
+                              Windows
+                            </p>
                             <p className="font-semibold text-gray-800">
-                              {override.assessment_type === "screener" ? "Screener" : "Full Assessment"}
+                              {override.window_count}
                             </p>
                           </div>
                           <div>
-                            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Threshold</p>
+                            <p className="text-[14px] font-medium text-gray-400 mb-1">
+                              Assessment
+                            </p>
+                            <p className="font-semibold text-gray-800">
+                              {override.assessment_type === "screener"
+                                ? "Screener"
+                                : "Full Assessment"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[14px] font-medium text-gray-400 mb-1">
+                              Threshold
+                            </p>
                             <p className="font-semibold text-gray-800">
                               {override.conditional_assignment
                                 ? `T-Score ≤ ${override.t_score}`
@@ -349,10 +740,15 @@ export default function YearlySetupPage() {
       {/* Delete confirmation */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setConfirmDeleteId(null)} />
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setConfirmDeleteId(null)}
+          />
           <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[400px]">
             <h2 className="text-[16px] font-bold text-gray-900 mb-2">
-              {confirmDeleteId === defaultSetup?.id ? "Delete this setup?" : "Delete custom schedule?"}
+              {confirmDeleteId === defaultSetup?.id
+                ? "Delete this setup?"
+                : "Delete custom schedule?"}
             </h2>
             <p className="text-[14px] text-gray-500 mb-6">
               {confirmDeleteId === defaultSetup?.id
@@ -387,7 +783,13 @@ export default function YearlySetupPage() {
 
 // ─── Year select ──────────────────────────────────────────────────────────────
 
-function YearSelect({ selectedYear, onSelect }: { selectedYear: string; onSelect: (y: string) => void }) {
+function YearSelect({
+  selectedYear,
+  onSelect,
+}: {
+  selectedYear: string;
+  onSelect: (y: string) => void;
+}) {
   return (
     <Select value={selectedYear} onValueChange={(v) => v && onSelect(v)}>
       <SelectTrigger className="w-auto gap-2 h-9 px-3 bg-white border border-[#d1d5db] rounded-lg text-[15px] font-semibold text-gray-700 cursor-pointer">
@@ -395,7 +797,11 @@ function YearSelect({ selectedYear, onSelect }: { selectedYear: string; onSelect
       </SelectTrigger>
       <SelectContent>
         {SCHOOL_YEARS.map((y) => (
-          <SelectItem key={y} value={y} className="text-[14px] font-semibold cursor-pointer">
+          <SelectItem
+            key={y}
+            value={y}
+            className="text-[14px] font-semibold cursor-pointer"
+          >
             {formatYear(y)}
           </SelectItem>
         ))}

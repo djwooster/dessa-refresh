@@ -583,6 +583,7 @@ function EditSetupPage() {
   const searchParams = useSearchParams();
   const isOverride = searchParams.get("override") === "true";
   const existingId = searchParams.get("id");
+  const fromPastYear = searchParams.get("fromPastYear") === "true";
   const supabase = createClient();
 
   // Override-specific state
@@ -626,6 +627,25 @@ function EditSetupPage() {
     overrideName: "",
     selectedSites: [] as string[],
   });
+
+  // ─── Apply past year on mount ──────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!fromPastYear) return;
+    setWindowCount(LAST_YEAR.windowCount);
+    setDates(LAST_YEAR.windows.map((w) => w.iso));
+    setWindowConfigs(
+      Array(LAST_YEAR.windowCount).fill(null).map(() => ({
+        assessment: "screener" as const,
+        conditionalAssignment: LAST_YEAR.conditionalAssignment,
+        tScore: LAST_YEAR.tScore,
+        resetBehavior: LAST_YEAR.resetEachWindow ? "rescreen" as const : "skip" as const,
+      }))
+    );
+    setSiteLeaderManage(LAST_YEAR.siteLeaderManage);
+    setShowReview(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Load existing setup ───────────────────────────────────────────────────
 
