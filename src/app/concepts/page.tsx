@@ -1,8 +1,5 @@
 import { AppShell } from "@/components/layout/AppShell";
-import { ConceptA } from "@/components/dashboard/timeline/ConceptA";
-import { ConceptB } from "@/components/dashboard/timeline/ConceptB";
 import { ConceptC } from "@/components/dashboard/timeline/ConceptC";
-import { ConceptD } from "@/components/dashboard/timeline/ConceptD";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,32 +25,11 @@ const SECTIONS: ConceptSection[] = [
     description: "Approaches for communicating assessment windows — where in the school year the teacher is relative to Pre, Mid, and Post assessments.",
     concepts: [
       {
-        id: "A",
-        title: "Tab Strip",
-        description: "Assessment windows as selectable pill tabs, inspired by a day picker. The active window is highlighted; tapping a tab shows its status. Familiar and compact — could double as navigation between historical windows.",
-        status: "exploring",
-        Component: ConceptA,
-      },
-      {
-        id: "B",
-        title: "Connected Cards",
-        description: "Each assessment window gets its own card connected by a progress line, inspired by a product roadmap. Gives each window equal visual weight and makes status scannable at a glance. Good for team reviews.",
-        status: "exploring",
-        Component: ConceptB,
-      },
-      {
         id: "C",
         title: "School Year Strip",
         description: "The full Aug–Jun school year as a horizontal strip with assessment windows shown as colored bands and a 'today' marker. Gives temporal context across the whole year, not just the three windows.",
         status: "selected",
         Component: ConceptC,
-      },
-      {
-        id: "D",
-        title: "Stepper + Countdown",
-        description: "A linear step indicator with a pulsing dot on the active window and a contextual callout showing days until the next assessment. Gives educators a direct action cue — useful when a window is approaching.",
-        status: "exploring",
-        Component: ConceptD,
       },
     ],
   },
