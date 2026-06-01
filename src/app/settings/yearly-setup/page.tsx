@@ -250,7 +250,7 @@ export default function YearlySetupPage() {
     <div className="p-6">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-[24px] font-bold text-gray-900">Yearly Setup</h1>
+          <h1 className="text-[24px] font-bold text-gray-900">Rating Window Setup</h1>
           <p className="text-[16px] text-gray-500">
             Plan your year ahead and set rating window timeframes for each
             school year.
@@ -368,13 +368,7 @@ export default function YearlySetupPage() {
             />
           </div>
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-            <div className="w-12 h-12 rounded-xl bg-[#eef2f8] flex items-center justify-center mb-4">
-              <CalendarClock
-                size={32}
-                className="text-[#1a4e8a]"
-                strokeWidth={1.5}
-              />
-            </div>
+            <img src="/undraw_date-picker_8qys.svg" alt="" className="w-40 h-40 mb-4" />
             <h3 className="text-[20px] font-semibold text-gray-800 mb-1">
               No setup for {formatYear(selectedYear)}
             </h3>
