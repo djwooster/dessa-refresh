@@ -1011,7 +1011,7 @@ function EditSetupPage() {
                 {/* Assessment type + Q1 — grouped container */}
                 <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] overflow-hidden">
                   <div className="px-4 py-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-3">Starting Assessment type</p>
+                    <p className="text-base font-semibold text-gray-700 mb-3">Starting Assessment type</p>
                     <div className="grid grid-cols-2 gap-2.5">
                       {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc }) => {
                         const isSelected = cfg.assessment === value;
@@ -1082,7 +1082,7 @@ function EditSetupPage() {
                       className="overflow-hidden"
                     >
                       <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] px-4 py-4">
-                        <p className="text-sm font-semibold text-gray-800 mb-0.5">Follow-up assessment</p>
+                        <p className="text-base font-semibold text-gray-800 mb-0.5">Follow-up assessment</p>
                         <p className="text-[13px] text-gray-500 mb-3">For students who scored below the threshold in the {labels[i - 1]}.</p>
                         <div className="grid grid-cols-2 gap-2">
                           {([
