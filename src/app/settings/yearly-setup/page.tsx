@@ -752,7 +752,7 @@ export default function YearlySetupPage() {
                         <h3 className="text-[20px] font-semibold text-gray-800 mb-4">Assessment configuration</h3>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                            <p className="text-[14px] font-medium text-gray-400 mb-1">Starting assessment</p>
+                            <p className="text-[14px] font-medium text-gray-400 mb-1">Current window starting assessment</p>
                             <div className="flex items-center gap-2">
                               <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
                                 {override.assessment_type === "screener" ? (
@@ -767,12 +767,25 @@ export default function YearlySetupPage() {
                             </div>
                           </div>
                           <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                            <p className="text-[14px] font-medium text-gray-400 mb-1">Auto-assign DESSA</p>
+                            <p className="text-[14px] font-medium text-gray-400 mb-1">Auto-assign full DESSA</p>
                             <p className="text-sm font-semibold text-gray-800">
                               {override.conditional_assignment
-                                ? `T-Score ${override.t_score} or below`
-                                : "No"}
+                                ? `When screener score is ${override.t_score} or below`
+                                : "Disabled"}
                             </p>
+                          </div>
+                          <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
+                            <p className="text-[14px] font-medium text-gray-400 mb-1">Assessments</p>
+                            <div className="flex flex-wrap gap-1">
+                              {ASSESSMENTS.map((a) => (
+                                <span
+                                  key={a}
+                                  className="inline-block text-[11px] font-medium text-gray-600 bg-white border border-[#e8ecf0] rounded-full px-2 py-0.5"
+                                >
+                                  {a}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
