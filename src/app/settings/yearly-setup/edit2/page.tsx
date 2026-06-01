@@ -206,6 +206,64 @@ function WizardTimeline({
   );
 }
 
+const TSCORE_RANGES = [
+  { label: "Needs Improvement", value: "≤ 40", bg: "#fee2e2", text: "#dc2626", flex: 2 },
+  { label: "Competent",         value: "41–59", bg: "#fef9c3", text: "#d97706", flex: 3 },
+  { label: "Above Average",     value: "≥ 60",  bg: "#dcf0e5", text: "#166534", flex: 2 },
+];
+
+function TScoreInfoTooltip() {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ bottom: 0, right: 0 });
+  const iconRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseEnter = () => {
+    if (iconRef.current) {
+      const rect = iconRef.current.getBoundingClientRect();
+      setPos({
+        bottom: window.innerHeight - rect.top + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setOpen(true);
+  };
+
+  return (
+    <div
+      ref={iconRef}
+      className="inline-flex items-center cursor-pointer"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <Info size={13} className="text-gray-400" strokeWidth={1.75} />
+      {open && (
+        <div
+          className="fixed w-[260px] bg-white border border-[#e8ecf0] rounded-xl shadow-lg p-4 z-[100]"
+          style={{ bottom: pos.bottom, right: pos.right }}
+        >
+          <p className="text-[12px] font-semibold text-gray-700 mb-3">Understanding T-Scores</p>
+          <div className="h-5 rounded-md overflow-hidden flex mb-3">
+            {TSCORE_RANGES.map(({ label, value, bg, text, flex }) => (
+              <div key={label} className="flex items-center justify-center" style={{ flex, backgroundColor: bg }}>
+                <span className="text-[9px] font-bold" style={{ color: text }}>{value}</span>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-1.5">
+            {TSCORE_RANGES.map(({ label, value, bg, text }) => (
+              <div key={label} className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: bg, border: "1px solid #e5e7eb" }} />
+                <span className="text-[12px] text-gray-600 flex-1">{label}</span>
+                <span className="text-[12px] font-semibold" style={{ color: text }}>{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const ASSESSMENT_OPTIONS = [
   {
     value: "screener",
@@ -247,12 +305,12 @@ const STEP_DEFS: Record<
   }
 > = {
   sites: {
-    label: "Site Selection",
-    desc: "Choose which sites follow this schedule",
+    label: "Create a Group",
+    desc: "Name the group and choose its sites",
     icon: Building2,
-    title: "Site Selection",
+    title: "Create a Group",
     subtitle:
-      "Choose which sites should follow this override schedule.",
+      "Give this custom schedule a name and choose which sites should follow it.",
   },
   windows: {
     label: "Rating Windows",
@@ -823,7 +881,10 @@ function EditSetupPage() {
     else router.push("/settings/yearly-setup");
   };
 
+  const sitesStepValid = !isOverride || (overrideName.trim().length > 0 && selectedSites.length > 0);
+
   const handleNext = () => {
+    if (!sitesStepValid) return;
     if (isLastStep) setShowReview(true);
     else setCurrentStepIndex((i) => i + 1);
   };
@@ -901,8 +962,20 @@ function EditSetupPage() {
         return (
           <div className="space-y-8">
             <div>
+              <label className="text-[14px] font-semibold text-gray-800 mb-2 block">
+                Group name
+              </label>
+              <input
+                type="text"
+                value={overrideName}
+                onChange={(e) => setOverrideName(e.target.value)}
+                placeholder="e.g. Downtown Sites, North Region"
+                className="w-80 bg-transparent border-0 border-b border-[#d1d5db] text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-[#1565c0] pb-1.5"
+              />
+            </div>
+            <div>
               <p className="text-[14px] font-semibold text-gray-800 mb-1">
-                Which sites should follow this schedule?
+                Which sites should be included?
               </p>
               <p className="text-sm text-gray-500 mb-3">
                 Select one or more sites.
@@ -930,23 +1003,6 @@ function EditSetupPage() {
                   );
                 })}
               </div>
-            </div>
-            <div>
-              <p className="text-[14px] font-semibold text-gray-800 mb-1">
-                {selectedSites.length > 0
-                  ? `Name this group of ${selectedSites.length} ${selectedSites.length === 1 ? "site" : "sites"}`
-                  : "Name this group"}
-              </p>
-              <p className="text-sm text-gray-500 mb-2">
-                This name will appear in your Custom Schedules list.
-              </p>
-              <input
-                type="text"
-                value={overrideName}
-                onChange={(e) => setOverrideName(e.target.value)}
-                placeholder="e.g. Downtown Sites, North Region"
-                className="w-80 h-9 px-3 border border-[#d1d5db] rounded-lg text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0]"
-              />
             </div>
           </div>
         );
@@ -1025,7 +1081,7 @@ function EditSetupPage() {
         const perWindowCard = (cfg: WindowConfig, i: number) => {
           const color = BAND_COLORS[i % BAND_COLORS.length];
           return (
-            <div key={i} className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+            <div key={i} className="rounded-xl border border-[#e8ecf0] bg-white overflow-visible">
               <div className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b border-[#f0f4f8]" style={{ borderLeftWidth: 4, borderLeftColor: color.text, borderLeftStyle: "solid", backgroundColor: color.text + "14" }}>
                 <p className="text-[18px] font-bold text-gray-800">{labels[i]}</p>
                 <span className="text-sm text-gray-500">
@@ -1034,7 +1090,7 @@ function EditSetupPage() {
               </div>
               <div className="px-5 py-4 space-y-4">
                 {/* Assessment type + Q1 — grouped container */}
-                <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] overflow-hidden">
+                <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] overflow-visible">
                   <div className="px-4 py-4">
                     <p className="text-base font-semibold text-gray-700 mb-3">Starting Assessment type</p>
                     <div className="grid grid-cols-2 gap-2.5">
@@ -1074,20 +1130,14 @@ function EditSetupPage() {
                               className="cursor-pointer"
                             />
                             <span className={`text-sm select-none transition-colors ${cfg.conditionalAssignment ? "text-gray-700" : "text-gray-400"}`}>Assign the full DESSA to students scoring at or below a T-Score of</span>
-                            <Select
+                            <input
+                              type="number"
                               value={cfg.tScore}
-                              onValueChange={(v) => updateWindowConfig(i, { tScore: v })}
+                              onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
                               disabled={!cfg.conditionalAssignment}
-                            >
-                              <SelectTrigger className="w-20 h-7 text-sm cursor-pointer bg-white disabled:cursor-not-allowed disabled:opacity-40">
-                                <SelectValue render={<span>{cfg.tScore}</span>} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Array.from({ length: 12 }, (_, idx) => String((idx + 1) * 5)).map((v) => (
-                                  <SelectItem key={v} value={v}>{v}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              className="w-16 h-7 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
+                            />
+                            <TScoreInfoTooltip />
                           </div>
                         </div>
                       </motion.div>
@@ -1097,7 +1147,7 @@ function EditSetupPage() {
 
                 {/* Q2 — previous window context, separate container */}
                 <AnimatePresence initial={false}>
-                  {cfg.assessment === "screener" && i > 0 && i < windowCount - 1 && (
+                  {cfg.assessment === "screener" && i > 0 && i < windowCount - 1 && windowConfigs[i - 1]?.assessment === "screener" && (
                     <motion.div
                       key="q2"
                       initial={{ opacity: 0, height: 0 }}
@@ -1157,7 +1207,7 @@ function EditSetupPage() {
             <AnimatePresence mode="wait" initial={false}>
               {sameConfigAllWindows ? (
                 <motion.div key="unified" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                  <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+                  <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-visible">
                     <div className="px-5 py-3.5 border-b border-[#f0f4f8]" style={{ borderLeftWidth: 4, borderLeftColor: "#1a4e8a", borderLeftStyle: "solid", backgroundColor: "#1a4e8a14" }}>
                       <p className="text-[18px] font-bold text-gray-800">All {windowCount} Windows</p>
                     </div>
@@ -1200,20 +1250,14 @@ function EditSetupPage() {
                                 <span className={`text-sm select-none transition-colors ${windowConfigs[0].conditionalAssignment ? "text-gray-700" : "text-gray-400"}`}>
                                   Assign the full DESSA to students scoring at or below a T-Score of
                                 </span>
-                                <Select
+                                <input
+                                  type="number"
                                   value={windowConfigs[0].tScore}
-                                  onValueChange={(v) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, tScore: v })))}
+                                  onChange={(e) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, tScore: e.target.value })))}
                                   disabled={!windowConfigs[0].conditionalAssignment}
-                                >
-                                  <SelectTrigger className="w-20 h-7 text-sm cursor-pointer bg-white disabled:cursor-not-allowed disabled:opacity-40">
-                                    <SelectValue render={<span>{windowConfigs[0].tScore}</span>} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {Array.from({ length: 12 }, (_, idx) => String((idx + 1) * 5)).map((v) => (
-                                      <SelectItem key={v} value={v}>{v}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                  className="w-16 h-7 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
+                                />
+                                <TScoreInfoTooltip />
                               </div>
                             </div>
                           </motion.div>
@@ -1410,7 +1454,8 @@ function EditSetupPage() {
               </div>
               <button
                 onClick={handleNext}
-                className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                disabled={!sitesStepValid}
+                className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1a4e8a]"
               >
                 {isLastStep ? "Review & Save" : "Save and continue"}
               </button>
