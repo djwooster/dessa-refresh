@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Pencil,
   CalendarClock,
   Zap,
   ClipboardList,
   Plus,
   Trash2,
   AlertTriangle,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   Select,
@@ -43,6 +43,16 @@ const PAST_YEAR_MOCK = {
   t_score: "40",
 };
 
+const TOTAL_SITES = 7;
+
+const WINDOW_LABELS: Record<number, string[]> = {
+  1: ["Annual Assessment"],
+  2: ["Pre-Assessment", "Post-Assessment"],
+  3: ["Pre-Assessment", "Mid-Assessment", "Post-Assessment"],
+  4: ["Pre-Assessment", "Mid 1 Assessment", "Mid 2 Assessment", "Post-Assessment"],
+  5: ["Pre-Assessment", "Mid 1 Assessment", "Mid 2 Assessment", "Mid 3 Assessment", "Post-Assessment"],
+};
+
 const BAND_COLORS = [
   { bg: "#dcf0e5", text: "#166534" },
   { bg: "#dbeafe", text: "#1e40af" },
@@ -66,12 +76,14 @@ const MONTH_NAMES = [
   "Dec",
 ];
 
-function PastYearTimeline({
+function ScheduleTimeline({
   dates,
   labels,
+  showToday = false,
 }: {
   dates: string[];
   labels: string[];
+  showToday?: boolean;
 }) {
   const parsed = dates.map((d) => (d ? new Date(d + "T00:00:00") : null));
   const valid = parsed.filter(Boolean) as Date[];
@@ -81,10 +93,11 @@ function PastYearTimeline({
   const rangeEnd = new Date(rangeStart.getFullYear() + 1, 7, 1);
   const rangeMs = rangeEnd.getTime() - rangeStart.getTime();
   const pct = (d: Date) =>
-    Math.max(
-      0,
-      Math.min(100, ((d.getTime() - rangeStart.getTime()) / rangeMs) * 100),
-    );
+    Math.max(0, Math.min(100, ((d.getTime() - rangeStart.getTime()) / rangeMs) * 100));
+
+  const today = new Date();
+  const todayPct = pct(today);
+  const todayInRange = today >= rangeStart && today <= rangeEnd;
 
   const ticks: Date[] = [];
   const cur = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
@@ -109,10 +122,7 @@ function PastYearTimeline({
                   ? { left: 0 }
                   : isLast
                     ? { right: 0 }
-                    : {
-                        left: `${(i / (ticks.length - 1)) * 100}%`,
-                        transform: "translateX(-50%)",
-                      }
+                    : { left: `${(i / (ticks.length - 1)) * 100}%`, transform: "translateX(-50%)" }
               }
             >
               {MONTH_NAMES[m.getMonth()]}
@@ -126,20 +136,39 @@ function PastYearTimeline({
           const next = parsed[i + 1];
           const width = pct(next ?? rangeEnd) - pct(date);
           const color = BAND_COLORS[i % BAND_COLORS.length];
-          const shortLabel =
-            labels[i]?.replace(/\s*-?\s*Assessment/i, "").trim() || `W${i + 1}`;
+          const shortLabel = labels[i]?.replace(/\s*-?\s*Assessment/i, "").trim() || `W${i + 1}`;
           return (
             <div
               key={i}
               className="flex items-center justify-center overflow-hidden shrink-0"
               style={{ width: `${width}%`, backgroundColor: color.bg }}
             >
-              <span
-                className="text-[10px] font-bold truncate px-1"
-                style={{ color: color.text }}
-              >
+              <span className="text-[10px] font-bold truncate px-1" style={{ color: color.text }}>
                 {shortLabel}
               </span>
+            </div>
+          );
+        })}
+        {showToday && todayInRange && (
+          <div className="absolute top-0 bottom-0 w-[2px] bg-[#1a4e8a] z-10" style={{ left: `${todayPct}%` }}>
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#1a4e8a]" />
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-between pt-1">
+        {parsed.map((date, i) => {
+          if (!date) return null;
+          const color = BAND_COLORS[i % BAND_COLORS.length];
+          const shortLabel = labels[i]?.replace(/\s*-?\s*Assessment/i, "").trim() || `W${i + 1}`;
+          return (
+            <div key={i} className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: color.bg, border: "1px solid #e5e7eb" }} />
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium text-gray-600 leading-tight">{shortLabel}-Assessment</span>
+                <span className="text-[10.5px] text-gray-400 leading-tight">
+                  opens {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </span>
+              </div>
             </div>
           );
         })}
@@ -162,6 +191,18 @@ export default function YearlySetupPage() {
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -194,6 +235,8 @@ export default function YearlySetupPage() {
   const currentYearHasSetup = allSetups.some(
     (s) => s.is_default && s.year === CURRENT_YEAR,
   );
+  const sitesInOverrides = overrides.reduce((acc, o) => acc + o.yearly_setup_sites.length, 0);
+  const defaultSiteCount = Math.max(0, TOTAL_SITES - sitesInOverrides);
 
   if (loading) {
     return (
@@ -249,7 +292,7 @@ export default function YearlySetupPage() {
               Rating windows
             </h3>
             <div className="mb-6">
-              <PastYearTimeline
+              <ScheduleTimeline
                 dates={PAST_YEAR_MOCK.windows.map((w) => w.iso)}
                 labels={PAST_YEAR_MOCK.windows.map((w) => w.label)}
               />
@@ -347,14 +390,6 @@ export default function YearlySetupPage() {
             >
               Setup
             </button>
-            {/* edit3 disabled — edit2 is canonical
-            <button
-              onClick={() => router.push(`/settings/yearly-setup/edit3?year=${selectedYear}`)}
-              className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-gray-400 text-white text-[16px] font-semibold hover:bg-gray-500 transition-colors cursor-pointer"
-            >
-              Setup (edit3)
-            </button>
-            */}
           </div>
         </div>
       ) : (
@@ -380,9 +415,10 @@ export default function YearlySetupPage() {
             </div>
 
             <div className="px-6 py-5 border-b border-[#f0f4f8]">
-              <h3 className="text-[20px] font-semibold text-gray-800 mb-4">
-                Rating windows
+              <h3 className="text-[20px] font-semibold text-gray-800 mb-0.5">
+                Default rating windows
               </h3>
+              <p className="text-sm text-gray-500 mb-4">Applies to {defaultSiteCount} {defaultSiteCount === 1 ? "site" : "sites"}</p>
               <ConceptC showYearLabel={false} />
             </div>
 
@@ -503,7 +539,7 @@ export default function YearlySetupPage() {
               )}
             </div>
 
-            <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
+            <div className={overrides.length === 0 ? "bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden" : ""}>
               {overrides.length === 0 ? (
                 <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
                   <div className="w-28 h-28 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-5">
@@ -662,9 +698,9 @@ export default function YearlySetupPage() {
                   </button>
                 </div>
               ) : (
-                <div className="divide-y divide-[#e8ecf0]">
+                <div className="space-y-4">
                   {overrides.map((override) => (
-                    <div key={override.id}>
+                    <div key={override.id} className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
                       <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
                         <div>
                           <p className="text-[14px] font-bold text-gray-900">
@@ -676,54 +712,66 @@ export default function YearlySetupPage() {
                               .join(", ")}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="relative" ref={openMenuId === override.id ? menuRef : null}>
                           <button
-                            onClick={() =>
-                              router.push(
-                                `/settings/yearly-setup/edit2?id=${override.id}&override=true`,
-                              )
-                            }
-                            className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#1a4e8a] text-white text-[12px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                            onClick={() => setOpenMenuId(openMenuId === override.id ? null : override.id)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                           >
-                            <Pencil size={11} strokeWidth={1.75} />
-                            Edit
+                            <MoreHorizontal size={16} strokeWidth={1.75} />
                           </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(override.id)}
-                            className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={14} strokeWidth={1.75} />
-                          </button>
+                          {openMenuId === override.id && (
+                            <div className="absolute right-0 top-9 z-20 w-36 bg-white rounded-xl border border-[#e8ecf0] shadow-lg py-1 overflow-hidden">
+                              <button
+                                onClick={() => { setOpenMenuId(null); router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`); }}
+                                className="w-full text-left px-4 py-2 text-[13px] font-medium text-gray-700 hover:bg-[#f8fafc] cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => { setOpenMenuId(null); setConfirmDeleteId(override.id); }}
+                                className="w-full text-left px-4 py-2 text-[13px] font-medium text-red-500 hover:bg-red-50 cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="px-6 py-4">
-                        <div className="flex gap-6 text-sm">
-                          <div>
-                            <p className="text-[14px] font-medium text-gray-400 mb-1">
-                              Windows
-                            </p>
-                            <p className="font-semibold text-gray-800">
-                              {override.window_count}
-                            </p>
+                      <div className="px-6 py-5 border-b border-[#f0f4f8]">
+                        <h3 className="text-[20px] font-semibold text-gray-800 mb-0.5">Rating windows</h3>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Applies to {override.yearly_setup_sites.length} {override.yearly_setup_sites.length === 1 ? "site" : "sites"}
+                        </p>
+                        <ScheduleTimeline
+                          dates={(override.dates as string[]) ?? []}
+                          labels={WINDOW_LABELS[override.window_count] ?? []}
+                          showToday
+                        />
+                      </div>
+                      <div className="px-6 py-5">
+                        <h3 className="text-[20px] font-semibold text-gray-800 mb-4">Assessment configuration</h3>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
+                            <p className="text-[14px] font-medium text-gray-400 mb-1">Starting assessment</p>
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
+                                {override.assessment_type === "screener" ? (
+                                  <Zap size={12} className="text-white" strokeWidth={1.75} />
+                                ) : (
+                                  <ClipboardList size={12} className="text-white" strokeWidth={1.75} />
+                                )}
+                              </div>
+                              <span className="text-sm font-semibold text-gray-800">
+                                {override.assessment_type === "screener" ? "Screener" : "Full DESSA"}
+                              </span>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[14px] font-medium text-gray-400 mb-1">
-                              Assessment
-                            </p>
-                            <p className="font-semibold text-gray-800">
-                              {override.assessment_type === "screener"
-                                ? "Screener"
-                                : "Full Assessment"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[14px] font-medium text-gray-400 mb-1">
-                              Threshold
-                            </p>
-                            <p className="font-semibold text-gray-800">
+                          <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
+                            <p className="text-[14px] font-medium text-gray-400 mb-1">Auto-assign DESSA</p>
+                            <p className="text-sm font-semibold text-gray-800">
                               {override.conditional_assignment
                                 ? `T-Score ${override.t_score} or below`
-                                : "Disabled"}
+                                : "No"}
                             </p>
                           </div>
                         </div>
