@@ -130,7 +130,7 @@ function ScheduleTimeline({
           );
         })}
       </div>
-      <div className="relative h-9 rounded-lg overflow-hidden flex">
+      <div className="relative h-9 rounded-lg overflow-visible flex">
         {parsed.map((date, i) => {
           if (!date) return null;
           const next = parsed[i + 1];
@@ -150,8 +150,8 @@ function ScheduleTimeline({
           );
         })}
         {showToday && todayInRange && (
-          <div className="absolute top-0 bottom-0 w-[2px] bg-[#1a4e8a] z-10" style={{ left: `${todayPct}%` }}>
-            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#1a4e8a]" />
+          <div className="absolute top-0 bottom-0 w-[2px] bg-[#e9000f] z-10" style={{ left: `${todayPct}%` }}>
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#e9000f]" />
           </div>
         )}
       </div>

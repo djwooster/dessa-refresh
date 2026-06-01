@@ -55,7 +55,7 @@ export function ConceptC({ showYearLabel = true }: { showYearLabel?: boolean }) 
       </div>
 
       {/* Strip — 3 windows fill the full width equally */}
-      <div className="relative h-9 rounded-lg overflow-hidden flex">
+      <div className="relative h-9 rounded-lg overflow-visible flex">
         {BANDS.map((band) => (
           <div
             key={band.label}
@@ -70,10 +70,10 @@ export function ConceptC({ showYearLabel = true }: { showYearLabel?: boolean }) 
 
         {/* Today marker */}
         <div
-          className="absolute top-0 bottom-0 w-[2px] bg-[#1a4e8a] z-10"
+          className="absolute top-0 bottom-0 w-[2px] bg-[#e9000f] z-10"
           style={{ left: `${todayPct}%` }}
         >
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#1a4e8a]" />
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#e9000f]" />
         </div>
       </div>
 
