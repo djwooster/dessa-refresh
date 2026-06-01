@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { SuccessToast } from "@/components/ui/sonner";
@@ -895,7 +896,7 @@ function EditSetupPage() {
                     <button
                       key={site}
                       onClick={() => toggleSite(site)}
-                      className={`text-left rounded-xl border-2 px-4 py-2.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                      className={`text-left rounded-xl border px-4 py-2.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
                     >
                       <span className={`text-sm font-semibold ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>
                         {site}
@@ -934,7 +935,7 @@ function EditSetupPage() {
                 <button
                   key={count}
                   onClick={() => handleCountChange(count)}
-                  className={`text-left rounded-xl border-2 p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                  className={`text-left rounded-xl border p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
                 >
                   <div
                     className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}
@@ -981,6 +982,9 @@ function EditSetupPage() {
                 borderRadius: 12,
               }}
             >
+              <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}
+              </p>
               <p className="text-[20px] font-semibold text-gray-800 mb-1">
                 Year at a Glance
               </p>
@@ -993,22 +997,21 @@ function EditSetupPage() {
         );
 
       case "assessment": {
-        return (
-          <div className="space-y-4">
-            {windowConfigs.map((cfg, i) => {
-              const color = BAND_COLORS[i % BAND_COLORS.length];
-              return (
-                <div key={i} className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
-                  {/* Window header */}
-                  <div className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b border-[#f0f4f8]" style={{ borderLeftWidth: 4, borderLeftColor: color.text, borderLeftStyle: "solid" }}>
-                    <p className="text-[15px] font-bold text-gray-800">{labels[i]}</p>
-                    <span className="text-sm text-gray-400">
-                      {dates[i] ? `Opens ${new Date(dates[i] + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "—"}
-                    </span>
-                  </div>
-
-                  <div className="px-5 py-4 space-y-5">
-                    {/* Screener / Full picker */}
+        const perWindowCard = (cfg: WindowConfig, i: number) => {
+          const color = BAND_COLORS[i % BAND_COLORS.length];
+          return (
+            <div key={i} className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+              <div className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b border-[#f0f4f8]" style={{ borderLeftWidth: 4, borderLeftColor: color.text, borderLeftStyle: "solid", backgroundColor: color.text + "14" }}>
+                <p className="text-[18px] font-bold text-gray-800">{labels[i]}</p>
+                <span className="text-sm text-gray-500">
+                  {dates[i] ? `Opens ${new Date(dates[i] + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "—"}
+                </span>
+              </div>
+              <div className="px-5 py-4 space-y-4">
+                {/* Assessment type + Q1 — grouped container */}
+                <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] overflow-hidden">
+                  <div className="px-4 py-4">
+                    <p className="text-sm font-semibold text-gray-700 mb-3">Starting Assessment type</p>
                     <div className="grid grid-cols-2 gap-2.5">
                       {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc }) => {
                         const isSelected = cfg.assessment === value;
@@ -1016,7 +1019,7 @@ function EditSetupPage() {
                           <button
                             key={value}
                             onClick={() => updateWindowConfig(i, { assessment: value as "screener" | "full" })}
-                            className={`text-left rounded-xl border-2 p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                            className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
                           >
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
                               <Icon size={15} className={isSelected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
@@ -1027,85 +1030,191 @@ function EditSetupPage() {
                         );
                       })}
                     </div>
+                  </div>
+                  <AnimatePresence initial={false}>
+                    {cfg.assessment === "screener" && (
+                      <motion.div
+                        key="q1"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="border-t border-[#e8ecf0] px-4 py-4">
+                          <div className="flex items-center gap-2.5">
+                            <Switch
+                              checked={cfg.conditionalAssignment}
+                              onCheckedChange={(v) => updateWindowConfig(i, { conditionalAssignment: v })}
+                              className="cursor-pointer"
+                            />
+                            <span className={`text-sm select-none transition-colors ${cfg.conditionalAssignment ? "text-gray-700" : "text-gray-400"}`}>Assign the full DESSA to students scoring at or below a T-Score of</span>
+                            <Select
+                              value={cfg.tScore}
+                              onValueChange={(v) => updateWindowConfig(i, { tScore: v })}
+                              disabled={!cfg.conditionalAssignment}
+                            >
+                              <SelectTrigger className="w-20 h-7 text-sm cursor-pointer bg-white disabled:cursor-not-allowed disabled:opacity-40">
+                                <SelectValue render={<span>{cfg.tScore}</span>} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 12 }, (_, idx) => String((idx + 1) * 5)).map((v) => (
+                                  <SelectItem key={v} value={v}>{v}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-                    {/* Screener-only settings */}
-                    <AnimatePresence initial={false}>
-                      {cfg.assessment === "screener" && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.18, ease: "easeOut" }}
-                          className="overflow-hidden"
-                        >
-                          <div className="border-t border-[#f0f4f8] pt-4 space-y-4">
-                            {/* Conditional assignment */}
-                            <div>
-                              <p className="text-base font-semibold text-gray-700 mb-3">
-                                Should students who score below a threshold receive the full DESSA?
-                              </p>
-                              <RadioGroup
-                                value={cfg.conditionalAssignment ? "yes" : "no"}
-                                onValueChange={(v) => updateWindowConfig(i, { conditionalAssignment: v === "yes" })}
-                                className="gap-3"
+                {/* Q2 — previous window context, separate container */}
+                <AnimatePresence initial={false}>
+                  {cfg.assessment === "screener" && i > 0 && i < windowCount - 1 && (
+                    <motion.div
+                      key="q2"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] px-4 py-4">
+                        <p className="text-sm font-semibold text-gray-800 mb-0.5">Follow-up assessment</p>
+                        <p className="text-[13px] text-gray-500 mb-3">For students who scored below the threshold in the {labels[i - 1]}.</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {([
+                            { value: "rescreen", icon: Zap, label: "Screener", sublabel: "Start fresh — they may have improved." },
+                            { value: "skip", icon: ClipboardList, label: "Full DESSA", sublabel: "Skip straight to the full assessment." },
+                          ] as const).map(({ value, icon: Icon, label, sublabel }) => {
+                            const isSelected = cfg.resetBehavior === value;
+                            return (
+                              <button
+                                key={value}
+                                onClick={() => updateWindowConfig(i, { resetBehavior: value })}
+                                className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
                               >
-                                <label className="flex items-start gap-2.5 cursor-pointer">
-                                  <RadioGroupItem value="yes" className="mt-0.5 shrink-0" />
-                                  <div>
-                                    <span className="text-sm text-gray-600 block mb-1.5">
-                                      Yes — assign full DESSA at or below T-Score
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                      <input
-                                        type="number"
-                                        value={cfg.tScore}
-                                        onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
-                                        disabled={!cfg.conditionalAssignment}
-                                        className="w-16 h-7 px-2 border border-[#d1d5db] rounded-lg text-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1565c0]/30 focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
-                                      />
-                                    </div>
-                                  </div>
-                                </label>
-                                <label className="flex items-start gap-2.5 cursor-pointer">
-                                  <RadioGroupItem value="no" className="mt-0.5 shrink-0" />
-                                  <span className="text-sm text-gray-600">
-                                    No — all students complete only the screener
-                                  </span>
-                                </label>
-                              </RadioGroup>
-                            </div>
+                                <p className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
+                                <p className="text-xs text-gray-500 leading-snug">{sublabel}</p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          );
+        };
 
-                            {/* Reset behavior — only relevant with multiple windows */}
-                            {cfg.conditionalAssignment && windowCount > 1 && (
-                              <div>
-                                <p className="text-base font-semibold text-gray-700 mb-2.5">
-                                  If a student scored below the threshold last window, next time:
-                                </p>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {([
-                                    { value: "rescreen", label: "Re-screen them", sublabel: "Start with the screener — they may have improved." },
-                                    { value: "skip", label: "Skip to full DESSA", sublabel: "Go straight to the full assessment." },
-                                  ] as const).map(({ value, label, sublabel }) => (
-                                    <button
-                                      key={value}
-                                      onClick={() => updateWindowConfig(i, { resetBehavior: value })}
-                                      className={`text-left rounded-lg border-2 px-3 py-2.5 transition-all cursor-pointer ${cfg.resetBehavior === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                                    >
-                                      <p className={`text-sm font-semibold mb-0.5 ${cfg.resetBehavior === value ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
-                                      <p className="text-xs text-gray-500 leading-snug">{sublabel}</p>
-                                    </button>
-                                  ))}
+        return (
+          <div className="space-y-6">
+            {/* Same settings toggle */}
+            <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-xl border border-[#e8ecf0]">
+              <Switch
+                checked={sameConfigAllWindows}
+                onCheckedChange={(same) => {
+                  setSameConfigAllWindows(same);
+                  if (same) setWindowConfigs((prev) => prev.map(() => ({ ...prev[0] })));
+                }}
+                className="cursor-pointer shrink-0"
+              />
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Same settings for all windows</p>
+                <p className="text-[13px] text-gray-500">Use the same assessment type and escalation settings across every window.</p>
+              </div>
+            </div>
+
+            <AnimatePresence mode="wait" initial={false}>
+              {sameConfigAllWindows ? (
+                <motion.div key="unified" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                  <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+                    <div className="px-5 py-3.5 border-b border-[#f0f4f8]" style={{ borderLeftWidth: 4, borderLeftColor: "#1a4e8a", borderLeftStyle: "solid", backgroundColor: "#1a4e8a14" }}>
+                      <p className="text-[18px] font-bold text-gray-800">All {windowCount} Windows</p>
+                    </div>
+                    <div className="px-5 py-4 space-y-5">
+                      <p className="text-sm font-semibold text-gray-700 mb-2.5">Assessment type</p>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc }) => {
+                          const isSelected = windowConfigs[0].assessment === value;
+                          return (
+                            <button
+                              key={value}
+                              onClick={() => setWindowConfigs((prev) => prev.map((c) => ({ ...c, assessment: value as "screener" | "full" })))}
+                              className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                            >
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
+                                <Icon size={15} className={isSelected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
+                              </div>
+                              <p className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
+                              <p className="text-xs text-gray-500 leading-snug">{desc}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <AnimatePresence initial={false}>
+                        {windowConfigs[0].assessment === "screener" && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.18, ease: "easeOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-[#f0f4f8] pt-4">
+                              <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] px-4 py-4">
+                                <p className="text-sm font-semibold text-gray-700 mb-0.5">Conditional escalation</p>
+                                <p className="text-[13px] text-gray-500 mb-3">Automatically assign the full DESSA to students who score at or below a T-Score threshold.</p>
+                                <div className="flex items-center gap-2.5">
+                                  <Select
+                                    value={windowConfigs[0].conditionalAssignment ? "yes" : "no"}
+                                    onValueChange={(v) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, conditionalAssignment: v === "yes" })))}
+                                  >
+                                    <SelectTrigger className="w-24 cursor-pointer">
+                                      <SelectValue render={<span>{windowConfigs[0].conditionalAssignment ? "Yes" : "No"}</span>} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="yes">Yes</SelectItem>
+                                      <SelectItem value="no">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {windowConfigs[0].conditionalAssignment && (
+                                    <>
+                                      <span className="text-[13px] text-gray-400 whitespace-nowrap">at T-Score ≤</span>
+                                      <Select
+                                        value={windowConfigs[0].tScore}
+                                        onValueChange={(v) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, tScore: v })))}
+                                      >
+                                        <SelectTrigger className="w-20 cursor-pointer">
+                                          <SelectValue render={<span>{windowConfigs[0].tScore}</span>} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {Array.from({ length: 12 }, (_, idx) => String((idx + 1) * 5)).map((v) => (
+                                            <SelectItem key={v} value={v}>{v}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </>
+                                  )}
                                 </div>
                               </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                </motion.div>
+              ) : (
+                <motion.div key="per-window" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="space-y-16">
+                  {windowConfigs.map((cfg, i) => perWindowCard(cfg, i))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         );
       }
@@ -1129,7 +1238,7 @@ function EditSetupPage() {
                 { value: false, icon: Ban, label: "No", sublabel: "Student assessments open automatically at the start of each rating window." },
               ] as const).map(({ value, icon: Icon, label, sublabel }) => (
                 <button key={String(value)} onClick={() => setSiteLeaderManage(value)}
-                  className={`text-left rounded-xl border-2 px-4 py-3 transition-all cursor-pointer ${siteLeaderManage === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                  className={`text-left rounded-xl border px-4 py-3 transition-all cursor-pointer ${siteLeaderManage === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <Icon size={16} className={siteLeaderManage === value ? "text-[#1a4e8a]" : "text-gray-400"} strokeWidth={2} />
