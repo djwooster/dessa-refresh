@@ -386,11 +386,29 @@ function ReviewPanel({
               <p className="text-[18px] font-semibold text-gray-800">Teacher Completed Assessments</p>
               <button onClick={() => onGoToStep("assessment")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
             </div>
-            {windowConfigs.map((wc, i) => {
-              const wLabel = labels[i];
-              const typeLabel = wc.assessment === "screener" ? "Screener" : "Full Assessment";
-              const threshold = wc.assessment === "screener" && wc.conditionalAssignment ? ` · Auto-assigns full DESSA when screener score is ${wc.tScore} or below` : wc.assessment === "screener" ? " · No auto-assignment" : "";
-              return row(wLabel, `${typeLabel}${threshold}`);
+            {sameConfigAllWindows ? (() => {
+              const wc = windowConfigs[0];
+              return (
+                <>
+                  {row("Starting assessment", wc.assessment === "screener" ? "Screener" : "Full DESSA")}
+                  {row("Auto-assign DESSA", wc.assessment === "screener" ? (wc.conditionalAssignment ? `T-Score ${wc.tScore} or below` : "No") : "Not applicable")}
+                </>
+              );
+            })() : windowConfigs.map((wc, i) => {
+              const typeLabel = wc.assessment === "screener" ? "Screener" : "Full DESSA";
+              const autoAssign = wc.assessment === "screener" ? (wc.conditionalAssignment ? `T-Score ${wc.tScore} or below` : "No") : "Not applicable";
+              return (
+                <div key={i} className="flex py-2.5 border-b border-[#f0f4f8] last:border-0">
+                  <div className="flex flex-col gap-1 w-48 shrink-0">
+                    <span className="text-[12px] font-medium text-gray-400">{labels[i]}</span>
+                    <span className="text-sm font-medium text-gray-700">{typeLabel}</span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[12px] font-medium text-gray-400">Auto-assign DESSA</span>
+                    <span className="text-sm font-medium text-gray-700">{autoAssign}</span>
+                  </div>
+                </div>
+              );
             })}
           </div>
           <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
@@ -533,7 +551,7 @@ function LastYearModal({
                   Conditional T-Score
                 </span>
                 <span className="text-[14px] text-gray-500">
-                  ≤ {LAST_YEAR.tScore}
+                  {LAST_YEAR.tScore} or below
                 </span>
               </div>
             </div>
@@ -896,8 +914,15 @@ function EditSetupPage() {
                     <button
                       key={site}
                       onClick={() => toggleSite(site)}
-                      className={`text-left rounded-xl border px-4 py-2.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                      className={`flex items-center gap-3 text-left rounded-xl border px-4 py-2.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
                     >
+                      <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300"}`}>
+                        {isSelected && (
+                          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                            <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
                       <span className={`text-sm font-semibold ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>
                         {site}
                       </span>
@@ -1165,42 +1190,30 @@ function EditSetupPage() {
                             transition={{ duration: 0.18, ease: "easeOut" }}
                             className="overflow-hidden"
                           >
-                            <div className="border-t border-[#f0f4f8] pt-4">
-                              <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] px-4 py-4">
-                                <p className="text-sm font-semibold text-gray-700 mb-0.5">Conditional escalation</p>
-                                <p className="text-[13px] text-gray-500 mb-3">Automatically assign the full DESSA to students who score at or below a T-Score threshold.</p>
-                                <div className="flex items-center gap-2.5">
-                                  <Select
-                                    value={windowConfigs[0].conditionalAssignment ? "yes" : "no"}
-                                    onValueChange={(v) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, conditionalAssignment: v === "yes" })))}
-                                  >
-                                    <SelectTrigger className="w-24 cursor-pointer">
-                                      <SelectValue render={<span>{windowConfigs[0].conditionalAssignment ? "Yes" : "No"}</span>} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="yes">Yes</SelectItem>
-                                      <SelectItem value="no">No</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  {windowConfigs[0].conditionalAssignment && (
-                                    <>
-                                      <span className="text-[13px] text-gray-400 whitespace-nowrap">at T-Score ≤</span>
-                                      <Select
-                                        value={windowConfigs[0].tScore}
-                                        onValueChange={(v) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, tScore: v })))}
-                                      >
-                                        <SelectTrigger className="w-20 cursor-pointer">
-                                          <SelectValue render={<span>{windowConfigs[0].tScore}</span>} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {Array.from({ length: 12 }, (_, idx) => String((idx + 1) * 5)).map((v) => (
-                                            <SelectItem key={v} value={v}>{v}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </>
-                                  )}
-                                </div>
+                            <div className="border-t border-[#e8ecf0] px-4 py-4">
+                              <div className="flex items-center gap-2.5">
+                                <Switch
+                                  checked={windowConfigs[0].conditionalAssignment}
+                                  onCheckedChange={(v) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, conditionalAssignment: v })))}
+                                  className="cursor-pointer"
+                                />
+                                <span className={`text-sm select-none transition-colors ${windowConfigs[0].conditionalAssignment ? "text-gray-700" : "text-gray-400"}`}>
+                                  Assign the full DESSA to students scoring at or below a T-Score of
+                                </span>
+                                <Select
+                                  value={windowConfigs[0].tScore}
+                                  onValueChange={(v) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, tScore: v })))}
+                                  disabled={!windowConfigs[0].conditionalAssignment}
+                                >
+                                  <SelectTrigger className="w-20 h-7 text-sm cursor-pointer bg-white disabled:cursor-not-allowed disabled:opacity-40">
+                                    <SelectValue render={<span>{windowConfigs[0].tScore}</span>} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Array.from({ length: 12 }, (_, idx) => String((idx + 1) * 5)).map((v) => (
+                                      <SelectItem key={v} value={v}>{v}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
                             </div>
                           </motion.div>

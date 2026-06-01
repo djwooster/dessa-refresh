@@ -240,7 +240,7 @@ function ReviewPanel({
           <div>
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Teacher Completed Assessments</p>
             {row("Starting assessment", assessment === "screener" ? "Screener" : "Full Assessment")}
-            {assessment === "screener" && row("Conditional full DESSA", conditionalAssignment ? `T-Score ≤ ${tScore}` : "Disabled")}
+            {assessment === "screener" && row("Conditional full DESSA", conditionalAssignment ? `T-Score ${tScore} or below` : "Disabled")}
             {assessment === "screener" && conditionalAssignment && row("If previously below threshold", resetBehavior === "rescreen" ? "Re-screen them" : "Skip to full DESSA")}
             {assessment === "screener" && row("Per-window config", sameConfigAllWindows ? "Same for all windows" : "Configured per window")}
           </div>
@@ -314,7 +314,7 @@ function LastYearModal({ onClose, onUse }: { onClose: () => void; onUse: () => v
               </div>
               <div className="flex justify-between items-baseline">
                 <span className="text-[14px] font-semibold text-gray-700">Conditional T-Score</span>
-                <span className="text-[14px] text-gray-500">≤ {LAST_YEAR.tScore}</span>
+                <span className="text-[14px] text-gray-500">{LAST_YEAR.tScore} or below</span>
               </div>
             </div>
           </div>

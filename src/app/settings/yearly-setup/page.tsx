@@ -448,7 +448,7 @@ export default function YearlySetupPage() {
           </div>
 
           {/* Aug 1 reset callout */}
-          {crossesAugReset(defaultSetup.dates) && (
+          {/* {crossesAugReset(defaultSetup.dates) && (
             <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
               <AlertTriangle
                 size={16}
@@ -476,13 +476,13 @@ export default function YearlySetupPage() {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Custom Schedules */}
-          <div className="mt-6">
+          <div className="mt-8">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h2 className="text-[15px] font-bold text-gray-900">
+                <h2 className="text-[20px] font-bold text-gray-900">
                   Custom Schedules
                 </h2>
                 <p className="text-sm text-gray-500 mt-0.5">
@@ -722,7 +722,7 @@ export default function YearlySetupPage() {
                             </p>
                             <p className="font-semibold text-gray-800">
                               {override.conditional_assignment
-                                ? `T-Score ≤ ${override.t_score}`
+                                ? `T-Score ${override.t_score} or below`
                                 : "Disabled"}
                             </p>
                           </div>
