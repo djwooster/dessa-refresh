@@ -454,7 +454,7 @@ export default function YearlySetupPage() {
                   </p>
                   <p className="text-sm font-semibold text-gray-800">
                     {defaultSetup.conditional_assignment
-                      ? `When screener score is ${defaultSetup.t_score} or below`
+                      ? `Need for Instruction at T-Score ${defaultSetup.t_score} or below`
                       : "Disabled"}
                   </p>
                 </div>
@@ -536,144 +536,7 @@ export default function YearlySetupPage() {
             <div className={overrides.length === 0 ? "bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden" : ""}>
               {overrides.length === 0 ? (
                 <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-                  <div className="w-28 h-28 rounded-full bg-[#f0f2f5] flex items-center justify-center mb-5">
-                    <svg
-                      width="72"
-                      height="72"
-                      viewBox="0 0 72 72"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      {/* Back calendar page */}
-                      <rect
-                        x="18"
-                        y="16"
-                        width="36"
-                        height="40"
-                        rx="4"
-                        fill="#d1d5db"
-                      />
-                      <rect
-                        x="27"
-                        y="12"
-                        width="4"
-                        height="8"
-                        rx="2"
-                        fill="#9ca3af"
-                      />
-                      <rect
-                        x="41"
-                        y="12"
-                        width="4"
-                        height="8"
-                        rx="2"
-                        fill="#9ca3af"
-                      />
-                      {/* Front calendar page */}
-                      <rect
-                        x="14"
-                        y="20"
-                        width="36"
-                        height="40"
-                        rx="4"
-                        fill="#e5e7eb"
-                      />
-                      <rect
-                        x="23"
-                        y="16"
-                        width="4"
-                        height="8"
-                        rx="2"
-                        fill="#9ca3af"
-                      />
-                      <rect
-                        x="37"
-                        y="16"
-                        width="4"
-                        height="8"
-                        rx="2"
-                        fill="#9ca3af"
-                      />
-                      {/* Calendar header bar */}
-                      <rect
-                        x="14"
-                        y="20"
-                        width="36"
-                        height="10"
-                        rx="4"
-                        fill="#d1d5db"
-                      />
-                      <rect
-                        x="14"
-                        y="26"
-                        width="36"
-                        height="4"
-                        fill="#d1d5db"
-                      />
-                      {/* Dead face */}
-                      <rect
-                        x="20"
-                        y="38"
-                        width="24"
-                        height="16"
-                        rx="3"
-                        fill="white"
-                      />
-                      {/* X left eye */}
-                      <line
-                        x1="24"
-                        y1="42"
-                        x2="28"
-                        y2="46"
-                        stroke="#9ca3af"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      <line
-                        x1="28"
-                        y1="42"
-                        x2="24"
-                        y2="46"
-                        stroke="#9ca3af"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      {/* X right eye */}
-                      <line
-                        x1="36"
-                        y1="42"
-                        x2="40"
-                        y2="46"
-                        stroke="#9ca3af"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      <line
-                        x1="40"
-                        y1="42"
-                        x2="36"
-                        y2="46"
-                        stroke="#9ca3af"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      {/* Tongue */}
-                      <ellipse cx="32" cy="52" rx="4" ry="2.5" fill="#d1d5db" />
-                      {/* Sparkles */}
-                      <path d="M10 22 L11 19 L12 22 L11 25 Z" fill="#d1d5db" />
-                      <path d="M8 21 L11 20 L14 21 L11 22 Z" fill="#d1d5db" />
-                      <path d="M56 50 L57 47 L58 50 L57 53 Z" fill="#d1d5db" />
-                      <path d="M54 49 L57 48 L60 49 L57 50 Z" fill="#d1d5db" />
-                      <path
-                        d="M58 28 L58.8 26 L59.6 28 L58.8 30 Z"
-                        fill="#d1d5db"
-                      />
-                      <path
-                        d="M57 27 L58.8 26.4 L60.6 27 L58.8 27.6 Z"
-                        fill="#d1d5db"
-                      />
-                    </svg>
-                  </div>
+                  <img src="/undraw_date-picker_8qys.svg" alt="" className="w-32 h-32 mb-1" />
                   <h6 className="text-[15px] font-semibold text-gray-700 mb-1">
                     No custom schedules
                   </h6>
@@ -764,7 +627,7 @@ export default function YearlySetupPage() {
                             <p className="text-[14px] font-medium text-gray-400 mb-1">Auto-assign full DESSA</p>
                             <p className="text-sm font-semibold text-gray-800">
                               {override.conditional_assignment
-                                ? `When screener score is ${override.t_score} or below`
+                                ? `Need for Instruction at T-Score ${override.t_score} or below`
                                 : "Disabled"}
                             </p>
                           </div>

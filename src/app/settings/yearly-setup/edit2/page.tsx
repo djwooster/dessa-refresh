@@ -207,9 +207,9 @@ function WizardTimeline({
 }
 
 const TSCORE_RANGES = [
-  { label: "Needs Improvement", value: "≤ 40", bg: "#fee2e2", text: "#dc2626", flex: 2 },
-  { label: "Competent",         value: "41–59", bg: "#fef9c3", text: "#d97706", flex: 3 },
-  { label: "Above Average",     value: "≥ 60",  bg: "#dcf0e5", text: "#166534", flex: 2 },
+  { label: "Need for Instruction", value: "≤ 40", bg: "#fecaca", text: "#b91c1c", flex: 2 },
+  { label: "Typical",              value: "41–59", bg: "#dbeafe", text: "#1e40af", flex: 3 },
+  { label: "Strength",             value: "≥ 60",  bg: "#dcfce7", text: "#166534", flex: 2 },
 ];
 
 function TScoreInfoTooltip() {
@@ -241,7 +241,7 @@ function TScoreInfoTooltip() {
           className="fixed w-[260px] bg-white border border-[#e8ecf0] rounded-xl shadow-lg p-4 z-[100]"
           style={{ bottom: pos.bottom, right: pos.right }}
         >
-          <p className="text-[12px] font-semibold text-gray-700 mb-3">Understanding T-Scores</p>
+          <p className="text-[12px] font-semibold text-gray-700 mb-3">T-Score ranges</p>
           <div className="h-5 rounded-md overflow-hidden flex mb-3">
             {TSCORE_RANGES.map(({ label, value, bg, text, flex }) => (
               <div key={label} className="flex items-center justify-center" style={{ flex, backgroundColor: bg }}>
@@ -449,12 +449,12 @@ function ReviewPanel({
               return (
                 <>
                   {row("Starting assessment", wc.assessment === "screener" ? "Screener" : "Full DESSA")}
-                  {row("Auto-assign DESSA", wc.assessment === "screener" ? (wc.conditionalAssignment ? `T-Score ${wc.tScore} or below` : "No") : "Not applicable")}
+                  {row("Auto-assign DESSA", wc.assessment === "screener" ? (wc.conditionalAssignment ? `Need for Instruction at T-Score ${wc.tScore} or below` : "No") : "Not applicable")}
                 </>
               );
             })() : windowConfigs.map((wc, i) => {
               const typeLabel = wc.assessment === "screener" ? "Screener" : "Full DESSA";
-              const autoAssign = wc.assessment === "screener" ? (wc.conditionalAssignment ? `T-Score ${wc.tScore} or below` : "No") : "Not applicable";
+              const autoAssign = wc.assessment === "screener" ? (wc.conditionalAssignment ? `Need for Instruction at T-Score ${wc.tScore} or below` : "No") : "Not applicable";
               return (
                 <div key={i} className="flex py-2.5 border-b border-[#f0f4f8] last:border-0">
                   <div className="flex flex-col gap-1 w-48 shrink-0">
