@@ -784,6 +784,70 @@ function EditSetupPage() {
         })),
       );
     }
+
+    // Persist per-site custom setups from the site-overrides step (default flow only)
+    if (!isOverride) {
+      // Remove any previously saved site-level records for this year
+      const { data: existingSiteRecords } = await db
+        .from("yearly_setups")
+        .select("id, group_name")
+        .eq("year", "2025-2026")
+        .eq("is_default", false)
+        .in("group_name", MOCK_SITES);
+      if (existingSiteRecords?.length) {
+        const ids = existingSiteRecords.map((r: { id: string }) => r.id);
+        await db.from("yearly_setup_window_configs").delete().in("setup_id", ids);
+        await db.from("yearly_setup_sites").delete().in("setup_id", ids);
+        await db.from("yearly_setups").delete().in("id", ids);
+      }
+
+      // Re-insert each site that has a custom config
+      if (hasSiteCustomSetups === true) {
+        for (const [siteName, siteCfg] of Object.entries(siteCustomSetups)) {
+          if (!siteCfg) continue;
+          const allDates = [
+            ...siteCfg.dates,
+            ...siteCfg.extraWindows.map((ew) => ew.date),
+          ];
+          const totalCount = siteCfg.windowConfigs.length + siteCfg.extraWindows.length;
+          const siteAssessmentType = siteCfg.windowConfigs.some((wc) => wc.assessment === "screener") ? "screener" : "full";
+          const sitePayload = {
+            is_default: false,
+            group_name: siteName,
+            year: "2025-2026",
+            window_count: totalCount,
+            dates: allDates,
+            assessment_type: siteAssessmentType,
+            conditional_assignment: siteCfg.windowConfigs.some((wc) => wc.conditionalAssignment === true),
+            t_score: siteCfg.windowConfigs[0]?.tScore ?? "40",
+            reset_behavior: siteCfg.windowConfigs[0]?.resetBehavior ?? "rescreen",
+            same_config_all_windows: false,
+            site_leader_manage: false,
+          };
+          const { data: newSiteRecord } = await db
+            .from("yearly_setups")
+            .insert(sitePayload)
+            .select("id")
+            .single();
+          const siteSetupId = newSiteRecord?.id;
+          if (siteSetupId) {
+            await db.from("yearly_setup_sites").insert({ setup_id: siteSetupId, site_name: siteName });
+            if (siteCfg.windowConfigs.length > 0) {
+              await db.from("yearly_setup_window_configs").insert(
+                siteCfg.windowConfigs.map((wc, i) => ({
+                  setup_id: siteSetupId,
+                  window_index: i,
+                  conditional_assignment: wc.conditionalAssignment,
+                  t_score: wc.tScore,
+                  reset_behavior: wc.resetBehavior,
+                }))
+              );
+            }
+          }
+        }
+      }
+    }
+
     setSaving(false);
   };
 
@@ -799,6 +863,7 @@ function EditSetupPage() {
         onAction={() => router.push("/settings/rating-window-reminders")}
       />
     ));
+    router.refresh();
     router.push("/settings/yearly-setup");
   };
 
@@ -903,6 +968,7 @@ function EditSetupPage() {
     await db.from("yearly_setup_sites").delete().eq("setup_id", existingId);
     await db.from("yearly_setups").delete().eq("id", existingId);
     setDeleting(false);
+    router.refresh();
     router.push("/settings/yearly-setup");
   };
 

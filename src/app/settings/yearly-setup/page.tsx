@@ -3,12 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarClock,
   Zap,
   ClipboardList,
   Plus,
   Trash2,
-  AlertTriangle,
   MoreHorizontal,
 } from "lucide-react";
 import {
@@ -22,9 +20,16 @@ import { ConceptC } from "@/components/dashboard/timeline/ConceptC";
 import { createClient } from "@/lib/supabase/client";
 import type { YearlySetup, YearlySetupSite } from "@/lib/supabase/types";
 
-type SetupWithSites = YearlySetup & { yearly_setup_sites: YearlySetupSite[] };
-
-const ASSESSMENTS = ["Teacher DESSA", "Student DESSA", "SEIR"];
+type WindowConfig = {
+  window_index: number;
+  conditional_assignment: boolean;
+  t_score: string | null;
+  reset_behavior: string;
+};
+type SetupWithSites = YearlySetup & {
+  yearly_setup_sites: YearlySetupSite[];
+  yearly_setup_window_configs: WindowConfig[];
+};
 
 const SCHOOL_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
 const CURRENT_YEAR = "2025-2026";
@@ -182,6 +187,62 @@ function crossesAugReset(dates: string[]): boolean {
   return months.some((m) => m <= 6) && months.some((m) => m >= 7);
 }
 
+function formatDate(iso: string) {
+  return new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function AssessmentConfigRows({
+  windowCount,
+  dates,
+  assessmentType,
+  windowConfigs,
+}: {
+  windowCount: number;
+  dates: string[];
+  assessmentType: "screener" | "full";
+  windowConfigs: WindowConfig[];
+}) {
+  const labels = WINDOW_LABELS[windowCount] ?? Array.from({ length: windowCount }, (_, i) => `Window ${i + 1}`);
+  return (
+    <div>
+      <h3 className="text-[20px] font-semibold text-gray-800 mb-4">Assessment configuration</h3>
+      <div className="rounded-xl border border-[#e8ecf0] overflow-hidden">
+        {/* Header row */}
+        <div className="grid grid-cols-[1fr_160px_1fr] gap-4 px-5 py-2.5 bg-[#f8fafc] border-b border-[#e8ecf0]">
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Window</span>
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Assessment type</span>
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Auto-assign DESSA</span>
+        </div>
+        {Array.from({ length: windowCount }, (_, i) => {
+          const wc = windowConfigs.find((c) => c.window_index === i);
+          const isScreener = assessmentType === "screener";
+          return (
+            <div key={i} className="grid grid-cols-[1fr_160px_1fr] gap-4 px-5 py-3.5 border-b border-[#f0f4f8] last:border-0 bg-white">
+              <div>
+                <p className="text-[13px] font-semibold text-gray-800">{labels[i]}</p>
+                {dates[i] && <p className="text-[12px] text-gray-400 mt-0.5">Opens {formatDate(dates[i])}</p>}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
+                  {isScreener
+                    ? <Zap size={10} className="text-white" strokeWidth={2} />
+                    : <ClipboardList size={10} className="text-white" strokeWidth={2} />}
+                </div>
+                <span className="text-[13px] text-gray-700">{isScreener ? "Screener" : "Full Assessment"}</span>
+              </div>
+              <div>
+                {wc?.conditional_assignment
+                  ? <p className="text-[13px] text-gray-700">T-score ≤ {wc.t_score}</p>
+                  : <p className="text-[13px] text-gray-400">Disabled</p>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function YearlySetupPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -208,7 +269,7 @@ export default function YearlySetupPage() {
     async function load() {
       const { data } = await supabase
         .from("yearly_setups")
-        .select("*, yearly_setup_sites(*)")
+        .select("*, yearly_setup_sites(*), yearly_setup_window_configs(*)")
         .order("created_at", { ascending: true });
       if (data) setAllSetups(data as SetupWithSites[]);
       setLoading(false);
@@ -315,47 +376,17 @@ export default function YearlySetupPage() {
           </div>
 
           <div className="px-6 py-5">
-            <h3 className="text-[20px] font-semibold text-gray-800 mb-4">
-              Assessment configuration
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                <p className="text-[14px] font-medium text-gray-400 mb-1">
-                  Starting assessment
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
-                    <Zap size={12} className="text-white" strokeWidth={1.75} />
-                  </div>
-                  <span className="text-sm font-semibold text-gray-800">
-                    Screener
-                  </span>
-                </div>
-              </div>
-              <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                <p className="text-[14px] font-medium text-gray-400 mb-1">
-                  Auto-assign full DESSA
-                </p>
-                <p className="text-sm font-semibold text-gray-800">
-                  When screener score is {PAST_YEAR_MOCK.t_score} or below
-                </p>
-              </div>
-              <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                <p className="text-[14px] font-medium text-gray-400 mb-1">
-                  Assessments
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {ASSESSMENTS.map((a) => (
-                    <span
-                      key={a}
-                      className="inline-block text-[11px] font-medium text-gray-600 bg-white border border-[#e8ecf0] rounded-full px-2 py-0.5"
-                    >
-                      {a}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <AssessmentConfigRows
+              windowCount={PAST_YEAR_MOCK.windowCount}
+              dates={PAST_YEAR_MOCK.windows.map((w) => w.iso)}
+              assessmentType={PAST_YEAR_MOCK.assessment_type}
+              windowConfigs={PAST_YEAR_MOCK.windows.map((_, i) => ({
+                window_index: i,
+                conditional_assignment: PAST_YEAR_MOCK.conditional_assignment,
+                t_score: PAST_YEAR_MOCK.t_score,
+                reset_behavior: "rescreen",
+              }))}
+            />
           </div>
         </div>
       ) : !defaultSetup ? (
@@ -417,63 +448,12 @@ export default function YearlySetupPage() {
             </div>
 
             <div className="px-6 py-5">
-              <h3 className="text-[20px] font-semibold text-gray-800 mb-4">
-                Assessment configuration
-              </h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[14px] font-medium text-gray-400 mb-1">
-                    Current window starting assessment
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
-                      {defaultSetup.assessment_type === "screener" ? (
-                        <Zap
-                          size={12}
-                          className="text-white"
-                          strokeWidth={1.75}
-                        />
-                      ) : (
-                        <ClipboardList
-                          size={12}
-                          className="text-white"
-                          strokeWidth={1.75}
-                        />
-                      )}
-                    </div>
-                    <span className="text-sm font-semibold text-gray-800">
-                      {defaultSetup.assessment_type === "screener"
-                        ? "Screener"
-                        : "Full Assessment"}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[14px] font-medium text-gray-400 mb-1">
-                    Auto-assign full DESSA
-                  </p>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {defaultSetup.conditional_assignment
-                      ? `Need for Instruction at T-Score ${defaultSetup.t_score} or below`
-                      : "Disabled"}
-                  </p>
-                </div>
-                <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                  <p className="text-[14px] font-medium text-gray-400 mb-1">
-                    Assessments
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {ASSESSMENTS.map((a) => (
-                      <span
-                        key={a}
-                        className="inline-block text-[11px] font-medium text-gray-600 bg-white border border-[#e8ecf0] rounded-full px-2 py-0.5"
-                      >
-                        {a}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <AssessmentConfigRows
+                windowCount={defaultSetup.window_count}
+                dates={(defaultSetup.dates as string[]) ?? []}
+                assessmentType={defaultSetup.assessment_type as "screener" | "full"}
+                windowConfigs={defaultSetup.yearly_setup_window_configs ?? []}
+              />
             </div>
           </div>
 
@@ -606,45 +586,12 @@ export default function YearlySetupPage() {
                         />
                       </div>
                       <div className="px-6 py-5">
-                        <h3 className="text-[20px] font-semibold text-gray-800 mb-4">Assessment configuration</h3>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                            <p className="text-[14px] font-medium text-gray-400 mb-1">Current window starting assessment</p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-md bg-[#1a4e8a] flex items-center justify-center shrink-0">
-                                {override.assessment_type === "screener" ? (
-                                  <Zap size={12} className="text-white" strokeWidth={1.75} />
-                                ) : (
-                                  <ClipboardList size={12} className="text-white" strokeWidth={1.75} />
-                                )}
-                              </div>
-                              <span className="text-sm font-semibold text-gray-800">
-                                {override.assessment_type === "screener" ? "Screener" : "Full DESSA"}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                            <p className="text-[14px] font-medium text-gray-400 mb-1">Auto-assign full DESSA</p>
-                            <p className="text-sm font-semibold text-gray-800">
-                              {override.conditional_assignment
-                                ? `Need for Instruction at T-Score ${override.t_score} or below`
-                                : "Disabled"}
-                            </p>
-                          </div>
-                          <div className="bg-[#f8fafc] rounded-lg border border-[#edf0f4] px-4 py-3">
-                            <p className="text-[14px] font-medium text-gray-400 mb-1">Assessments</p>
-                            <div className="flex flex-wrap gap-1">
-                              {ASSESSMENTS.map((a) => (
-                                <span
-                                  key={a}
-                                  className="inline-block text-[11px] font-medium text-gray-600 bg-white border border-[#e8ecf0] rounded-full px-2 py-0.5"
-                                >
-                                  {a}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
+                        <AssessmentConfigRows
+                          windowCount={override.window_count}
+                          dates={(override.dates as string[]) ?? []}
+                          assessmentType={override.assessment_type as "screener" | "full"}
+                          windowConfigs={override.yearly_setup_window_configs ?? []}
+                        />
                       </div>
                     </div>
                   ))}
