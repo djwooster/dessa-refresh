@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
+  HelpCircle,
   Info,
   Zap,
   ClipboardList,
@@ -285,66 +286,138 @@ const ASSESSMENT_OPTIONS = [
   },
 ];
 
-// ─── Step definitions ─────────────────────────────────────────────────────────
+// ─── Screen definitions ────────────────────────────────────────────────────────
 
-type StepId =
-  | "sites"
-  | "windows"
-  | "dates"
-  | "assessment"
-  | "students";
-
-const STEP_DEFS: Record<
-  StepId,
-  {
-    label: string;
-    desc: string;
-    icon: React.ElementType;
-    title: string;
-    subtitle: string;
-  }
-> = {
-  sites: {
-    label: "Create a Group",
-    desc: "Name the group and choose its sites",
-    icon: Building2,
-    title: "Create a Group",
-    subtitle:
-      "Give this custom schedule a name and choose which sites should follow it.",
-  },
-  windows: {
-    label: "Rating Windows",
-    desc: "Choose how many windows per year",
-    icon: CalendarClock,
-    title: "Rating Windows",
-    subtitle:
-      "Each period is called a rating window — you'll see this term throughout your reports and data filters. Choose based on your school's calendar and how often you want to track progress.",
-  },
-  dates: {
-    label: "Rating Window Dates",
-    desc: "Set the start date for each window",
-    icon: Calendar,
-    title: "Rating Window Start Dates",
-    subtitle:
-      "Each rating window opens on its start date — that's when teachers can begin submitting assessments for that period. Pick dates that align with your school's calendar and give your staff enough time to complete their work before the next window begins.",
-  },
-  assessment: {
-    label: "Teacher Assessments",
-    desc: "Configure assessment per window",
-    icon: ClipboardList,
-    title: "Teacher Completed Assessments",
-    subtitle:
-      "Choose the assessment type for each rating window. Each window can use a different form, and screener windows can automatically escalate students who score below a threshold.",
-  },
-  students: {
-    label: "Student Assessments",
-    desc: "Configure student self-report access",
-    icon: Users,
-    title: "Student Completed Assessments",
-    subtitle:
-      "If your program has enabled student completed assessments, they will automatically be available for students to complete unless you de-activate them.",
-  },
+type ScreenDef = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  helpTitle?: string;
+  helpBody?: React.ReactNode;
 };
+
+function buildScreens(
+  isOverride: boolean,
+  windowCount: number,
+  windowConfigs: WindowConfig[],
+  labels: string[],
+): ScreenDef[] {
+  const screens: ScreenDef[] = [];
+
+  if (isOverride) {
+    screens.push({
+      id: "name",
+      title: "What should we call this group?",
+      subtitle: "Give this custom schedule a name so Site Leaders and admins can identify it.",
+    });
+    screens.push({
+      id: "sites",
+      title: "Which sites are in this group?",
+      subtitle: "Select all sites that should follow this custom schedule.",
+    });
+  }
+
+  screens.push({
+    id: "window-count",
+    title: "How many rating windows do you need this year?",
+    helpTitle: "About Rating Windows",
+    helpBody: (
+      <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
+        <p>A rating window is a period during the school year when teachers complete DESSA assessments for their students.</p>
+        <p>Most programs use <strong>3 windows</strong> — Pre, Mid, and Post — which lets you track social-emotional growth across the year.</p>
+        <p>Choose a number that matches your program&apos;s schedule. You can adjust this in future years.</p>
+      </div>
+    ),
+  });
+
+  for (let i = 0; i < windowCount; i++) {
+    screens.push({
+      id: `date-${i}`,
+      title: `When does ${labels[i]} open?`,
+      subtitle: "This is the first day teachers can begin submitting assessments for this window.",
+      helpTitle: "About Start Dates",
+      helpBody: (
+        <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
+          <p>The start date is when this rating window opens. Once it opens, teachers can begin submitting assessments for students in this period.</p>
+          <p>Good choices are dates that align with your school calendar — the start of a semester, after a break, or at the beginning of a grading period.</p>
+          <p>Make sure there&apos;s enough time between windows for teachers to complete their assessments.</p>
+        </div>
+      ),
+    });
+  }
+
+  for (let i = 0; i < windowCount; i++) {
+    screens.push({
+      id: `assess-type-${i}`,
+      title: `What assessment will teachers use for ${labels[i]}?`,
+      helpTitle: "Screener vs. Full Assessment",
+      helpBody: (
+        <div className="space-y-4 text-[14px] text-gray-600 leading-relaxed">
+          <div>
+            <p className="font-semibold text-gray-800 mb-1">Screener</p>
+            <p>A short, 8-item form that quickly identifies students who may need additional support. Includes the DESSA 2 mini and DESSA HSE-mini.</p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-800 mb-1">Full Assessment</p>
+            <p>A comprehensive form measuring eight social-emotional competencies in depth. Includes the DESSA 2 and DESSA HSE.</p>
+          </div>
+          <p className="text-gray-500 text-[13px]">Many programs use a screener for most windows and only escalate to the full assessment when a student scores below a threshold.</p>
+        </div>
+      ),
+    });
+
+    if (windowConfigs[i]?.assessment === "screener") {
+      screens.push({
+        id: `assess-escalate-${i}`,
+        title: `Should students who score below a threshold in ${labels[i]} automatically receive the full DESSA?`,
+        helpTitle: "Auto-Escalation",
+        helpBody: (
+          <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
+            <p>When enabled, students who score at or below the T-Score threshold are automatically assigned the full DESSA — no manual review needed by teachers.</p>
+            <p>A T-Score of <strong>40 or below</strong> is the standard cutoff for <strong>Need for Instruction</strong>, indicating the student may benefit from targeted social-emotional support.</p>
+            <p>You can set the threshold higher or lower based on your program&apos;s criteria.</p>
+          </div>
+        ),
+      });
+
+      if (i < windowCount - 1 && windowConfigs[i + 1]?.assessment === "screener") {
+        screens.push({
+          id: `assess-handoff-${i}`,
+          title: `For students who score below the threshold in ${labels[i]}, how should they begin ${labels[i + 1]}?`,
+          helpTitle: "Carrying Over Low Scorers",
+          helpBody: (
+            <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
+              <p>When a student scores below the threshold in one window, you decide how they start the next.</p>
+              <div>
+                <p className="font-semibold text-gray-800 mb-1">Screen again</p>
+                <p>They take the screener again. Useful if enough time has passed that their score may have changed.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800 mb-1">Full DESSA</p>
+                <p>They skip the screener and go straight to the full assessment in the next window.</p>
+              </div>
+            </div>
+          ),
+        });
+      }
+    }
+  }
+
+  screens.push({
+    id: "students",
+    title: "Who controls when students can access their self-assessments?",
+    helpTitle: "Student Self-Assessment Access",
+    helpBody: (
+      <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
+        <p>The DESSA student self-report lets students rate themselves on social-emotional skills.</p>
+        <p>By default, student assessments open automatically when a rating window opens — no extra step needed.</p>
+        <p>If you enable Site Leader management, each Site Leader can choose exactly when students at their site can access their self-assessment within the window, giving them more control over timing.</p>
+      </div>
+    ),
+  });
+
+  return screens;
+}
 
 // ─── Mock / last-year data ────────────────────────────────────────────────────
 
@@ -381,12 +454,12 @@ const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {};
 
 function ReviewPanel({
   windowCount, dates, labels, assessment, conditionalAssignment, tScore, resetBehavior,
-  windowConfigs, siteLeaderManage, isOverride, onBack, onGoToStep, onSave, saving,
+  windowConfigs, siteLeaderManage, isOverride, onBack, onGoToScreen, onSave, saving,
 }: {
   windowCount: number; dates: string[]; labels: string[]; assessment: "screener" | "full";
   conditionalAssignment: boolean; tScore: string; resetBehavior: "rescreen" | "skip";
   windowConfigs: WindowConfig[]; siteLeaderManage: boolean; isOverride: boolean;
-  onBack: () => void; onGoToStep: (stepId: StepId) => void; onSave: () => void; saving?: boolean;
+  onBack: () => void; onGoToScreen: (screenId: string) => void; onSave: () => void; saving?: boolean;
 }) {
   const windowDesc = WINDOW_OPTIONS.find((o) => o.count === windowCount)!.desc;
   const row = (label: string, value: React.ReactNode) => (
@@ -424,7 +497,7 @@ function ReviewPanel({
           <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[18px] font-semibold text-gray-800">Rating Windows</p>
-              <button onClick={() => onGoToStep("windows")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
+              <button onClick={() => onGoToScreen("window-count")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
             </div>
             {row("Schedule", `${windowCount} windows — ${windowDesc}`)}
             <div className="mt-4 mb-3">
@@ -442,7 +515,7 @@ function ReviewPanel({
           <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[18px] font-semibold text-gray-800">Teacher Completed Assessments</p>
-              <button onClick={() => onGoToStep("assessment")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
+              <button onClick={() => onGoToScreen("assess-type-0")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
             </div>
             {windowConfigs.map((wc, i) => {
               const typeLabel = wc.assessment === "screener" ? "Screener" : "Full DESSA";
@@ -680,7 +753,8 @@ function EditSetupPage() {
   );
 
   // UI state
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [currentScreenId, setCurrentScreenId] = useState(isOverride ? "name" : "window-count");
+  const [helpOpen, setHelpOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLastYear, setShowLastYear] = useState(false);
@@ -845,21 +919,18 @@ function EditSetupPage() {
     JSON.stringify([...selectedSites].sort()) !==
       JSON.stringify([...initial.selectedSites].sort());
 
-  const getStepSequence = (): StepId[] => {
-    const seq: StepId[] = [];
-    if (isOverride) seq.push("sites");
-    seq.push("windows", "dates", "assessment", "students");
-    return seq;
-  };
-
-  const stepSequence = getStepSequence();
-  const currentStepId = stepSequence[currentStepIndex];
-  const totalSteps = stepSequence.length;
-  const isFirstStep = currentStepIndex === 0;
-  const isLastStep = currentStepIndex === totalSteps - 1;
-  const visibleSteps = stepSequence.map((id) => ({ id, ...STEP_DEFS[id] }));
-  const currentStepDef = STEP_DEFS[currentStepId];
   const labels = WINDOW_OPTIONS.find((o) => o.count === windowCount)!.labels;
+  const screenSequence = useMemo(
+    () => buildScreens(isOverride, windowCount, windowConfigs, labels),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isOverride, windowCount, JSON.stringify(windowConfigs), labels.join(",")],
+  );
+  const currentScreenIdx = Math.max(0, screenSequence.findIndex((s) => s.id === currentScreenId));
+  const currentScreen = screenSequence[currentScreenIdx] ?? screenSequence[0];
+  const totalScreens = screenSequence.length;
+  const isFirstScreen = currentScreenIdx === 0;
+  const isLastScreen = currentScreenIdx === totalScreens - 1;
+  const progress = totalScreens > 0 ? ((currentScreenIdx + 1) / totalScreens) * 100 : 0;
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
@@ -868,15 +939,23 @@ function EditSetupPage() {
     else router.push("/settings/yearly-setup");
   };
 
-  const sitesStepValid = !isOverride || (overrideName.trim().length > 0 && selectedSites.length > 0);
-
-  const handleNext = () => {
-    if (!sitesStepValid) return;
-    if (isLastStep) setShowReview(true);
-    else setCurrentStepIndex((i) => i + 1);
+  const currentScreenValid = () => {
+    if (currentScreen.id === "name") return overrideName.trim().length > 0;
+    if (currentScreen.id === "sites") return selectedSites.length > 0;
+    return true;
   };
 
-  const handlePrev = () => setCurrentStepIndex((i) => i - 1);
+  const handleNext = () => {
+    if (!currentScreenValid()) return;
+    if (isLastScreen) { setShowReview(true); return; }
+    const next = screenSequence[currentScreenIdx + 1];
+    if (next) setCurrentScreenId(next.id);
+  };
+
+  const handlePrev = () => {
+    const prev = screenSequence[currentScreenIdx - 1];
+    if (prev) setCurrentScreenId(prev.id);
+  };
 
   const handleDelete = async () => {
     if (!existingId) return;
@@ -941,131 +1020,242 @@ function EditSetupPage() {
     setShowLastYear(false);
   };
 
-  // ─── Step content ──────────────────────────────────────────────────────────
+  // ─── Screen content ────────────────────────────────────────────────────────
 
-  const renderStepContent = () => {
-    switch (currentStepId) {
-      case "sites":
-        return (
-          <div className="space-y-8">
-            <div>
-              <label className="text-[14px] font-semibold text-gray-800 mb-2 block">
-                Group name
-              </label>
-              <input
-                type="text"
-                value={overrideName}
-                onChange={(e) => setOverrideName(e.target.value)}
-                placeholder="e.g. Downtown Sites, North Region"
-                className="w-80 bg-transparent border-0 border-b border-[#d1d5db] text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-[#1565c0] pb-1.5"
-              />
-            </div>
-            <div>
-              <p className="text-[14px] font-semibold text-gray-800 mb-1">
-                Which sites should be included?
-              </p>
-              <p className="text-sm text-gray-500 mb-3">
-                Select one or more sites.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {MOCK_SITES.filter((site) => !SITES_IN_OTHER_OVERRIDES[site] || selectedSites.includes(site)).map((site) => {
-                  const isSelected = selectedSites.includes(site);
-                  return (
-                    <button
-                      key={site}
-                      onClick={() => toggleSite(site)}
-                      className={`flex items-center gap-3 text-left rounded-xl border px-4 py-2.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                    >
-                      <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300"}`}>
-                        {isSelected && (
-                          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                            <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className={`text-sm font-semibold ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>
-                        {site}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
+  const renderScreenContent = (screenId: string) => {
+    // ── Override: group name ───────────────────────────────────────────────
+    if (screenId === "name") {
+      return (
+        <input
+          type="text"
+          value={overrideName}
+          onChange={(e) => setOverrideName(e.target.value)}
+          placeholder="e.g. Downtown Sites, North Region"
+          className="w-full max-w-sm bg-transparent border-0 border-b-2 border-[#d1d5db] text-[20px] text-gray-700 placeholder:text-gray-300 focus:outline-none focus:border-[#1565c0] pb-2"
+          autoFocus
+        />
+      );
+    }
 
-      case "windows":
-        return (
-          <div className="grid grid-cols-5 gap-2">
-            {WINDOW_OPTIONS.map(({ count, desc }) => {
-              const isSelected = windowCount === count;
-              return (
-                <button
-                  key={count}
-                  onClick={() => handleCountChange(count)}
-                  className={`text-left rounded-xl border p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                >
-                  <div
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}
-                  >
-                    {count}
-                  </div>
-                  <p className={`text-base font-semibold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>
-                    {count === 1 ? "1 Window" : `${count} Windows`}
-                  </p>
-                  <p className="text-sm text-gray-500 leading-snug">{desc}</p>
-                </button>
-              );
-            })}
-          </div>
-        );
+    // ── Override: site selection ───────────────────────────────────────────
+    if (screenId === "sites") {
+      return (
+        <div className="grid grid-cols-2 gap-2">
+          {MOCK_SITES.filter((site) => !SITES_IN_OTHER_OVERRIDES[site] || selectedSites.includes(site)).map((site) => {
+            const isSelected = selectedSites.includes(site);
+            return (
+              <button
+                key={site}
+                onClick={() => toggleSite(site)}
+                className={`flex items-center gap-3 text-left rounded-xl border px-4 py-3 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+              >
+                <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300"}`}>
+                  {isSelected && (
+                    <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                      <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span className={`text-[14px] font-semibold ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>{site}</span>
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
 
-      case "dates":
-        return (
-          <div className="space-y-16">
-            <div>
-              <div className="flex flex-wrap gap-6">
-                {dates.map((date, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col gap-1"
-                    style={{ width: 140 }}
-                  >
-                    <label className="text-[13px] font-semibold text-gray-700">
-                      {labels[i]}
-                    </label>
-                    <DatePicker
-                      value={date}
-                      onChange={(v) => updateDate(i, v)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div
-              style={{
-                padding: 12,
-                backgroundColor: "white",
-                border: "1px solid #dbdbdb",
-                borderRadius: 12,
-              }}
-            >
-              <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+    // ── Window count ───────────────────────────────────────────────────────
+    if (screenId === "window-count") {
+      return (
+        <div className="grid grid-cols-5 gap-2">
+          {WINDOW_OPTIONS.map(({ count, desc }) => {
+            const isSelected = windowCount === count;
+            return (
+              <button
+                key={count}
+                onClick={() => handleCountChange(count)}
+                className={`text-left rounded-xl border p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+              >
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}>
+                  {count}
+                </div>
+                <p className={`text-[14px] font-semibold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>
+                  {count === 1 ? "1 Window" : `${count} Windows`}
+                </p>
+                <p className="text-[12px] text-gray-500 leading-snug">{desc}</p>
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ── Date picker (one per window) ──────────────────────────────────────
+    const dateMatch = screenId.match(/^date-(\d+)$/);
+    if (dateMatch) {
+      const i = parseInt(dateMatch[1]);
+      return (
+        <div className="space-y-10">
+          <DatePicker value={dates[i]} onChange={(v) => updateDate(i, v)} />
+          {dates.some(Boolean) && (
+            <div className="bg-white border border-[#e8ecf0] rounded-xl p-4">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
                 {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}
               </p>
-              <p className="text-[20px] font-semibold text-gray-800 mb-1">
-                Year at a Glance
-              </p>
-              <p className="text-[13.5px] text-gray-500 mb-3">
-                A preview of your rating windows across the school year
-              </p>
+              <p className="text-[15px] font-semibold text-gray-800 mb-3">Year at a glance</p>
               <WizardTimeline dates={dates} labels={labels} />
             </div>
-          </div>
-        );
+          )}
+        </div>
+      );
+    }
 
-      case "assessment": {
-        const perWindowCard = (cfg: WindowConfig, i: number) => {
+    // ── Assessment type (one per window) ──────────────────────────────────
+    const assessTypeMatch = screenId.match(/^assess-type-(\d+)$/);
+    if (assessTypeMatch) {
+      const i = parseInt(assessTypeMatch[1]);
+      const cfg = windowConfigs[i];
+      return (
+        <div className="space-y-3">
+          {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc, summary }) => {
+            const isSelected = cfg?.assessment === value;
+            return (
+              <button
+                key={value}
+                onClick={() => updateWindowConfig(i, { assessment: value as "screener" | "full" })}
+                className={`w-full text-left rounded-xl border-2 p-5 flex items-start gap-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+              >
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
+                  <Icon size={16} className={isSelected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
+                </div>
+                <div className="flex-1">
+                  <p className={`text-[15px] font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>{label}</p>
+                  <p className="text-[13px] text-gray-500 leading-snug">{summary}</p>
+                  <p className="text-[12px] text-gray-400 mt-1">{desc}</p>
+                </div>
+                {isSelected && <CheckCircle2 size={18} className="text-[#1a4e8a] shrink-0 mt-0.5" strokeWidth={2} />}
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ── Auto-escalation (screener windows only) ────────────────────────────
+    const assessEscalateMatch = screenId.match(/^assess-escalate-(\d+)$/);
+    if (assessEscalateMatch) {
+      const i = parseInt(assessEscalateMatch[1]);
+      const cfg = windowConfigs[i];
+      return (
+        <div className="space-y-3">
+          {([
+            { value: true, label: "Yes, auto-assign", desc: "Students scoring below the threshold automatically receive the full DESSA." },
+            { value: false, label: "No, skip it", desc: "Teachers will manage escalation manually." },
+          ] as const).map(({ value, label, desc }) => {
+            const isSelected = cfg?.conditionalAssignment === value;
+            return (
+              <button
+                key={String(value)}
+                onClick={() => updateWindowConfig(i, { conditionalAssignment: value })}
+                className={`w-full text-left rounded-xl border-2 p-5 flex items-start gap-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+              >
+                <div className="flex-1">
+                  <p className={`text-[15px] font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>{label}</p>
+                  <p className="text-[13px] text-gray-500">{desc}</p>
+                </div>
+                {isSelected && <CheckCircle2 size={18} className="text-[#1a4e8a] shrink-0 mt-0.5" strokeWidth={2} />}
+              </button>
+            );
+          })}
+          <AnimatePresence initial={false}>
+            {cfg?.conditionalAssignment && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center gap-3 pt-2 pl-2">
+                  <span className="text-[14px] text-gray-600">Assign full DESSA to students scoring at or below T-Score</span>
+                  <input
+                    type="number"
+                    value={cfg.tScore}
+                    onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
+                    className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0]"
+                  />
+                  <TScoreInfoTooltip />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    // ── Handoff (low scorers into next screener window) ────────────────────
+    const assessHandoffMatch = screenId.match(/^assess-handoff-(\d+)$/);
+    if (assessHandoffMatch) {
+      const i = parseInt(assessHandoffMatch[1]);
+      return (
+        <div className="space-y-3">
+          {([
+            { value: "rescreen" as const, label: "Screen again", desc: `They take the screener again in ${labels[i + 1]}.` },
+            { value: "skip" as const, label: "Full DESSA", desc: `They go straight to the full assessment in ${labels[i + 1]}.` },
+          ]).map(({ value, label, desc }) => {
+            const isSelected = windowConfigs[i + 1]?.resetBehavior === value;
+            return (
+              <button
+                key={value}
+                onClick={() => updateWindowConfig(i + 1, { resetBehavior: value })}
+                className={`w-full text-left rounded-xl border-2 p-5 flex items-start gap-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+              >
+                <div className="flex-1">
+                  <p className={`text-[15px] font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>{label}</p>
+                  <p className="text-[13px] text-gray-500">{desc}</p>
+                </div>
+                {isSelected && <CheckCircle2 size={18} className="text-[#1a4e8a] shrink-0 mt-0.5" strokeWidth={2} />}
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ── Students ───────────────────────────────────────────────────────────
+    if (screenId === "students") {
+      return (
+        <div className="space-y-3">
+          {([
+            { value: false, label: "Automatic", desc: "Student assessments open at the start of each rating window. No extra step needed." },
+            { value: true, label: "Site Leader controlled", desc: "Site Leaders choose when students at their site can access their self-assessment within the window." },
+          ] as const).map(({ value, label, desc }) => {
+            const isSelected = siteLeaderManage === value;
+            return (
+              <button
+                key={String(value)}
+                onClick={() => setSiteLeaderManage(value)}
+                className={`w-full text-left rounded-xl border-2 p-5 flex items-start gap-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+              >
+                <div className="flex-1">
+                  <p className={`text-[15px] font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>{label}</p>
+                  <p className="text-[13px] text-gray-500">{desc}</p>
+                </div>
+                {isSelected && <CheckCircle2 size={18} className="text-[#1a4e8a] shrink-0 mt-0.5" strokeWidth={2} />}
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // ─── Render ────────────────────────────────────────────────────────────────
+
+  // (legacy perWindowCard kept below for reference during transition)
+  const _perWindowCard = (cfg: WindowConfig, i: number) => {
           const color = BAND_COLORS[i % BAND_COLORS.length];
           const nextIsScreener = i < windowCount - 1 && windowConfigs[i + 1]?.assessment === "screener";
           return (
@@ -1176,54 +1366,7 @@ function EditSetupPage() {
               </AnimatePresence>
             </div>
           );
-        };
-
-        return (
-          <div className="space-y-6">
-            {windowConfigs.map((cfg, i) => perWindowCard(cfg, i))}
-          </div>
-        );
-      }
-
-      case "students":
-        return (
-          <div className="space-y-8">
-            {/* <Alert className="border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-[#4a5c9c]">
-              <Info />
-              <AlertTitle className="text-[#132d78]">About this setting</AlertTitle>
-              <AlertDescription className="text-[#132d78] opacity-80">
-                When Site Leaders control access, students can only submit assessments during open rating windows, keeping your data clean and tied to the right time period.
-              </AlertDescription>
-            </Alert> */}
-            <div>
-            <p className="text-[16px] font-semibold text-gray-800 mb-1">Should Site Leaders be able to control when students can access their assessments?</p>
-            <p className="text-base text-gray-500 mb-5">This gives Site Leaders control over when students can access their self-assessment within a rating window.</p>
-            <div className="grid grid-cols-2 gap-3">
-              {([
-                { value: true, icon: Check, label: "Yes", sublabel: "Site Leaders can open and close student access at their sites independently." },
-                { value: false, icon: Ban, label: "No", sublabel: "Student assessments open automatically at the start of each rating window." },
-              ] as const).map(({ value, icon: Icon, label, sublabel }) => (
-                <button key={String(value)} onClick={() => setSiteLeaderManage(value)}
-                  className={`text-left rounded-xl border px-4 py-3 transition-all cursor-pointer ${siteLeaderManage === value ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Icon size={16} className={siteLeaderManage === value ? "text-[#1a4e8a]" : "text-gray-400"} strokeWidth={2} />
-                    <p className={`text-base font-semibold ${siteLeaderManage === value ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
-                  </div>
-                  <p className="text-base text-gray-500 leading-snug">{sublabel}</p>
-                </button>
-              ))}
-            </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
   };
-
-  // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-white">
@@ -1236,30 +1379,13 @@ function EditSetupPage() {
       )}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setShowDeleteConfirm(false)}
-          />
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowDeleteConfirm(false)} />
           <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[400px]">
-            <h2 className="text-[16px] font-bold text-gray-900 mb-2">
-              Delete this setup?
-            </h2>
-            <p className="text-[14px] text-gray-500 mb-6">
-              All data for this setup will be permanently deleted. This cannot
-              be undone.
-            </p>
+            <h2 className="text-[16px] font-bold text-gray-900 mb-2">Delete this setup?</h2>
+            <p className="text-[14px] text-gray-500 mb-6">All data for this setup will be permanently deleted. This cannot be undone.</p>
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60"
-              >
+              <button onClick={() => setShowDeleteConfirm(false)} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={handleDelete} disabled={deleting} className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60">
                 {deleting ? "Deleting…" : "Delete Setup"}
               </button>
             </div>
@@ -1279,7 +1405,7 @@ function EditSetupPage() {
           siteLeaderManage={siteLeaderManage}
           isOverride={isOverride}
           onBack={() => setShowReview(false)}
-          onGoToStep={(stepId) => { setShowReview(false); setCurrentStepIndex(stepSequence.indexOf(stepId)); }}
+          onGoToScreen={(screenId) => { setShowReview(false); setCurrentScreenId(screenId); }}
           onSave={async () => {
             await saveToSupabase();
             setShowReview(false);
@@ -1289,9 +1415,7 @@ function EditSetupPage() {
                 title="Setup saved"
                 description="Don't forget to configure rating window reminder emails."
                 actionLabel="Set reminders"
-                onAction={() =>
-                  router.push("/settings/rating-window-reminders")
-                }
+                onAction={() => router.push("/settings/rating-window-reminders")}
               />
             ));
             router.push("/settings/yearly-setup");
@@ -1300,42 +1424,65 @@ function EditSetupPage() {
         />
       )}
       {showLastYear && (
-        <LastYearModal
-          onClose={() => setShowLastYear(false)}
-          onUse={applyLastYear}
-        />
+        <LastYearModal onClose={() => setShowLastYear(false)} onUse={applyLastYear} />
       )}
 
-      {/* Two-column body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Right panel — step content */}
-        <main className="flex-1 overflow-y-auto bg-[#fcfcfc]">
-          <div className="max-w-[800px] mx-auto py-8">
-            <p className="text-[12px] font-bold text-[#1a4e8a] uppercase tracking-widest mb-4">
-              Step {currentStepIndex + 1} of {totalSteps}
-            </p>
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
-                {currentStepDef.title}
-              </h1>
-              {currentStepId === "dates" && (
-                <span className="shrink-0 text-[12px] font-medium text-[#1a4e8a] bg-[#1676b712] border border-[#c7d7ee] rounded-md px-2 py-1">
-                  {windowCount} {windowCount === 1 ? "window" : "windows"}{" "}
-                  selected
-                </span>
-              )}
-            </div>
-            {currentStepId !== "students" && (
-              <p className="text-[16px] text-gray-500 mb-10 leading-relaxed max-w-[750px]">
-                {currentStepDef.subtitle}
-              </p>
-            )}
-            {renderStepContent()}
+      {/* 60px progress header */}
+      <header className="h-[60px] shrink-0 flex items-center gap-5 px-8 border-b border-[#e8ecf0] bg-white">
+        <button
+          onClick={handleCancel}
+          className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer shrink-0"
+        >
+          Cancel
+        </button>
+        <div className="flex-1 h-1.5 bg-[#e8ecf0] rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-[#1a4e8a] rounded-full"
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          />
+        </div>
+        <span className="text-[13px] text-gray-400 shrink-0 tabular-nums">
+          {currentScreenIdx + 1} / {totalScreens}
+        </span>
+      </header>
 
-            {/* Step footer */}
-            <div className="flex items-center justify-between pt-8 mt-8 border-t border-[#f0f4f8]">
-              <div className="flex items-center gap-4">
-                {!isFirstStep ? (
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-[900px] mx-auto px-8 py-16">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentScreen.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
+              <div className="flex items-start justify-between gap-6 mb-3">
+                <h1 className="text-[30px] font-medium leading-tight" style={{ color: "#2a2c32" }}>
+                  {currentScreen.title}
+                </h1>
+                {currentScreen.helpTitle && (
+                  <button
+                    onClick={() => setHelpOpen(true)}
+                    className="shrink-0 mt-2 w-7 h-7 rounded-full border border-[#d1d5db] flex items-center justify-center text-gray-400 hover:text-[#1a4e8a] hover:border-[#1a4e8a] transition-colors cursor-pointer"
+                  >
+                    <HelpCircle size={14} strokeWidth={1.75} />
+                  </button>
+                )}
+              </div>
+              {currentScreen.subtitle && (
+                <p className="text-[16px] text-gray-500 mb-10 leading-relaxed">
+                  {currentScreen.subtitle}
+                </p>
+              )}
+              <div className={currentScreen.subtitle ? "" : "mt-10"}>
+                {renderScreenContent(currentScreen.id)}
+              </div>
+
+              {/* In-content navigation */}
+              <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#f0f4f8]">
+                {!isFirstScreen ? (
                   <button
                     onClick={handlePrev}
                     className="flex items-center gap-1.5 text-[13.5px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
@@ -1343,126 +1490,63 @@ function EditSetupPage() {
                     <ArrowLeft size={14} strokeWidth={2} />
                     Back
                   </button>
+                ) : currentScreen.id === "window-count" && !fromPastYear ? (
+                  <button
+                    onClick={() => setShowLastYear(true)}
+                    className="text-[13px] text-[#1a4e8a] hover:underline cursor-pointer"
+                  >
+                    Use last year&apos;s setup →
+                  </button>
                 ) : (
-                  <button
-                    onClick={handleCancel}
-                    className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
+                  <div />
                 )}
-                {existingId && isFirstStep && (
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="text-[13px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                  >
-                    Delete Setup
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={handleNext}
-                disabled={!sitesStepValid}
-                className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1a4e8a]"
-              >
-                {isLastStep ? "Review & Save" : "Save and continue"}
-              </button>
-            </div>
-          </div>
-        </main>
-
-        {/* Right panel — step list */}
-        <aside className="w-[300px] shrink-0 bg-[#f8fafc] border-l border-[#e8ecf0] px-8 py-10 overflow-y-auto">
-          {visibleSteps.map((step, idx) => {
-            const isCompleted = idx < currentStepIndex;
-            const isActive = idx === currentStepIndex;
-            const isLast = idx === visibleSteps.length - 1;
-            const Icon = step.icon;
-            return (
-              <div
-                key={step.id}
-                className={`flex gap-4 -mx-4 px-4 rounded-xl transition-colors duration-150 ${isCompleted ? "cursor-pointer group hover:bg-[#e8f0f9]" : ""}`}
-                onClick={
-                  isCompleted ? () => setCurrentStepIndex(idx) : undefined
-                }
-              >
-                {/* Circle + connector */}
-                <div className="flex flex-col items-center">
-                  <motion.div
-                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                    animate={{
-                      backgroundColor:
-                        isCompleted || isActive ? "#1a4e8a" : "#e8ecf0",
-                      scale: isActive ? [1, 1.14, 1] : 1,
-                    }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                  >
-                    <AnimatePresence mode="wait" initial={false}>
-                      {isCompleted ? (
-                        <motion.span
-                          key="check"
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ duration: 0.2, ease: "easeOut" }}
-                        >
-                          <Check
-                            size={15}
-                            className="text-white"
-                            strokeWidth={2.5}
-                          />
-                        </motion.span>
-                      ) : (
-                        <motion.span
-                          key={step.id}
-                          initial={{ scale: 0.6, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.6, opacity: 0 }}
-                          transition={{ duration: 0.2, ease: "easeOut" }}
-                        >
-                          <Icon
-                            size={15}
-                            className={
-                              isActive ? "text-white" : "text-gray-400"
-                            }
-                            strokeWidth={1.75}
-                          />
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                  {!isLast && (
-                    <motion.div
-                      className="w-px my-2"
-                      animate={{
-                        backgroundColor: isCompleted ? "#1a4e8a" : "#d1d9e0",
-                      }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      style={{ height: 44 }}
-                    />
-                  )}
-                </div>
-                {/* Text */}
-                <div
-                  className={!isLast ? "pb-[44px]" : ""}
-                  style={{ paddingTop: 6 }}
+                <button
+                  onClick={handleNext}
+                  disabled={!currentScreenValid()}
+                  className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1a4e8a]"
                 >
-                  <p
-                    className={`text-[13.5px] font-semibold leading-snug transition-colors duration-200 ${isActive ? "text-gray-900" : isCompleted ? "text-gray-600 group-hover:text-gray-900" : "text-gray-400"}`}
-                  >
-                    {step.label}
-                  </p>
-                  <p
-                    className={`text-[12px] mt-0.5 leading-snug transition-colors duration-200 ${isActive ? "text-gray-400" : isCompleted ? "text-gray-400 group-hover:text-gray-500" : "text-gray-300"}`}
-                  >
-                    {step.desc}
-                  </p>
-                </div>
+                  {isLastScreen ? "Review & Save" : "Continue"}
+                </button>
               </div>
-            );
-          })}
-        </aside>
-      </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </main>
+
+      {/* Contextual help slide-out */}
+      <AnimatePresence>
+        {helpOpen && currentScreen.helpTitle && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setHelpOpen(false)}
+            />
+            <motion.aside
+              className="fixed right-0 top-0 bottom-0 w-[400px] bg-white border-l border-[#e8ecf0] shadow-2xl z-50 flex flex-col"
+              initial={{ x: 400 }}
+              animate={{ x: 0 }}
+              exit={{ x: 400 }}
+              transition={{ type: "spring", damping: 28, stiffness: 260 }}
+            >
+              <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8ecf0]">
+                <h2 className="text-[17px] font-bold text-gray-900">{currentScreen.helpTitle}</h2>
+                <button
+                  onClick={() => setHelpOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-8 py-6">
+                {currentScreen.helpBody}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1474,3 +1558,4 @@ export default function EditSetupPageWrapper() {
     </Suspense>
   );
 }
+
