@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   Info,
   Zap,
   ClipboardList,
@@ -93,7 +94,6 @@ const DEFAULT_STATE = {
   conditionalAssignment: true,
   tScore: "40",
   resetBehavior: "rescreen" as "rescreen" | "skip",
-  sameConfigAllWindows: true,
   windowConfigs: Array(DEFAULT_COUNT)
     .fill(null)
     .map(() => ({ ...DEFAULT_WINDOW_CONFIG })) as WindowConfig[],
@@ -321,12 +321,12 @@ const STEP_DEFS: Record<
       "Each period is called a rating window — you'll see this term throughout your reports and data filters. Choose based on your school's calendar and how often you want to track progress.",
   },
   dates: {
-    label: "Window Dates",
+    label: "Rating Window Dates",
     desc: "Set the start date for each window",
     icon: Calendar,
-    title: "Window Start Dates",
+    title: "Rating Window Start Dates",
     subtitle:
-      "Set the opening date for each rating window. These dates determine when teachers can begin submitting assessments for that period.",
+      "Each rating window opens on its start date — that's when teachers can begin submitting assessments for that period. Pick dates that align with your school's calendar and give your staff enough time to complete their work before the next window begins.",
   },
   assessment: {
     label: "Teacher Assessments",
@@ -381,11 +381,11 @@ const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {};
 
 function ReviewPanel({
   windowCount, dates, labels, assessment, conditionalAssignment, tScore, resetBehavior,
-  sameConfigAllWindows, windowConfigs, siteLeaderManage, isOverride, onBack, onGoToStep, onSave, saving,
+  windowConfigs, siteLeaderManage, isOverride, onBack, onGoToStep, onSave, saving,
 }: {
   windowCount: number; dates: string[]; labels: string[]; assessment: "screener" | "full";
   conditionalAssignment: boolean; tScore: string; resetBehavior: "rescreen" | "skip";
-  sameConfigAllWindows: boolean; windowConfigs: WindowConfig[]; siteLeaderManage: boolean; isOverride: boolean;
+  windowConfigs: WindowConfig[]; siteLeaderManage: boolean; isOverride: boolean;
   onBack: () => void; onGoToStep: (stepId: StepId) => void; onSave: () => void; saving?: boolean;
 }) {
   const windowDesc = WINDOW_OPTIONS.find((o) => o.count === windowCount)!.desc;
@@ -444,15 +444,7 @@ function ReviewPanel({
               <p className="text-[18px] font-semibold text-gray-800">Teacher Completed Assessments</p>
               <button onClick={() => onGoToStep("assessment")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
             </div>
-            {sameConfigAllWindows ? (() => {
-              const wc = windowConfigs[0];
-              return (
-                <>
-                  {row("Starting assessment", wc.assessment === "screener" ? "Screener" : "Full DESSA")}
-                  {row("Auto-assign DESSA", wc.assessment === "screener" ? (wc.conditionalAssignment ? `Need for Instruction at T-Score ${wc.tScore} or below` : "No") : "Not applicable")}
-                </>
-              );
-            })() : windowConfigs.map((wc, i) => {
+            {windowConfigs.map((wc, i) => {
               const typeLabel = wc.assessment === "screener" ? "Screener" : "Full DESSA";
               const autoAssign = wc.assessment === "screener" ? (wc.conditionalAssignment ? `Need for Instruction at T-Score ${wc.tScore} or below` : "No") : "Not applicable";
               return (
@@ -680,9 +672,6 @@ function EditSetupPage() {
   const [resetBehavior, setResetBehavior] = useState<"rescreen" | "skip">(
     DEFAULT_STATE.resetBehavior,
   );
-  const [sameConfigAllWindows, setSameConfigAllWindows] = useState(
-    DEFAULT_STATE.sameConfigAllWindows,
-  );
   const [windowConfigs, setWindowConfigs] = useState<WindowConfig[]>(
     DEFAULT_STATE.windowConfigs,
   );
@@ -761,7 +750,6 @@ function EditSetupPage() {
       setConditionalAssignment(data.conditional_assignment);
       setTScore(data.t_score);
       setResetBehavior(data.reset_behavior as "rescreen" | "skip");
-      setSameConfigAllWindows(data.same_config_all_windows);
       setSiteLeaderManage(data.site_leader_manage);
       setWindowConfigs(loadedConfigs);
       setSelectedSites(loadedSites);
@@ -773,7 +761,6 @@ function EditSetupPage() {
         conditionalAssignment: data.conditional_assignment,
         tScore: data.t_score,
         resetBehavior: data.reset_behavior as "rescreen" | "skip",
-        sameConfigAllWindows: data.same_config_all_windows,
         windowConfigs: loadedConfigs,
         siteLeaderManage: data.site_leader_manage,
         overrideName: loadedOverrideName,
@@ -1080,6 +1067,7 @@ function EditSetupPage() {
       case "assessment": {
         const perWindowCard = (cfg: WindowConfig, i: number) => {
           const color = BAND_COLORS[i % BAND_COLORS.length];
+          const nextIsScreener = i < windowCount - 1 && windowConfigs[i + 1]?.assessment === "screener";
           return (
             <div key={i} className="rounded-xl border border-[#e8ecf0] bg-white overflow-visible">
               <div className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b border-[#f0f4f8]" style={{ borderLeftWidth: 4, borderLeftColor: color.text, borderLeftStyle: "solid", backgroundColor: color.text + "14" }}>
@@ -1088,11 +1076,10 @@ function EditSetupPage() {
                   {dates[i] ? `Opens ${new Date(dates[i] + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "—"}
                 </span>
               </div>
-              <div className="px-5 py-4 space-y-4">
-                {/* Assessment type + Q1 — grouped container */}
+              <div className="px-5 py-4">
                 <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] overflow-visible">
                   <div className="px-4 py-4">
-                    <p className="text-base font-semibold text-gray-700 mb-3">Starting Assessment type</p>
+                    <p className="text-base font-semibold text-gray-700 mb-3">Assessment type</p>
                     <div className="grid grid-cols-2 gap-2.5">
                       {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc }) => {
                         const isSelected = cfg.assessment === value;
@@ -1144,134 +1131,56 @@ function EditSetupPage() {
                     )}
                   </AnimatePresence>
                 </div>
-
-                {/* Q2 — previous window context, separate container */}
-                <AnimatePresence initial={false}>
-                  {cfg.assessment === "screener" && i > 0 && i < windowCount - 1 && windowConfigs[i - 1]?.assessment === "screener" && (
-                    <motion.div
-                      key="q2"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.18, ease: "easeOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] px-4 py-4">
-                        <p className="text-base font-semibold text-gray-800 mb-0.5">Follow-up assessment</p>
-                        <p className="text-[13px] text-gray-500 mb-3">For students who scored below the threshold in the {labels[i - 1]}.</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {([
-                            { value: "rescreen", icon: Zap, label: "Screener", sublabel: "Start fresh — they may have improved." },
-                            { value: "skip", icon: ClipboardList, label: "Full DESSA", sublabel: "Skip straight to the full assessment." },
-                          ] as const).map(({ value, icon: Icon, label, sublabel }) => {
-                            const isSelected = cfg.resetBehavior === value;
-                            return (
-                              <button
-                                key={value}
-                                onClick={() => updateWindowConfig(i, { resetBehavior: value })}
-                                className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                              >
-                                <p className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
-                                <p className="text-xs text-gray-500 leading-snug">{sublabel}</p>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
+
+              {/* Low-scorer handoff — forward-looking, belongs to this window's screener outcome */}
+              <AnimatePresence initial={false}>
+                {cfg.assessment === "screener" && nextIsScreener && (
+                  <motion.div
+                    key="handoff"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="border-t border-[#c7d7ee] bg-[#f0f6ff] rounded-b-xl px-5 py-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <ArrowRight size={14} className="text-[#1a4e8a] shrink-0" strokeWidth={2} />
+                        <p className="text-sm font-semibold text-gray-800">Students scoring below the threshold</p>
+                      </div>
+                      <p className="text-[13px] text-gray-500 mb-3 pl-5">
+                        How should they begin {labels[i + 1]}?
+                      </p>
+                      <div className="pl-5 grid grid-cols-2 gap-2">
+                        {([
+                          { value: "rescreen", label: "Screen again", sublabel: `They take the screener again in ${labels[i + 1]}.` },
+                          { value: "skip", label: "Full DESSA", sublabel: `They go straight to the full assessment in ${labels[i + 1]}.` },
+                        ] as const).map(({ value, label, sublabel }) => {
+                          const isSelected = windowConfigs[i + 1]?.resetBehavior === value;
+                          return (
+                            <button
+                              key={value}
+                              onClick={() => updateWindowConfig(i + 1, { resetBehavior: value })}
+                              className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#c7d7ee] bg-white hover:border-[#a3bfdf]"}`}
+                            >
+                              <p className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
+                              <p className="text-xs text-gray-500 leading-snug">{sublabel}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         };
 
         return (
           <div className="space-y-6">
-            {/* Same settings toggle */}
-            <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-xl border border-[#e8ecf0]">
-              <Switch
-                checked={sameConfigAllWindows}
-                onCheckedChange={(same) => {
-                  setSameConfigAllWindows(same);
-                  if (same) setWindowConfigs((prev) => prev.map(() => ({ ...prev[0] })));
-                }}
-                className="cursor-pointer shrink-0"
-              />
-              <div>
-                <p className="text-sm font-semibold text-gray-700">Same settings for all windows</p>
-                <p className="text-[13px] text-gray-500">Use the same assessment type and escalation settings across every window.</p>
-              </div>
-            </div>
-
-            <AnimatePresence mode="wait" initial={false}>
-              {sameConfigAllWindows ? (
-                <motion.div key="unified" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                  <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-visible">
-                    <div className="px-5 py-3.5 border-b border-[#f0f4f8]" style={{ borderLeftWidth: 4, borderLeftColor: "#1a4e8a", borderLeftStyle: "solid", backgroundColor: "#1a4e8a14" }}>
-                      <p className="text-[18px] font-bold text-gray-800">All {windowCount} Windows</p>
-                    </div>
-                    <div className="px-5 py-4 space-y-5">
-                      <p className="text-sm font-semibold text-gray-700 mb-2.5">Assessment type</p>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc }) => {
-                          const isSelected = windowConfigs[0].assessment === value;
-                          return (
-                            <button
-                              key={value}
-                              onClick={() => setWindowConfigs((prev) => prev.map((c) => ({ ...c, assessment: value as "screener" | "full" })))}
-                              className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                            >
-                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
-                                <Icon size={15} className={isSelected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
-                              </div>
-                              <p className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
-                              <p className="text-xs text-gray-500 leading-snug">{desc}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <AnimatePresence initial={false}>
-                        {windowConfigs[0].assessment === "screener" && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.18, ease: "easeOut" }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-[#e8ecf0] px-4 py-4">
-                              <div className="flex items-center gap-2.5">
-                                <Switch
-                                  checked={windowConfigs[0].conditionalAssignment}
-                                  onCheckedChange={(v) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, conditionalAssignment: v })))}
-                                  className="cursor-pointer"
-                                />
-                                <span className={`text-sm select-none transition-colors ${windowConfigs[0].conditionalAssignment ? "text-gray-700" : "text-gray-400"}`}>
-                                  Assign the full DESSA to students scoring at or below a T-Score of
-                                </span>
-                                <input
-                                  type="number"
-                                  value={windowConfigs[0].tScore}
-                                  onChange={(e) => setWindowConfigs((prev) => prev.map((c) => ({ ...c, tScore: e.target.value })))}
-                                  disabled={!windowConfigs[0].conditionalAssignment}
-                                  className="w-16 h-7 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
-                                />
-                                <TScoreInfoTooltip />
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div key="per-window" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="space-y-16">
-                  {windowConfigs.map((cfg, i) => perWindowCard(cfg, i))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {windowConfigs.map((cfg, i) => perWindowCard(cfg, i))}
           </div>
         );
       }
@@ -1366,7 +1275,6 @@ function EditSetupPage() {
           conditionalAssignment={conditionalAssignment}
           tScore={tScore}
           resetBehavior={resetBehavior}
-          sameConfigAllWindows={sameConfigAllWindows}
           windowConfigs={windowConfigs}
           siteLeaderManage={siteLeaderManage}
           isOverride={isOverride}
