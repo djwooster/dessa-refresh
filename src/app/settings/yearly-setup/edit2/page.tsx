@@ -18,6 +18,8 @@ import {
   Building2,
   Ban,
   ChevronDown,
+  Copy,
+  Equal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -1343,32 +1345,67 @@ function EditSetupPage() {
                               {(() => {
                                 const displayCfg = siteCfg ?? defaultSiteConfig();
                                 const copyableSites = MOCK_SITES.filter((s) => s !== site && !!siteCustomSetups[s]);
+                                // Group copyable sites by config fingerprint so identical configs share one row
+                                const groupMap = new Map<string, string[]>();
+                                copyableSites.forEach((src) => {
+                                  const key = JSON.stringify(siteCustomSetups[src]);
+                                  if (!groupMap.has(key)) groupMap.set(key, []);
+                                  groupMap.get(key)!.push(src);
+                                });
+                                const configGroups = Array.from(groupMap.entries()).map(([key, sites]) => ({ key, sites }));
+                                const currentKey = JSON.stringify(siteCustomSetups[site]);
+                                const joinNames = (names: string[]) => {
+                                  if (names.length === 1) return <span className="font-semibold">{names[0]}</span>;
+                                  if (names.length === 2) return <><span className="font-semibold">{names[0]}</span> and <span className="font-semibold">{names[1]}</span></>;
+                                  const rest = names.length - 2;
+                                  return <><span className="font-semibold">{names[0]}</span>, <span className="font-semibold">{names[1]}</span> <span className="text-gray-400">+{rest} more</span></>;
+                                };
                                 return (
                               <div className="border-t border-[#e8ecf0] px-5 py-5 space-y-6">
-                                {copyableSites.length > 0 && (
+                                {configGroups.length > 0 && (
                                   <div className="space-y-2">
-                                    {copyableSites.map((src) => (
-                                      <div key={src} className="flex items-center justify-between gap-4 rounded-lg border border-[#e8ecf0] bg-white px-4 py-3">
-                                        <div>
-                                          <p className="text-[13px] font-medium text-gray-700">Copy settings from <span className="font-semibold">{src}</span></p>
-                                          <p className="text-[12px] text-gray-400 mt-0.5">Dates, assessment types, and escalation rules</p>
+                                    {configGroups.map(({ key, sites: groupSites }) => {
+                                      const isSame = currentKey === key;
+                                      return (
+                                      <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-[#e8ecf0] bg-[#f8fafc] px-4 py-3">
+                                        <div className="flex items-center gap-3">
+                                          {isSame
+                                            ? <Equal className="shrink-0 text-gray-400" style={{ width: 20, height: 20 }} />
+                                            : <Copy className="shrink-0 text-gray-400" style={{ width: 20, height: 20 }} />
+                                          }
+                                          <div>
+                                            {isSame ? (
+                                              <>
+                                                <p className="text-[13px] font-medium text-gray-700">Same settings as {joinNames(groupSites)}</p>
+                                                <p className="text-[12px] text-gray-400 mt-0.5">Dates, assessment types, and escalation rules match</p>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <p className="text-[13px] font-medium text-gray-700">Copy settings from {joinNames(groupSites)}</p>
+                                                <p className="text-[12px] text-gray-400 mt-0.5">Dates, assessment types, and escalation rules</p>
+                                              </>
+                                            )}
+                                          </div>
                                         </div>
-                                        <button
-                                          onClick={() => {
-                                            updateSiteConfig(site, { ...siteCustomSetups[src]! });
-                                            toast.custom((t) => (
-                                              <SuccessToast
-                                                id={t}
-                                                title={`Settings applied from ${src} to ${site}`}
-                                              />
-                                            ), { position: "top-left" });
-                                          }}
-                                          className="shrink-0 h-8 px-3 rounded-lg border border-[#c7d7ee] text-[12px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                                        >
-                                          Copy
-                                        </button>
+                                        {!isSame && (
+                                          <button
+                                            onClick={() => {
+                                              updateSiteConfig(site, { ...siteCustomSetups[groupSites[0]]! });
+                                              toast.custom((t) => (
+                                                <SuccessToast
+                                                  id={t}
+                                                  title={`Settings applied from ${groupSites[0]} to ${site}`}
+                                                />
+                                              ), { position: "top-right" });
+                                            }}
+                                            className="shrink-0 h-8 px-3 rounded-lg border border-[#c7d7ee] text-[12px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
+                                          >
+                                            Copy
+                                          </button>
+                                        )}
                                       </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 )}
                                 {Array.from({ length: windowCount }, (_, i) => (
