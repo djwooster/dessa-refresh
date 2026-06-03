@@ -82,6 +82,9 @@ type WindowConfig = {
   resetBehavior: "rescreen" | "skip" | null;
 };
 
+type SiteExtraWindow = { label: string; date: string; assessment: "screener" | "full" | null };
+type SiteCustomConfig = { dates: string[]; windowConfigs: WindowConfig[]; extraWindows: SiteExtraWindow[] };
+
 const DEFAULT_WINDOW_CONFIG: WindowConfig = {
   assessment: null,
   conditionalAssignment: null,
@@ -433,120 +436,6 @@ const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {};
 
 // ─── Shared modals (identical to /edit) ───────────────────────────────────────
 
-function ReviewPanel({
-  windowCount, dates, labels, assessment, conditionalAssignment, tScore, resetBehavior,
-  windowConfigs, siteLeaderManage, isOverride, onBack, onGoToScreen, onSave, saving,
-}: {
-  windowCount: number; dates: string[]; labels: string[]; assessment: "screener" | "full" | null;
-  conditionalAssignment: boolean | null; tScore: string; resetBehavior: "rescreen" | "skip" | null;
-  windowConfigs: WindowConfig[]; siteLeaderManage: boolean | null; isOverride: boolean;
-  onBack: () => void; onGoToScreen: (screenId: string) => void; onSave: () => void; saving?: boolean;
-}) {
-  const windowDesc = WINDOW_OPTIONS.find((o) => o.count === windowCount)!.desc;
-  const row = (label: string, value: React.ReactNode) => (
-    <div key={label} className="flex flex-col gap-1 py-2.5 border-b border-[#f0f4f8] last:border-0">
-      <span className="text-[12px] font-medium text-gray-400">{label}</span>
-      <span className="text-sm font-medium text-gray-700">{value}</span>
-    </div>
-  );
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onBack} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
-        <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8ecf0]">
-          <div>
-            <h2 className="text-[24px] font-bold text-gray-900">
-              Review your setup
-            </h2>
-            <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-sm text-gray-500">2025–2026 School Year</p>
-              {isOverride && (
-                <span className="text-[11px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-2 py-0.5">
-                  Custom schedule
-                </span>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={onBack}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        <div className="px-8 py-6 overflow-y-auto max-h-[75vh] space-y-4 bg-[#f8fafc]">
-          <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[18px] font-semibold text-gray-800">Rating Windows</p>
-              <button onClick={() => onGoToScreen("window-count")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
-            </div>
-            {row("Schedule", `${windowCount} windows — ${windowDesc}`)}
-            <div className="mt-4 mb-3">
-              <WizardTimeline dates={dates} labels={labels} />
-            </div>
-            <div className="flex justify-between pt-1">
-              {dates.map((d, i) => (
-                <div key={i} className={`flex flex-col gap-1 flex-1 ${i === dates.length - 1 ? "items-end" : ""}`}>
-                  <span className="text-[12px] font-medium text-gray-400">{labels[i]}</span>
-                  <span className="text-sm font-semibold text-gray-700">{d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[18px] font-semibold text-gray-800">Teacher Completed Assessments</p>
-              <button onClick={() => onGoToScreen("assess-type-0")} className="text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer">Edit</button>
-            </div>
-            {windowConfigs.map((wc, i) => {
-              const typeLabel = wc.assessment === "screener" ? "Screener" : "Full DESSA";
-              const autoAssign = wc.assessment === "screener" ? (wc.conditionalAssignment ? `Need for Instruction at T-Score ${wc.tScore} or below` : "No") : "Not applicable";
-              return (
-                <div key={i} className="flex py-2.5 border-b border-[#f0f4f8] last:border-0">
-                  <div className="flex flex-col gap-1 w-48 shrink-0">
-                    <span className="text-[12px] font-medium text-gray-400">{labels[i]}</span>
-                    <span className="text-sm font-medium text-gray-700">{typeLabel}</span>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[12px] font-medium text-gray-400">Auto-assign DESSA</span>
-                    <span className="text-sm font-medium text-gray-700">{autoAssign}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="border border-[#e8ecf0] rounded-xl p-5 bg-white">
-            <p className="text-[18px] font-semibold text-gray-800 mb-2">Student Completed Assessments</p>
-            <div className="flex items-center gap-2 py-2 text-sm text-gray-700">
-              {siteLeaderManage
-                ? <Check size={14} className="text-green-600 shrink-0" strokeWidth={2.5} />
-                : <Ban size={14} className="text-gray-400 shrink-0" strokeWidth={1.75} />
-              }
-              <span>
-                {siteLeaderManage
-                  ? "Site Leaders can control when students access their assessments"
-                  : "Student assessments open automatically at the start of each rating window"}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center justify-between px-8 py-5 bg-[#f8fafc] border-t border-[#e8ecf0]">
-          <button onClick={onBack} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
-            Back to Edit
-          </button>
-          <button
-            onClick={onSave}
-            disabled={saving}
-            className="h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-sm font-semibold hover:bg-[#15407a] transition-colors cursor-pointer disabled:opacity-60"
-          >
-            {saving ? "Saving…" : "Save Setup"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ConfirmModal({
   onDiscard,
   onKeep,
@@ -733,7 +622,7 @@ function EditSetupPage() {
     DEFAULT_STATE.siteLeaderManage,
   );
   const [hasSiteCustomSetups, setHasSiteCustomSetups] = useState<boolean | null>(null);
-  const [siteCustomSetups, setSiteCustomSetups] = useState<Record<string, { dates: string[]; windowConfigs: WindowConfig[] } | null>>({});
+  const [siteCustomSetups, setSiteCustomSetups] = useState<Record<string, SiteCustomConfig | null>>({});
   const [openSiteAccordion, setOpenSiteAccordion] = useState<string | null>(null);
 
   // UI state
@@ -747,6 +636,7 @@ function EditSetupPage() {
   const [showReview, setShowReview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [openReviewSections, setOpenReviewSections] = useState<string[]>([]);
 
   const initialStateRef = useRef({
     ...DEFAULT_STATE,
@@ -893,6 +783,21 @@ function EditSetupPage() {
       );
     }
     setSaving(false);
+  };
+
+  const handleSave = async () => {
+    await saveToSupabase();
+    setShowReview(false);
+    toast.custom((t) => (
+      <SuccessToast
+        id={t}
+        title="Setup saved"
+        description="Don't forget to configure rating window reminder emails."
+        actionLabel="Set reminders"
+        onAction={() => router.push("/settings/rating-window-reminders")}
+      />
+    ));
+    router.push("/settings/yearly-setup");
   };
 
   // ─── Derived state ─────────────────────────────────────────────────────────
@@ -1329,28 +1234,40 @@ function EditSetupPage() {
 
     // ── Site custom setups ─────────────────────────────────────────────────
     if (screenId === "site-overrides") {
-      const updateSiteConfig = (
-        site: string,
-        patch: Partial<{ dates: string[]; windowConfigs: WindowConfig[] }>,
-      ) => {
+      const defaultSiteConfig = (): SiteCustomConfig => ({
+        dates: [...dates],
+        windowConfigs: windowConfigs.map((wc) => ({ ...wc })),
+        extraWindows: [],
+      });
+
+      const updateSiteConfig = (site: string, patch: Partial<SiteCustomConfig>) => {
         setSiteCustomSetups((prev) => ({
           ...prev,
-          [site]: { ...(prev[site] ?? { dates: [...dates], windowConfigs: windowConfigs.map((wc) => ({ ...wc })) }), ...patch },
+          [site]: { ...(prev[site] ?? defaultSiteConfig()), ...patch },
         }));
       };
 
       const toggleSiteAccordion = (site: string) => {
-        if (openSiteAccordion === site) {
-          setOpenSiteAccordion(null);
-        } else {
-          if (!siteCustomSetups[site]) {
-            setSiteCustomSetups((prev) => ({
-              ...prev,
-              [site]: { dates: [...dates], windowConfigs: windowConfigs.map((wc) => ({ ...wc })) },
-            }));
-          }
-          setOpenSiteAccordion(site);
-        }
+        setOpenSiteAccordion(openSiteAccordion === site ? null : site);
+      };
+
+      const addExtraWindow = (site: string) => {
+        const cfg = siteCustomSetups[site] ?? defaultSiteConfig();
+        updateSiteConfig(site, {
+          extraWindows: [...cfg.extraWindows, { label: "", date: "", assessment: null }],
+        });
+      };
+
+      const updateExtraWindow = (site: string, idx: number, patch: Partial<SiteExtraWindow>) => {
+        const cfg = siteCustomSetups[site] ?? defaultSiteConfig();
+        updateSiteConfig(site, {
+          extraWindows: cfg.extraWindows.map((w, i) => i === idx ? { ...w, ...patch } : w),
+        });
+      };
+
+      const removeExtraWindow = (site: string, idx: number) => {
+        const cfg = siteCustomSetups[site] ?? defaultSiteConfig();
+        updateSiteConfig(site, { extraWindows: cfg.extraWindows.filter((_, i) => i !== idx) });
       };
 
       const resetSiteToDefault = (site: string) => {
@@ -1423,17 +1340,47 @@ function EditSetupPage() {
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
                             >
+                              {(() => {
+                                const displayCfg = siteCfg ?? defaultSiteConfig();
+                                const copyableSites = MOCK_SITES.filter((s) => s !== site && !!siteCustomSetups[s]);
+                                return (
                               <div className="border-t border-[#e8ecf0] px-5 py-5 space-y-6">
+                                {copyableSites.length > 0 && (
+                                  <div className="space-y-2">
+                                    {copyableSites.map((src) => (
+                                      <div key={src} className="flex items-center justify-between gap-4 rounded-lg border border-[#e8ecf0] bg-white px-4 py-3">
+                                        <div>
+                                          <p className="text-[13px] font-medium text-gray-700">Copy settings from <span className="font-semibold">{src}</span></p>
+                                          <p className="text-[12px] text-gray-400 mt-0.5">Dates, assessment types, and escalation rules</p>
+                                        </div>
+                                        <button
+                                          onClick={() => {
+                                            updateSiteConfig(site, { ...siteCustomSetups[src]! });
+                                            toast.custom((t) => (
+                                              <SuccessToast
+                                                id={t}
+                                                title={`Settings applied from ${src} to ${site}`}
+                                              />
+                                            ), { position: "top-left" });
+                                          }}
+                                          className="shrink-0 h-8 px-3 rounded-lg border border-[#c7d7ee] text-[12px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
+                                        >
+                                          Copy
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                                 {Array.from({ length: windowCount }, (_, i) => (
-                                  <div key={i} className="space-y-3">
+                                  <div key={i} className="rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3">
                                     <p className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{labels[i]}</p>
                                     <div>
                                       <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
                                       <div className="w-[200px]">
                                         <DatePicker
-                                          value={siteCfg?.dates[i] ?? ""}
+                                          value={displayCfg.dates[i] ?? ""}
                                           onChange={(v) => {
-                                            const newDates = [...(siteCfg?.dates ?? dates)];
+                                            const newDates = [...displayCfg.dates];
                                             newDates[i] = v;
                                             updateSiteConfig(site, { dates: newDates });
                                           }}
@@ -1449,9 +1396,9 @@ function EditSetupPage() {
                                               type="radio"
                                               name={`site-${site}-window-${i}`}
                                               value={value}
-                                              checked={siteCfg?.windowConfigs[i]?.assessment === value}
+                                              checked={displayCfg.windowConfigs[i]?.assessment === value}
                                               onChange={() => {
-                                                const newWcs = (siteCfg?.windowConfigs ?? windowConfigs).map((wc, idx) =>
+                                                const newWcs = displayCfg.windowConfigs.map((wc, idx) =>
                                                   idx === i ? { ...wc, assessment: value as "screener" | "full" } : wc,
                                                 );
                                                 updateSiteConfig(site, { windowConfigs: newWcs });
@@ -1463,15 +1410,136 @@ function EditSetupPage() {
                                         ))}
                                       </div>
                                     </div>
+                                    <AnimatePresence initial={false}>
+                                      {displayCfg.windowConfigs[i]?.assessment === "screener" && (
+                                        <motion.div
+                                          key="escalation"
+                                          initial={{ opacity: 0, height: 0 }}
+                                          animate={{ opacity: 1, height: "auto" }}
+                                          exit={{ opacity: 0, height: 0 }}
+                                          transition={{ duration: 0.18, ease: "easeOut" }}
+                                          className="overflow-hidden"
+                                        >
+                                          <div className="pt-1 space-y-2">
+                                            <p className="text-[13px] text-gray-500">If a student&apos;s screener score is low, should they automatically take the full DESSA?</p>
+                                            <div className="space-y-2">
+                                              {([{ value: true, label: "Yes" }, { value: false, label: "No" }] as const).map(({ value, label }) => (
+                                                <label key={String(value)} className="flex items-center gap-3 cursor-pointer">
+                                                  <input
+                                                    type="radio"
+                                                    name={`site-${site}-escalate-${i}`}
+                                                    checked={displayCfg.windowConfigs[i]?.conditionalAssignment === value}
+                                                    onChange={() => {
+                                                      const newWcs = displayCfg.windowConfigs.map((wc, idx) =>
+                                                        idx === i ? { ...wc, conditionalAssignment: value } : wc,
+                                                      );
+                                                      updateSiteConfig(site, { windowConfigs: newWcs });
+                                                    }}
+                                                    className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
+                                                  />
+                                                  <span className="text-[14px] text-gray-800">{label}</span>
+                                                </label>
+                                              ))}
+                                            </div>
+                                            <AnimatePresence initial={false}>
+                                              {displayCfg.windowConfigs[i]?.conditionalAssignment === true && (
+                                                <motion.div
+                                                  key="tscore"
+                                                  initial={{ opacity: 0, height: 0 }}
+                                                  animate={{ opacity: 1, height: "auto" }}
+                                                  exit={{ opacity: 0, height: 0 }}
+                                                  transition={{ duration: 0.18, ease: "easeOut" }}
+                                                  className="overflow-hidden"
+                                                >
+                                                  <div className="flex items-center gap-3 pt-2">
+                                                    <span className="text-[13px] text-gray-600">Assign full DESSA at or below T-Score</span>
+                                                    <input
+                                                      type="number"
+                                                      value={displayCfg.windowConfigs[i]?.tScore ?? "40"}
+                                                      onChange={(e) => {
+                                                        const newWcs = displayCfg.windowConfigs.map((wc, idx) =>
+                                                          idx === i ? { ...wc, tScore: e.target.value } : wc,
+                                                        );
+                                                        updateSiteConfig(site, { windowConfigs: newWcs });
+                                                      }}
+                                                      className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0]"
+                                                    />
+                                                  </div>
+                                                </motion.div>
+                                              )}
+                                            </AnimatePresence>
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
                                   </div>
                                 ))}
+
+                                {(siteCfg?.extraWindows ?? []).map((ew, idx) => (
+                                  <div key={idx} className="space-y-3 pt-2 border-t border-dashed border-[#e8ecf0]">
+                                    <div className="flex items-center justify-between">
+                                      <input
+                                        type="text"
+                                        value={ew.label}
+                                        onChange={(e) => updateExtraWindow(site, idx, { label: e.target.value })}
+                                        placeholder="Window name (e.g. Summer School)"
+                                        className="text-[13px] font-bold text-gray-700 uppercase tracking-wider bg-transparent border-b border-dashed border-gray-300 focus:outline-none focus:border-[#1a4e8a] placeholder:normal-case placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-400 w-64"
+                                      />
+                                      <button
+                                        onClick={() => removeExtraWindow(site, idx)}
+                                        className="text-gray-300 hover:text-red-400 transition-colors cursor-pointer"
+                                      >
+                                        <X size={15} />
+                                      </button>
+                                    </div>
+                                    <div>
+                                      <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
+                                      <div className="w-[200px]">
+                                        <DatePicker
+                                          value={ew.date}
+                                          onChange={(v) => updateExtraWindow(site, idx, { date: v })}
+                                        />
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <p className="text-[13px] text-gray-500 mb-1.5">Assessment type</p>
+                                      <div className="space-y-2">
+                                        {ASSESSMENT_OPTIONS.map(({ value, label }) => (
+                                          <label key={value} className="flex items-center gap-3 cursor-pointer">
+                                            <input
+                                              type="radio"
+                                              name={`site-${site}-extra-${idx}`}
+                                              value={value}
+                                              checked={ew.assessment === value}
+                                              onChange={() => updateExtraWindow(site, idx, { assessment: value as "screener" | "full" })}
+                                              className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
+                                            />
+                                            <span className="text-[14px] text-gray-800">{label}</span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+
                                 <button
-                                  onClick={() => resetSiteToDefault(site)}
-                                  className="text-[13px] text-gray-400 hover:text-gray-600 transition-colors cursor-pointer underline"
+                                  onClick={() => addExtraWindow(site)}
+                                  className="flex items-center gap-1.5 text-[13px] text-[#1a4e8a] hover:text-[#15407a] font-medium transition-colors cursor-pointer"
                                 >
-                                  Reset to default setup
+                                  <span className="text-lg leading-none">+</span> Add a window
                                 </button>
+
+                                <div className="pt-2 border-t border-[#e8ecf0]">
+                                  <button
+                                    onClick={() => resetSiteToDefault(site)}
+                                    className="text-[13px] text-gray-400 hover:text-gray-600 transition-colors cursor-pointer underline"
+                                  >
+                                    Reset to default setup
+                                  </button>
+                                </div>
                               </div>
+                                );
+                              })()}
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -1655,165 +1723,427 @@ function EditSetupPage() {
           </div>
         </div>
       )}
-      {showReview && (
-        <ReviewPanel
-          windowCount={windowCount}
-          dates={dates}
-          labels={labels}
-          assessment={assessment}
-          conditionalAssignment={conditionalAssignment}
-          tScore={tScore}
-          resetBehavior={resetBehavior}
-          windowConfigs={windowConfigs}
-          siteLeaderManage={siteLeaderManage}
-          isOverride={isOverride}
-          onBack={() => setShowReview(false)}
-          onGoToScreen={(screenId) => { setShowReview(false); setCurrentScreenId(screenId); }}
-          onSave={async () => {
-            await saveToSupabase();
-            setShowReview(false);
-            toast.custom((t) => (
-              <SuccessToast
-                id={t}
-                title="Setup saved"
-                description="Don't forget to configure rating window reminder emails."
-                actionLabel="Set reminders"
-                onAction={() => router.push("/settings/rating-window-reminders")}
-              />
-            ));
-            router.push("/settings/yearly-setup");
-          }}
-          saving={saving}
-        />
-      )}
       {showLastYear && (
         <LastYearModal onClose={() => setShowLastYear(false)} onUse={applyLastYear} />
       )}
 
-      {/* 60px progress header */}
-      <header className="h-[60px] shrink-0 flex items-center gap-5 px-8 border-b border-[#e8ecf0] bg-white">
-        <button
-          onClick={handleCancel}
-          className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer shrink-0"
-        >
-          Cancel
-        </button>
-        <div className="flex-1 h-1.5 bg-[#e8ecf0] rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-[#1a4e8a] rounded-full"
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-          />
-        </div>
-        <span className="text-[13px] text-gray-400 shrink-0 tabular-nums">
-          {currentScreenIdx + 1} / {totalScreens}
-        </span>
-      </header>
-
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-[900px] mx-auto px-8 py-16">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentScreen.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
+      {showReview ? (
+        <>
+          {/* Review header */}
+          <header className="h-[60px] shrink-0 flex items-center justify-between px-8 border-b border-[#e8ecf0] bg-white">
+            <button
+              onClick={() => setShowReview(false)}
+              className="flex items-center gap-2 text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
             >
-              <div className="flex items-center gap-2 mb-3">
-                <h1 className="text-[30px] font-medium leading-tight" style={{ color: "#2a2c32" }}>
-                  {currentScreen.title}
-                </h1>
-                {currentScreen.helpTitle && (
-                  <button
-                    onClick={() => setHelpOpen(true)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
-                  >
-                    <HelpCircle size={15} />
-                  </button>
-                )}
-              </div>
-              {currentScreen.subtitle && (
-                <p className="text-[16px] text-gray-500 mb-10 leading-relaxed">
-                  {currentScreen.subtitle}
-                </p>
-              )}
-              <div className={currentScreen.subtitle ? "" : "mt-10"}>
-                {renderScreenContent(currentScreen.id)}
-              </div>
-
-              {/* In-content navigation */}
-              <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#f0f4f8]">
-                {!isFirstScreen ? (
-                  <button
-                    onClick={handlePrev}
-                    className="flex items-center gap-1.5 text-[13.5px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
-                  >
-                    <ArrowLeft size={14} strokeWidth={2} />
-                    Back
-                  </button>
-                ) : currentScreen.id === "window-count" && !fromPastYear ? (
-                  <button
-                    onClick={() => setShowLastYear(true)}
-                    className="text-[13px] text-[#1a4e8a] hover:underline cursor-pointer"
-                  >
-                    Use last year&apos;s setup →
-                  </button>
-                ) : (
-                  <div />
-                )}
-                <div className="flex flex-col items-end gap-1.5">
-                  {validationError && (
-                    <p className="text-[13px] text-red-500">{validationError}</p>
-                  )}
-                  <button
-                    onClick={handleNext}
-                    className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-                  >
-                    {isLastScreen ? "Review & Save" : "Continue"}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </main>
-
-      {/* Contextual help slide-out */}
-      <AnimatePresence>
-        {helpOpen && (helpContent ?? currentScreen.helpTitle) && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => { setHelpOpen(false); setHelpContent(null); }}
-            />
-            <motion.aside
-              className="fixed right-0 top-0 bottom-0 w-[400px] bg-white border-l border-[#e8ecf0] shadow-2xl z-50 flex flex-col"
-              initial={{ x: 400 }}
-              animate={{ x: 0 }}
-              exit={{ x: 400 }}
-              transition={{ type: "spring", damping: 28, stiffness: 260 }}
+              <ArrowLeft size={14} />
+              Back to edit
+            </button>
+            <span className="text-[13px] text-gray-400">
+              {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"} School Year
+              {isOverride && <span className="ml-2 text-[11px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-2 py-0.5">Custom schedule</span>}
+            </span>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer disabled:opacity-60"
             >
-              <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8ecf0]">
-                <h2 className="text-[17px] font-bold text-gray-900">{helpContent?.title ?? currentScreen.helpTitle}</h2>
-                <button
-                  onClick={() => { setHelpOpen(false); setHelpContent(null); }}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              {saving ? "Saving…" : "Save Setup"}
+            </button>
+          </header>
+
+          {/* Review main */}
+          <main className="flex-1 overflow-y-auto bg-[#f8fafc]">
+            <div className="max-w-[900px] mx-auto px-8 py-12">
+              <h1 className="text-[30px] font-medium text-[#2a2c32] mb-1">Review your setup</h1>
+              <p className="text-[15px] text-gray-400 mb-10">Make sure everything looks right before saving.</p>
+
+              <div className="space-y-3">
+                {/* Section 1 — Rating Windows */}
+                {(() => {
+                  const sectionId = "windows";
+                  const isOpen = openReviewSections.includes(sectionId);
+                  const isComplete = dates.every(Boolean);
+                  const toggle = () => setOpenReviewSections(prev =>
+                    prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
+                  );
+                  return (
+                    <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+                      <button
+                        onClick={toggle}
+                        className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
+                      >
+                        <span className="text-[16px] font-semibold text-gray-800">Rating Windows</span>
+                        <div className="flex items-center gap-3">
+                          {isComplete
+                            ? <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">Complete</span>
+                            : <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">Incomplete</span>
+                          }
+                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown size={16} className="text-gray-400" />
+                          </motion.div>
+                        </div>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            key="body"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-[#e8ecf0] px-6 py-5">
+                              <div className="bg-white border border-[#e8ecf0] rounded-xl p-4 mb-4">
+                                <WizardTimeline dates={dates} labels={labels} />
+                              </div>
+                              <div className="flex justify-between">
+                                {dates.map((d, i) => (
+                                  <div key={i} className={`flex flex-col gap-1 flex-1 ${i === dates.length - 1 ? "items-end" : ""}`}>
+                                    <span className="text-[12px] font-medium text-gray-400">{labels[i]}</span>
+                                    <span className="text-sm font-semibold text-gray-700">{d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <button
+                                onClick={() => { setShowReview(false); setCurrentScreenId("window-count"); }}
+                                className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })()}
+
+                {/* Section 2 — Assessment Configuration */}
+                {(() => {
+                  const sectionId = "assessment";
+                  const isOpen = openReviewSections.includes(sectionId);
+                  const isComplete = windowConfigs.every(wc => wc.assessment !== null);
+                  const toggle = () => setOpenReviewSections(prev =>
+                    prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
+                  );
+                  return (
+                    <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+                      <button
+                        onClick={toggle}
+                        className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
+                      >
+                        <span className="text-[16px] font-semibold text-gray-800">Assessment Configuration</span>
+                        <div className="flex items-center gap-3">
+                          {isComplete
+                            ? <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">Complete</span>
+                            : <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">Incomplete</span>
+                          }
+                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown size={16} className="text-gray-400" />
+                          </motion.div>
+                        </div>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            key="body"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-[#e8ecf0] px-6 py-5">
+                              <div className="space-y-3">
+                                {windowConfigs.map((wc, i) => {
+                                  const typeLabel = wc.assessment === "screener" ? "Screener" : "Full DESSA";
+                                  const autoEscalation = wc.assessment === "screener"
+                                    ? (wc.conditionalAssignment ? `Yes (T ≤ ${wc.tScore})` : "No")
+                                    : "Not applicable";
+                                  return (
+                                    <div key={i} className="flex py-2.5 border-b border-[#f0f4f8] last:border-0">
+                                      <div className="w-48 shrink-0">
+                                        <span className="text-[12px] font-medium text-gray-400 block">{labels[i]}</span>
+                                        <span className="text-sm font-medium text-gray-700">{typeLabel}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-[12px] font-medium text-gray-400 block">Auto-escalation</span>
+                                        <span className="text-sm font-medium text-gray-700">{autoEscalation}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <button
+                                onClick={() => { setShowReview(false); setCurrentScreenId("date-0"); }}
+                                className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })()}
+
+                {/* Section 3 — Site Custom Setups (only if hasSiteCustomSetups !== null) */}
+                {hasSiteCustomSetups !== null && (() => {
+                  const sectionId = "sites";
+                  const isOpen = openReviewSections.includes(sectionId);
+                  const isComplete = hasSiteCustomSetups !== null;
+                  const toggle = () => setOpenReviewSections(prev =>
+                    prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
+                  );
+                  return (
+                    <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+                      <button
+                        onClick={toggle}
+                        className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
+                      >
+                        <span className="text-[16px] font-semibold text-gray-800">Site Custom Setups</span>
+                        <div className="flex items-center gap-3">
+                          {isComplete
+                            ? <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">Complete</span>
+                            : <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">Incomplete</span>
+                          }
+                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown size={16} className="text-gray-400" />
+                          </motion.div>
+                        </div>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            key="body"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-[#e8ecf0] px-6 py-5">
+                              {hasSiteCustomSetups === false ? (
+                                <p className="text-sm text-gray-600">All sites follow the same setup.</p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {MOCK_SITES.map((site) => {
+                                    const hasCustom = !!siteCustomSetups[site];
+                                    return (
+                                      <div key={site} className="flex items-center justify-between py-2 border-b border-[#f0f4f8] last:border-0">
+                                        <span className="text-sm font-medium text-gray-700">{site}</span>
+                                        <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${hasCustom ? "bg-[#eef2f8] text-[#1a4e8a]" : "bg-gray-100 text-gray-400"}`}>
+                                          {hasCustom ? "Custom setup" : "Default"}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <button
+                                onClick={() => { setShowReview(false); setCurrentScreenId("site-overrides"); }}
+                                className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })()}
+
+                {/* Section 4 — Student Self-Assessments */}
+                {(() => {
+                  const sectionId = "students";
+                  const isOpen = openReviewSections.includes(sectionId);
+                  const isComplete = siteLeaderManage !== null;
+                  const toggle = () => setOpenReviewSections(prev =>
+                    prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
+                  );
+                  return (
+                    <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+                      <button
+                        onClick={toggle}
+                        className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
+                      >
+                        <span className="text-[16px] font-semibold text-gray-800">Student Self-Assessments</span>
+                        <div className="flex items-center gap-3">
+                          {isComplete
+                            ? <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">Complete</span>
+                            : <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">Incomplete</span>
+                          }
+                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown size={16} className="text-gray-400" />
+                          </motion.div>
+                        </div>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            key="body"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-[#e8ecf0] px-6 py-5">
+                              <p className="text-sm text-gray-600">
+                                {siteLeaderManage === true
+                                  ? "Site Leaders control when students access their self-assessments within each window."
+                                  : siteLeaderManage === false
+                                    ? "Student assessments open automatically at the start of each rating window."
+                                    : "—"}
+                              </p>
+                              <button
+                                onClick={() => { setShowReview(false); setCurrentScreenId("students"); }}
+                                className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </main>
+        </>
+      ) : (
+        <>
+          {/* 60px progress header */}
+          <header className="h-[60px] shrink-0 flex items-center gap-5 px-8 border-b border-[#e8ecf0] bg-white">
+            <button
+              onClick={handleCancel}
+              className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer shrink-0"
+            >
+              Cancel
+            </button>
+            <div className="flex-1 h-1.5 bg-[#e8ecf0] rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-[#1a4e8a] rounded-full"
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              />
+            </div>
+            <span className="text-[13px] text-gray-400 shrink-0 tabular-nums">
+              {currentScreenIdx + 1} / {totalScreens}
+            </span>
+          </header>
+
+          {/* Main content */}
+          <main className="flex-1 overflow-y-auto">
+            <div className="max-w-[900px] mx-auto px-8 py-16">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentScreen.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
                 >
-                  <X size={16} />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto px-8 py-6">
-                {helpContent?.body ?? currentScreen.helpBody}
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+                  <div className="flex items-center gap-2 mb-3">
+                    <h1 className="text-[30px] font-medium leading-tight" style={{ color: "#2a2c32" }}>
+                      {currentScreen.title}
+                    </h1>
+                    {currentScreen.helpTitle && (
+                      <button
+                        onClick={() => setHelpOpen(true)}
+                        className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
+                      >
+                        <HelpCircle size={15} />
+                      </button>
+                    )}
+                  </div>
+                  {currentScreen.subtitle && (
+                    <p className="text-[16px] text-gray-500 mb-10 leading-relaxed">
+                      {currentScreen.subtitle}
+                    </p>
+                  )}
+                  <div className={currentScreen.subtitle ? "" : "mt-10"}>
+                    {renderScreenContent(currentScreen.id)}
+                  </div>
+
+                  {/* In-content navigation */}
+                  <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#f0f4f8]">
+                    {!isFirstScreen ? (
+                      <button
+                        onClick={handlePrev}
+                        className="flex items-center gap-1.5 text-[13.5px] font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+                      >
+                        <ArrowLeft size={14} strokeWidth={2} />
+                        Back
+                      </button>
+                    ) : currentScreen.id === "window-count" && !fromPastYear ? (
+                      <button
+                        onClick={() => setShowLastYear(true)}
+                        className="text-[13px] text-[#1a4e8a] hover:underline cursor-pointer"
+                      >
+                        Use last year&apos;s setup →
+                      </button>
+                    ) : (
+                      <div />
+                    )}
+                    <div className="flex flex-col items-end gap-1.5">
+                      {validationError && (
+                        <p className="text-[13px] text-red-500">{validationError}</p>
+                      )}
+                      <button
+                        onClick={handleNext}
+                        className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                      >
+                        {isLastScreen ? "Review & Save" : "Continue"}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </main>
+
+          {/* Contextual help slide-out */}
+          <AnimatePresence>
+            {helpOpen && (helpContent ?? currentScreen.helpTitle) && (
+              <>
+                <motion.div
+                  className="fixed inset-0 z-40"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => { setHelpOpen(false); setHelpContent(null); }}
+                />
+                <motion.aside
+                  className="fixed right-0 top-0 bottom-0 w-[400px] bg-white border-l border-[#e8ecf0] shadow-2xl z-50 flex flex-col"
+                  initial={{ x: 400 }}
+                  animate={{ x: 0 }}
+                  exit={{ x: 400 }}
+                  transition={{ type: "spring", damping: 28, stiffness: 260 }}
+                >
+                  <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8ecf0]">
+                    <h2 className="text-[17px] font-bold text-gray-900">{helpContent?.title ?? currentScreen.helpTitle}</h2>
+                    <button
+                      onClick={() => { setHelpOpen(false); setHelpContent(null); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-8 py-6">
+                    {helpContent?.body ?? currentScreen.helpBody}
+                  </div>
+                </motion.aside>
+              </>
+            )}
+          </AnimatePresence>
+        </>
+      )}
     </div>
   );
 }
