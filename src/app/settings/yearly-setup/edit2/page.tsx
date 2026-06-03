@@ -1775,7 +1775,7 @@ function EditSetupPage() {
               <ArrowLeft size={14} />
               Back to edit
             </button>
-            <span className="text-[13px] text-gray-400">
+            <span className="text-[16px] font-semibold tracking-tight text-gray-700">
               {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"} School Year
               {isOverride && <span className="ml-2 text-[11px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-2 py-0.5">Custom schedule</span>}
             </span>
@@ -1809,7 +1809,7 @@ function EditSetupPage() {
                         onClick={toggle}
                         className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
                       >
-                        <span className="text-[16px] font-semibold text-gray-800">Rating Windows</span>
+                        <span className="text-[16px] font-semibold text-gray-800">Default Rating Windows</span>
                         <div className="flex items-center gap-3">
                           {isComplete
                             ? <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">Complete</span>
@@ -1905,7 +1905,7 @@ function EditSetupPage() {
                                         <span className="text-sm font-medium text-gray-700">{typeLabel}</span>
                                       </div>
                                       <div>
-                                        <span className="text-[12px] font-medium text-gray-400 block">Auto-escalation</span>
+                                        <span className="text-[12px] font-medium text-gray-400 block">Auto-assign DESSA</span>
                                         <span className="text-sm font-medium text-gray-700">{autoEscalation}</span>
                                       </div>
                                     </div>
