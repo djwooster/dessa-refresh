@@ -819,55 +819,69 @@ function EditSetupPage() {
 
     // Persist per-site custom setups from the site-overrides step (default flow only)
     if (!isOverride) {
-      // Remove any previously saved site-level records for this year
-      const { data: existingSiteRecords } = await db
-        .from("yearly_setups")
-        .select("id, group_name")
-        .eq("year", "2025-2026")
-        .eq("is_default", false)
-        .in("group_name", MOCK_SITES);
-      if (existingSiteRecords?.length) {
-        const ids = existingSiteRecords.map((r: { id: string }) => r.id);
-        await db.from("yearly_setup_window_configs").delete().in("setup_id", ids);
-        await db.from("yearly_setup_sites").delete().in("setup_id", ids);
-        await db.from("yearly_setups").delete().in("id", ids);
+      // Remove previously saved site-level records for this year (match by sites, not group_name,
+      // since grouped records may have a user-defined group_name that isn't a site name)
+      const { data: existingSiteLinks } = await db
+        .from("yearly_setup_sites")
+        .select("setup_id")
+        .in("site_name", MOCK_SITES);
+      if (existingSiteLinks?.length) {
+        const linkedIds = [...new Set(existingSiteLinks.map((r: { setup_id: string }) => r.setup_id))];
+        const { data: staleSetups } = await db
+          .from("yearly_setups")
+          .select("id")
+          .in("id", linkedIds)
+          .eq("is_default", false)
+          .eq("year", "2025-2026");
+        if (staleSetups?.length) {
+          const ids = staleSetups.map((r: { id: string }) => r.id);
+          await db.from("yearly_setup_window_configs").delete().in("setup_id", ids);
+          await db.from("yearly_setup_sites").delete().in("setup_id", ids);
+          await db.from("yearly_setups").delete().in("id", ids);
+        }
       }
 
-      // Re-insert each site that has a custom config
+      // Re-insert, one DB record per unique group name
       if (hasSiteCustomSetups === true) {
+        // Bucket sites by their group name (falling back to the site name for ungrouped sites)
+        const groups = new Map<string, { sites: string[]; cfg: SiteCustomConfig }>();
         for (const [siteName, siteCfg] of Object.entries(siteCustomSetups)) {
           if (!siteCfg) continue;
-          const allDates = [
-            ...siteCfg.dates,
-            ...siteCfg.extraWindows.map((ew) => ew.date),
-          ];
-          const totalCount = siteCfg.windowConfigs.length + siteCfg.extraWindows.length;
-          const siteAssessmentType = siteCfg.windowConfigs.some((wc) => wc.assessment === "screener") ? "screener" : "full";
-          const sitePayload = {
-            is_default: false,
-            group_name: siteName,
-            year: "2025-2026",
-            window_count: totalCount,
-            dates: allDates,
-            assessment_type: siteAssessmentType,
-            conditional_assignment: siteCfg.windowConfigs.some((wc) => wc.conditionalAssignment === true),
-            t_score: siteCfg.windowConfigs[0]?.tScore ?? "40",
-            reset_behavior: siteCfg.windowConfigs[0]?.resetBehavior ?? "rescreen",
-            same_config_all_windows: false,
-            site_leader_manage: false,
-          };
-          const { data: newSiteRecord } = await db
+          const key = siteCfg.groupName?.trim() || siteName;
+          if (!groups.has(key)) groups.set(key, { sites: [], cfg: siteCfg });
+          groups.get(key)!.sites.push(siteName);
+        }
+
+        for (const [groupName, { sites, cfg }] of groups) {
+          const allDates = [...cfg.dates, ...cfg.extraWindows.map((ew) => ew.date)];
+          const totalCount = cfg.windowConfigs.length + cfg.extraWindows.length;
+          const siteAssessmentType = cfg.windowConfigs.some((wc) => wc.assessment === "screener") ? "screener" : "full";
+          const { data: newRecord } = await db
             .from("yearly_setups")
-            .insert(sitePayload)
+            .insert({
+              is_default: false,
+              group_name: groupName,
+              year: "2025-2026",
+              window_count: totalCount,
+              dates: allDates,
+              assessment_type: siteAssessmentType,
+              conditional_assignment: cfg.windowConfigs.some((wc) => wc.conditionalAssignment === true),
+              t_score: cfg.windowConfigs[0]?.tScore ?? "40",
+              reset_behavior: cfg.windowConfigs[0]?.resetBehavior ?? "rescreen",
+              same_config_all_windows: false,
+              site_leader_manage: false,
+            })
             .select("id")
             .single();
-          const siteSetupId = newSiteRecord?.id;
-          if (siteSetupId) {
-            await db.from("yearly_setup_sites").insert({ setup_id: siteSetupId, site_name: siteName });
-            if (siteCfg.windowConfigs.length > 0) {
+          const setupId = newRecord?.id;
+          if (setupId) {
+            await db.from("yearly_setup_sites").insert(
+              sites.map((site) => ({ setup_id: setupId, site_name: site }))
+            );
+            if (cfg.windowConfigs.length > 0) {
               await db.from("yearly_setup_window_configs").insert(
-                siteCfg.windowConfigs.map((wc, i) => ({
-                  setup_id: siteSetupId,
+                cfg.windowConfigs.map((wc, i) => ({
+                  setup_id: setupId,
                   window_index: i,
                   conditional_assignment: wc.conditionalAssignment,
                   t_score: wc.tScore,
@@ -1082,6 +1096,14 @@ function EditSetupPage() {
     });
     setSiteModalOpen(false);
     setSelectedSiteRows([]);
+    const count = siteModalTargets.length;
+    toast.custom((t) => (
+      <SuccessToast
+        id={t}
+        title={count === 1 ? `${siteModalTargets[0]} configured` : `${count} sites configured`}
+        description="Custom setup saved. You can adjust it anytime before saving."
+      />
+    ));
   };
 
   const renderScreenContent = (screenId: string) => {
@@ -1425,6 +1447,30 @@ function EditSetupPage() {
                         ? `Configure ${selectedSiteRows.length} site${selectedSiteRows.length > 1 ? "s" : ""}`
                         : "Configure"}
                     </button>
+                  </div>
+
+                  {/* Quick select */}
+                  <div className="flex items-center gap-2 px-4 py-2 border-b border-[#e8ecf0] bg-white">
+                    <span className="text-[11px] text-gray-400 font-medium shrink-0">Quick select:</span>
+                    {(["Elementary", "Middle", "High"] as const).map((keyword) => {
+                      const group = MOCK_SITES.filter((s) => s.includes(keyword));
+                      const allOn = group.length > 0 && group.every((s) => selectedSiteRows.includes(s));
+                      return (
+                        <button
+                          key={keyword}
+                          onClick={() =>
+                            setSelectedSiteRows((prev) =>
+                              allOn
+                                ? prev.filter((s) => !group.includes(s))
+                                : [...new Set([...prev, ...group])]
+                            )
+                          }
+                          className={`h-6 px-2.5 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${allOn ? "bg-[#1a4e8a] text-white border-[#1a4e8a]" : "bg-white text-[#1a4e8a] border-[#c7d7ee] hover:bg-[#eef2f8]"}`}
+                        >
+                          {keyword}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Header row */}
@@ -1879,21 +1925,28 @@ function EditSetupPage() {
                             <div className="border-t border-[#e8ecf0] px-6 py-5">
                               {hasSiteCustomSetups === false ? (
                                 <p className="text-sm text-gray-600">All sites follow the same setup.</p>
-                              ) : (
-                                <div className="space-y-2">
-                                  {MOCK_SITES.map((site) => {
-                                    const hasCustom = !!siteCustomSetups[site];
-                                    return (
-                                      <div key={site} className="flex items-center justify-between py-2 border-b border-[#f0f4f8] last:border-0">
-                                        <span className="text-sm font-medium text-gray-700">{site}</span>
-                                        <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${hasCustom ? "bg-[#eef2f8] text-[#1a4e8a]" : "bg-gray-100 text-gray-400"}`}>
-                                          {hasCustom ? "Custom setup" : "Default"}
-                                        </span>
+                              ) : (() => {
+                                const customSites = MOCK_SITES.filter((s) => !!siteCustomSetups[s]);
+                                const defaultCount = MOCK_SITES.length - customSites.length;
+                                const shown = customSites.slice(0, 3);
+                                const overflow = customSites.length - shown.length;
+                                const customLine = overflow > 0
+                                  ? `${shown.join(", ")} +${overflow} more`
+                                  : shown.join(", ") || "None";
+                                return (
+                                  <div className="space-y-0">
+                                    {[
+                                      { label: "Custom setup", value: `${customSites.length} site${customSites.length !== 1 ? "s" : ""} — ${customLine}` },
+                                      { label: "Default", value: `${defaultCount} site${defaultCount !== 1 ? "s" : ""}` },
+                                    ].map(({ label, value }) => (
+                                      <div key={label} className="flex items-baseline py-2.5 border-b border-[#f0f4f8] last:border-0">
+                                        <span className="text-[13px] text-gray-400 w-36 shrink-0">{label}</span>
+                                        <span className="text-[13px] font-medium text-gray-700">{value}</span>
                                       </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
+                                    ))}
+                                  </div>
+                                );
+                              })()}
                               <button
                                 onClick={() => { setShowReview(false); setCurrentScreenId("site-overrides"); }}
                                 className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
@@ -2024,7 +2077,7 @@ function EditSetupPage() {
                   </div>
 
                   {/* In-content navigation */}
-                  <div className="flex items-center justify-between mt-10 pt-6 border-t border-[#f0f4f8]">
+                  <div className={`flex items-center justify-between pt-6 ${currentScreen.id === "site-overrides" ? "mt-4" : "mt-10 border-t border-[#f0f4f8]"}`}>
                     {!isFirstScreen ? (
                       <button
                         onClick={handlePrev}
@@ -2333,12 +2386,18 @@ function EditSetupPage() {
               </button>
 
               {/* Timeline — bottom of body */}
-              {siteModalConfig.dates.some(Boolean) && (
-                <div className="rounded-xl border border-[#e8ecf0] bg-[#f8fafc] px-5 py-4 mt-2">
-                  <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-4">Year at a glance</p>
-                  <WizardTimeline dates={siteModalConfig.dates.filter(Boolean)} labels={labels} />
-                </div>
-              )}
+              {(siteModalConfig.dates.some(Boolean) || siteModalConfig.extraWindows.some((ew) => ew.date)) && (() => {
+                const allDates = [
+                  ...siteModalConfig.dates.map((d, i) => ({ date: d, label: labels[i] ?? `W${i + 1}` })),
+                  ...siteModalConfig.extraWindows.map((ew) => ({ date: ew.date, label: ew.label || "Extra" })),
+                ].filter((e) => e.date).sort((a, b) => a.date.localeCompare(b.date));
+                return (
+                  <div className="rounded-xl border border-[#e8ecf0] bg-[#f8fafc] px-5 py-4 mt-2">
+                    <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-4">Year at a glance</p>
+                    <WizardTimeline dates={allDates.map((e) => e.date)} labels={allDates.map((e) => e.label)} />
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Modal footer */}
