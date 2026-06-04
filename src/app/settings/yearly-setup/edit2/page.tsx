@@ -20,6 +20,7 @@ import {
   ChevronDown,
   Copy,
   Equal,
+  Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -85,7 +86,7 @@ type WindowConfig = {
 };
 
 type SiteExtraWindow = { label: string; date: string; assessment: "screener" | "full" | null };
-type SiteCustomConfig = { dates: string[]; windowConfigs: WindowConfig[]; extraWindows: SiteExtraWindow[] };
+type SiteCustomConfig = { dates: string[]; windowConfigs: WindowConfig[]; extraWindows: SiteExtraWindow[]; groupName?: string };
 
 const DEFAULT_WINDOW_CONFIG: WindowConfig = {
   assessment: null,
@@ -425,14 +426,40 @@ const LAST_YEAR = {
 };
 
 const MOCK_SITES = [
-  "Lincoln Elementary",
-  "Roosevelt Middle",
-  "Washington High",
-  "Jefferson Elementary",
-  "Adams Middle",
-  "Madison High",
-  "Monroe Elementary",
+  "Adams Middle","Agave High","Arroyo Seco Elementary","Arthur Elementary",
+  "Aspen Grove Middle","Bayshore Middle","Birchwood Middle","Blackrock High",
+  "Bluehills High","Bluffview Middle","Bridgeview Elementary","Bronzedale High",
+  "Buchanan Middle","Bush Elementary","Cactus Wren Elementary","Canyon View Middle",
+  "Capstone High","Carter Middle","Cedarbrook Elementary","Chaparral Middle",
+  "Clearwater Middle","Cleveland Middle","Cliffside Elementary","Clinton Middle",
+  "Coastline High","Coolidge Middle","Copperfield Middle","Coral Reef High",
+  "Cornerstone High","Cottonwood Elementary","Creekside Elementary","Crestwood High",
+  "Desert Ridge Elementary","Dolphin Bay Elementary","Eagle View Elementary","Eastview Middle",
+  "Eisenhower High","Elmwood High","Fairview High","Falcon Ridge High",
+  "FDR Elementary","Fillmore High","Flint Ridge Middle","Ford Elementary",
+  "Garfield High","Glenview Middle","Goldfield Middle","Granite Ridge Middle",
+  "Grant Elementary","Greenlawn Elementary","GW Bush High","Harborview Elementary",
+  "Harding Elementary","Harrison Prep","Hawk Creek Middle","Hayes Middle",
+  "Heron Bay Elementary","Hillcrest High","Hillside High","Hoover High",
+  "Inland Empire Elementary","Ironwood Elementary","Jackson Academy","Jefferson Elementary",
+  "Johnson High","Juniper Valley Elementary","Kennedy Elementary","Keystone Elementary",
+  "Lakeshore Middle","Lakeview Middle","LBJ Middle","Limestone High",
+  "Lincoln Elementary","Madison High","Manatee Middle","Maplewood High",
+  "Marble Falls Elementary","McKinley High","Meadowbrook Elementary","Mesa Verde High",
+  "Mesquite Middle","Milestone Middle","Monroe Elementary","Nixon High",
+  "Northside High","Oakwood Middle","Obama Elementary","Ocotillo Middle",
+  "Osprey High","Palo Verde High","Parkview Elementary","Pelican Cove Middle",
+  "Pierce Elementary","Pinecrest Elementary","Pinnacle Middle","Plains High",
+  "Polk Elementary","Pondview Middle","Prairie View Middle","Reagan High",
+  "Redwood High","Ridgecrest High","Riverbend High","Riverside Elementary",
+  "Roadrunner Middle","Roosevelt Elementary","Roosevelt Middle","Sage Hills High",
+  "Sagebrush Middle","Saguaro Elementary","Sandstone Elementary","Seagull Shores High",
+  "Silverstone Elementary","Southside Elementary","Summit Elementary","Sunrise Middle",
+  "Sunset Elementary","Taft Middle","Taylor Middle","Truman Middle",
+  "Tumbleweed High","Tyler Charter","Valley High","Washington High",
+  "Westwood High","Whitewater Middle","Willowbrook Elementary","Wilson High",
 ];
+
 
 const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {};
 
@@ -625,7 +652,12 @@ function EditSetupPage() {
   );
   const [hasSiteCustomSetups, setHasSiteCustomSetups] = useState<boolean | null>(null);
   const [siteCustomSetups, setSiteCustomSetups] = useState<Record<string, SiteCustomConfig | null>>({});
-  const [openSiteAccordion, setOpenSiteAccordion] = useState<string | null>(null);
+  const [siteSearchQuery, setSiteSearchQuery] = useState("");
+  const [selectedSiteRows, setSelectedSiteRows] = useState<string[]>([]);
+  const [siteModalOpen, setSiteModalOpen] = useState(false);
+  const [siteModalTargets, setSiteModalTargets] = useState<string[]>([]);
+  const [siteModalConfig, setSiteModalConfig] = useState<SiteCustomConfig | null>(null);
+  const [siteModalGroupName, setSiteModalGroupName] = useState("");
 
   // UI state
   const [currentScreenId, setCurrentScreenId] = useState(isOverride ? "name" : "window-count");
@@ -1022,6 +1054,36 @@ function EditSetupPage() {
 
   // ─── Screen content ────────────────────────────────────────────────────────
 
+  const defaultSiteConfig = (): SiteCustomConfig => ({
+    dates: [...dates],
+    windowConfigs: windowConfigs.map((wc) => ({ ...wc })),
+    extraWindows: [],
+  });
+
+  const openSiteModal = (targets: string[]) => {
+    const first = targets[0];
+    const base = (first && siteCustomSetups[first]) ? { ...siteCustomSetups[first]! } : defaultSiteConfig();
+    setSiteModalTargets(targets);
+    setSiteModalConfig(base);
+    setSiteModalGroupName(base.groupName ?? "");
+    setSiteModalOpen(true);
+  };
+
+  const saveSiteModal = () => {
+    if (!siteModalConfig) return;
+    const configWithGroup: SiteCustomConfig = {
+      ...siteModalConfig,
+      groupName: siteModalGroupName.trim() || undefined,
+    };
+    setSiteCustomSetups((prev) => {
+      const next = { ...prev };
+      siteModalTargets.forEach((s) => { next[s] = { ...configWithGroup }; });
+      return next;
+    });
+    setSiteModalOpen(false);
+    setSelectedSiteRows([]);
+  };
+
   const renderScreenContent = (screenId: string) => {
     // ── Override: group name ───────────────────────────────────────────────
     if (screenId === "name") {
@@ -1302,46 +1364,11 @@ function EditSetupPage() {
 
     // ── Site custom setups ─────────────────────────────────────────────────
     if (screenId === "site-overrides") {
-      const defaultSiteConfig = (): SiteCustomConfig => ({
-        dates: [...dates],
-        windowConfigs: windowConfigs.map((wc) => ({ ...wc })),
-        extraWindows: [],
-      });
-
-      const updateSiteConfig = (site: string, patch: Partial<SiteCustomConfig>) => {
-        setSiteCustomSetups((prev) => ({
-          ...prev,
-          [site]: { ...(prev[site] ?? defaultSiteConfig()), ...patch },
-        }));
-      };
-
-      const toggleSiteAccordion = (site: string) => {
-        setOpenSiteAccordion(openSiteAccordion === site ? null : site);
-      };
-
-      const addExtraWindow = (site: string) => {
-        const cfg = siteCustomSetups[site] ?? defaultSiteConfig();
-        updateSiteConfig(site, {
-          extraWindows: [...cfg.extraWindows, { label: "", date: "", assessment: null }],
-        });
-      };
-
-      const updateExtraWindow = (site: string, idx: number, patch: Partial<SiteExtraWindow>) => {
-        const cfg = siteCustomSetups[site] ?? defaultSiteConfig();
-        updateSiteConfig(site, {
-          extraWindows: cfg.extraWindows.map((w, i) => i === idx ? { ...w, ...patch } : w),
-        });
-      };
-
-      const removeExtraWindow = (site: string, idx: number) => {
-        const cfg = siteCustomSetups[site] ?? defaultSiteConfig();
-        updateSiteConfig(site, { extraWindows: cfg.extraWindows.filter((_, i) => i !== idx) });
-      };
-
-      const resetSiteToDefault = (site: string) => {
-        setSiteCustomSetups((prev) => ({ ...prev, [site]: null }));
-        setOpenSiteAccordion(null);
-      };
+      const filteredSites = MOCK_SITES.filter((s) =>
+        s.toLowerCase().includes(siteSearchQuery.toLowerCase())
+      );
+      const allFilteredSelected =
+        filteredSites.length > 0 && filteredSites.every((s) => selectedSiteRows.includes(s));
 
       return (
         <div className="space-y-6">
@@ -1355,7 +1382,7 @@ function EditSetupPage() {
                   type="radio"
                   name="site-overrides"
                   checked={hasSiteCustomSetups === value}
-                  onChange={() => { setHasSiteCustomSetups(value); if (!value) setOpenSiteAccordion(null); }}
+                  onChange={() => { setHasSiteCustomSetups(value); if (!value) setSelectedSiteRows([]); }}
                   className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
                 />
                 <div>
@@ -1369,286 +1396,108 @@ function EditSetupPage() {
           <AnimatePresence initial={false}>
             {hasSiteCustomSetups === true && (
               <motion.div
-                key="site-accordions"
+                key="site-table"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="space-y-2 pt-2">
-                  {MOCK_SITES.map((site) => {
-                    const isOpen = openSiteAccordion === site;
-                    const hasCustom = !!siteCustomSetups[site];
-                    const siteCfg = siteCustomSetups[site];
-                    return (
-                      <div key={site} className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
-                        <button
-                          onClick={() => toggleSiteAccordion(site)}
-                          className="w-full flex items-center justify-between px-5 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
+                <div className="rounded-xl border border-[#e8ecf0] overflow-hidden bg-white">
+                  {/* Toolbar */}
+                  <div className="flex items-center gap-3 px-4 py-3 bg-[#f8fafc] border-b border-[#e8ecf0]">
+                    <div className="flex-1 relative">
+                      <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Search sites…"
+                        value={siteSearchQuery}
+                        onChange={(e) => setSiteSearchQuery(e.target.value)}
+                        className="w-full h-8 pl-8 pr-3 text-[13px] border border-[#d1d5db] rounded-lg bg-white focus:outline-none focus:border-[#1a4e8a] placeholder:text-gray-400"
+                      />
+                    </div>
+                    <button
+                      disabled={selectedSiteRows.length === 0}
+                      onClick={() => openSiteModal(selectedSiteRows)}
+                      className="shrink-0 h-8 px-4 rounded-lg text-[13px] font-semibold transition-colors cursor-pointer bg-[#1a4e8a] text-white hover:bg-[#15407a] disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {selectedSiteRows.length > 0
+                        ? `Configure ${selectedSiteRows.length} site${selectedSiteRows.length > 1 ? "s" : ""}`
+                        : "Configure"}
+                    </button>
+                  </div>
+
+                  {/* Header row */}
+                  <div className="grid grid-cols-[44px_1fr_130px_44px] border-b border-[#e8ecf0] bg-[#f8fafc]">
+                    <div className="flex items-center justify-center py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={allFilteredSelected}
+                        onChange={(e) =>
+                          setSelectedSiteRows(e.target.checked ? filteredSites : [])
+                        }
+                        className="w-4 h-4 accent-[#1a4e8a] cursor-pointer"
+                      />
+                    </div>
+                    <div className="px-3 py-2.5 flex items-center">
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Site</span>
+                    </div>
+                    <div className="px-3 py-2.5 flex items-center">
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</span>
+                    </div>
+                    <div />
+                  </div>
+
+                  {/* Rows */}
+                  <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+                    {filteredSites.map((site) => {
+                      const hasCustom = !!siteCustomSetups[site];
+                      const isSelected = selectedSiteRows.includes(site);
+                      return (
+                        <div
+                          key={site}
+                          onClick={() =>
+                            setSelectedSiteRows((prev) =>
+                              prev.includes(site) ? prev.filter((s) => s !== site) : [...prev, site]
+                            )
+                          }
+                          className={`grid grid-cols-[44px_1fr_130px_44px] border-b border-[#f0f4f8] last:border-0 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2f8]" : "bg-white hover:bg-[#f8fafc]"}`}
                         >
-                          <span className="text-[15px] font-semibold text-gray-800">{site}</span>
-                          <div className="flex items-center gap-3">
-                            <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${hasCustom ? "bg-[#eef2f8] text-[#1a4e8a]" : "bg-gray-100 text-gray-400"}`}>
-                              {hasCustom ? "Custom setup" : "Default"}
-                            </span>
-                            <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                              <ChevronDown size={16} className="text-gray-400" />
-                            </motion.div>
+                          <div className="flex items-center justify-center py-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() =>
+                                setSelectedSiteRows((prev) =>
+                                  prev.includes(site) ? prev.filter((s) => s !== site) : [...prev, site]
+                                )
+                              }
+                              className="w-4 h-4 accent-[#1a4e8a] cursor-pointer"
+                            />
                           </div>
-                        </button>
-
-                        <AnimatePresence initial={false}>
-                          {isOpen && (
-                            <motion.div
-                              key="content"
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
+                          <div className="px-3 py-3 flex items-center">
+                            <span className="text-[14px] text-gray-800">{site}</span>
+                          </div>
+                          <div className="px-3 py-3 flex items-center">
+                            <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${hasCustom ? "bg-[#eef2f8] text-[#1a4e8a]" : "bg-gray-100 text-gray-400"}`}>
+                              {hasCustom ? "Custom" : "Default"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-center py-3">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openSiteModal([site]); }}
+                              className="text-[12px] font-medium text-[#1a4e8a] hover:underline cursor-pointer"
                             >
-                              {(() => {
-                                const displayCfg = siteCfg ?? defaultSiteConfig();
-                                const copyableSites = MOCK_SITES.filter((s) => s !== site && !!siteCustomSetups[s]);
-                                // Group copyable sites by config fingerprint so identical configs share one row
-                                const groupMap = new Map<string, string[]>();
-                                copyableSites.forEach((src) => {
-                                  const key = JSON.stringify(siteCustomSetups[src]);
-                                  if (!groupMap.has(key)) groupMap.set(key, []);
-                                  groupMap.get(key)!.push(src);
-                                });
-                                const configGroups = Array.from(groupMap.entries()).map(([key, sites]) => ({ key, sites }));
-                                const currentKey = JSON.stringify(siteCustomSetups[site]);
-                                const joinNames = (names: string[]) => {
-                                  if (names.length === 1) return <span className="font-semibold">{names[0]}</span>;
-                                  if (names.length === 2) return <><span className="font-semibold">{names[0]}</span> and <span className="font-semibold">{names[1]}</span></>;
-                                  const rest = names.length - 2;
-                                  return <><span className="font-semibold">{names[0]}</span>, <span className="font-semibold">{names[1]}</span> <span className="text-gray-400">+{rest} more</span></>;
-                                };
-                                return (
-                              <div className="border-t border-[#e8ecf0] px-5 py-5 space-y-6">
-                                {configGroups.length > 0 && (
-                                  <div className="space-y-2">
-                                    {configGroups.map(({ key, sites: groupSites }) => {
-                                      const isSame = currentKey === key;
-                                      return (
-                                      <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-[#e8ecf0] bg-[#f8fafc] px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                          {isSame
-                                            ? <Equal className="shrink-0 text-gray-400" style={{ width: 20, height: 20 }} />
-                                            : <Copy className="shrink-0 text-gray-400" style={{ width: 20, height: 20 }} />
-                                          }
-                                          <div>
-                                            {isSame ? (
-                                              <>
-                                                <p className="text-[13px] font-medium text-gray-700">Same settings as {joinNames(groupSites)}</p>
-                                                <p className="text-[12px] text-gray-400 mt-0.5">Dates, assessment types, and escalation rules match</p>
-                                              </>
-                                            ) : (
-                                              <>
-                                                <p className="text-[13px] font-medium text-gray-700">Copy settings from {joinNames(groupSites)}</p>
-                                                <p className="text-[12px] text-gray-400 mt-0.5">Dates, assessment types, and escalation rules</p>
-                                              </>
-                                            )}
-                                          </div>
-                                        </div>
-                                        {!isSame && (
-                                          <button
-                                            onClick={() => {
-                                              updateSiteConfig(site, { ...siteCustomSetups[groupSites[0]]! });
-                                              toast.custom((t) => (
-                                                <SuccessToast
-                                                  id={t}
-                                                  title={`Settings applied from ${groupSites[0]} to ${site}`}
-                                                />
-                                              ), { position: "top-right" });
-                                            }}
-                                            className="shrink-0 h-8 px-3 rounded-lg border border-[#c7d7ee] text-[12px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                                          >
-                                            Copy
-                                          </button>
-                                        )}
-                                      </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                                {Array.from({ length: windowCount }, (_, i) => (
-                                  <div key={i} className="rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3">
-                                    <p className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{labels[i]}</p>
-                                    <div>
-                                      <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
-                                      <div className="w-[200px]">
-                                        <DatePicker
-                                          value={displayCfg.dates[i] ?? ""}
-                                          onChange={(v) => {
-                                            const newDates = [...displayCfg.dates];
-                                            newDates[i] = v;
-                                            updateSiteConfig(site, { dates: newDates });
-                                          }}
-                                        />
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <p className="text-[13px] text-gray-500 mb-1.5">Assessment type</p>
-                                      <div className="space-y-2">
-                                        {ASSESSMENT_OPTIONS.map(({ value, label }) => (
-                                          <label key={value} className="flex items-center gap-3 cursor-pointer">
-                                            <input
-                                              type="radio"
-                                              name={`site-${site}-window-${i}`}
-                                              value={value}
-                                              checked={displayCfg.windowConfigs[i]?.assessment === value}
-                                              onChange={() => {
-                                                const newWcs = displayCfg.windowConfigs.map((wc, idx) =>
-                                                  idx === i ? { ...wc, assessment: value as "screener" | "full" } : wc,
-                                                );
-                                                updateSiteConfig(site, { windowConfigs: newWcs });
-                                              }}
-                                              className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
-                                            />
-                                            <span className="text-[14px] text-gray-800">{label}</span>
-                                          </label>
-                                        ))}
-                                      </div>
-                                    </div>
-                                    <AnimatePresence initial={false}>
-                                      {displayCfg.windowConfigs[i]?.assessment === "screener" && (
-                                        <motion.div
-                                          key="escalation"
-                                          initial={{ opacity: 0, height: 0 }}
-                                          animate={{ opacity: 1, height: "auto" }}
-                                          exit={{ opacity: 0, height: 0 }}
-                                          transition={{ duration: 0.18, ease: "easeOut" }}
-                                          className="overflow-hidden"
-                                        >
-                                          <div className="pt-1 space-y-2">
-                                            <p className="text-[13px] text-gray-500">If a student&apos;s screener score is low, should they automatically take the full DESSA?</p>
-                                            <div className="space-y-2">
-                                              {([{ value: true, label: "Yes" }, { value: false, label: "No" }] as const).map(({ value, label }) => (
-                                                <label key={String(value)} className="flex items-center gap-3 cursor-pointer">
-                                                  <input
-                                                    type="radio"
-                                                    name={`site-${site}-escalate-${i}`}
-                                                    checked={displayCfg.windowConfigs[i]?.conditionalAssignment === value}
-                                                    onChange={() => {
-                                                      const newWcs = displayCfg.windowConfigs.map((wc, idx) =>
-                                                        idx === i ? { ...wc, conditionalAssignment: value } : wc,
-                                                      );
-                                                      updateSiteConfig(site, { windowConfigs: newWcs });
-                                                    }}
-                                                    className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
-                                                  />
-                                                  <span className="text-[14px] text-gray-800">{label}</span>
-                                                </label>
-                                              ))}
-                                            </div>
-                                            <AnimatePresence initial={false}>
-                                              {displayCfg.windowConfigs[i]?.conditionalAssignment === true && (
-                                                <motion.div
-                                                  key="tscore"
-                                                  initial={{ opacity: 0, height: 0 }}
-                                                  animate={{ opacity: 1, height: "auto" }}
-                                                  exit={{ opacity: 0, height: 0 }}
-                                                  transition={{ duration: 0.18, ease: "easeOut" }}
-                                                  className="overflow-hidden"
-                                                >
-                                                  <div className="flex items-center gap-3 pt-2">
-                                                    <span className="text-[13px] text-gray-600">Assign full DESSA at or below T-Score</span>
-                                                    <input
-                                                      type="number"
-                                                      value={displayCfg.windowConfigs[i]?.tScore ?? "40"}
-                                                      onChange={(e) => {
-                                                        const newWcs = displayCfg.windowConfigs.map((wc, idx) =>
-                                                          idx === i ? { ...wc, tScore: e.target.value } : wc,
-                                                        );
-                                                        updateSiteConfig(site, { windowConfigs: newWcs });
-                                                      }}
-                                                      className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0]"
-                                                    />
-                                                  </div>
-                                                </motion.div>
-                                              )}
-                                            </AnimatePresence>
-                                          </div>
-                                        </motion.div>
-                                      )}
-                                    </AnimatePresence>
-                                  </div>
-                                ))}
-
-                                {(siteCfg?.extraWindows ?? []).map((ew, idx) => (
-                                  <div key={idx} className="space-y-3 pt-2 border-t border-dashed border-[#e8ecf0]">
-                                    <div className="flex items-center justify-between">
-                                      <input
-                                        type="text"
-                                        value={ew.label}
-                                        onChange={(e) => updateExtraWindow(site, idx, { label: e.target.value })}
-                                        placeholder="Window name (e.g. Summer School)"
-                                        className="text-[13px] font-bold text-gray-700 uppercase tracking-wider bg-transparent border-b border-dashed border-gray-300 focus:outline-none focus:border-[#1a4e8a] placeholder:normal-case placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-400 w-64"
-                                      />
-                                      <button
-                                        onClick={() => removeExtraWindow(site, idx)}
-                                        className="text-gray-300 hover:text-red-400 transition-colors cursor-pointer"
-                                      >
-                                        <X size={15} />
-                                      </button>
-                                    </div>
-                                    <div>
-                                      <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
-                                      <div className="w-[200px]">
-                                        <DatePicker
-                                          value={ew.date}
-                                          onChange={(v) => updateExtraWindow(site, idx, { date: v })}
-                                        />
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <p className="text-[13px] text-gray-500 mb-1.5">Assessment type</p>
-                                      <div className="space-y-2">
-                                        {ASSESSMENT_OPTIONS.map(({ value, label }) => (
-                                          <label key={value} className="flex items-center gap-3 cursor-pointer">
-                                            <input
-                                              type="radio"
-                                              name={`site-${site}-extra-${idx}`}
-                                              value={value}
-                                              checked={ew.assessment === value}
-                                              onChange={() => updateExtraWindow(site, idx, { assessment: value as "screener" | "full" })}
-                                              className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
-                                            />
-                                            <span className="text-[14px] text-gray-800">{label}</span>
-                                          </label>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-
-                                <button
-                                  onClick={() => addExtraWindow(site)}
-                                  className="flex items-center gap-1.5 text-[13px] text-[#1a4e8a] hover:text-[#15407a] font-medium transition-colors cursor-pointer"
-                                >
-                                  <span className="text-lg leading-none">+</span> Add a window
-                                </button>
-
-                                <div className="pt-2 border-t border-[#e8ecf0]">
-                                  <button
-                                    onClick={() => resetSiteToDefault(site)}
-                                    className="text-[13px] text-gray-400 hover:text-gray-600 transition-colors cursor-pointer underline"
-                                  >
-                                    Reset to default setup
-                                  </button>
-                                </div>
-                              </div>
-                                );
-                              })()}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
+                              Edit
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {filteredSites.length === 0 && (
+                      <div className="px-4 py-8 text-center text-[13px] text-gray-400">No sites match your search.</div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -2246,6 +2095,279 @@ function EditSetupPage() {
             )}
           </AnimatePresence>
         </>
+      )}
+
+      {/* ── Site config modal ──────────────────────────────────────────────── */}
+      {siteModalOpen && siteModalConfig && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setSiteModalOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl flex flex-col" style={{ width: "80vw", height: "80vh" }}>
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-8 py-5 border-b border-[#e8ecf0] bg-[#f0f4f8] shrink-0">
+              <div>
+                <h2 className="text-[18px] font-bold text-gray-900">
+                  {siteModalTargets.length === 1 ? siteModalTargets[0] : `Configure ${siteModalTargets.length} sites`}
+                </h2>
+                {siteModalTargets.length > 1 && (
+                  <p className="text-[13px] text-gray-400 mt-0.5">
+                    {siteModalTargets.slice(0, 3).join(", ")}{siteModalTargets.length > 3 ? ` +${siteModalTargets.length - 3} more` : ""}
+                  </p>
+                )}
+              </div>
+              <button onClick={() => setSiteModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+              {/* Copy-from rows */}
+              {(() => {
+                const otherCustomSites = MOCK_SITES.filter((s) => !siteModalTargets.includes(s) && !!siteCustomSetups[s]);
+                const groupMap = new Map<string, string[]>();
+                otherCustomSites.forEach((s) => {
+                  const key = JSON.stringify(siteCustomSetups[s]);
+                  if (!groupMap.has(key)) groupMap.set(key, []);
+                  groupMap.get(key)!.push(s);
+                });
+                const groups = Array.from(groupMap.entries());
+                if (groups.length === 0) return null;
+                const joinNames = (names: string[]) => {
+                  if (names.length === 1) return <span className="font-semibold">{names[0]}</span>;
+                  if (names.length === 2) return <><span className="font-semibold">{names[0]}</span> and <span className="font-semibold">{names[1]}</span></>;
+                  const rest = names.length - 2;
+                  return <><span className="font-semibold">{names[0]}</span>, <span className="font-semibold">{names[1]}</span> <span className="text-gray-400">+{rest} more</span></>;
+                };
+                return (
+                  <div className="space-y-2">
+                    {groups.map(([key, groupSites]) => (
+                      <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-[#e8ecf0] bg-[#f8fafc] px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Copy className="shrink-0 text-gray-400" style={{ width: 20, height: 20 }} />
+                          <div>
+                            <p className="text-[13px] font-medium text-gray-700">Copy settings from {joinNames(groupSites)}</p>
+                            <p className="text-[12px] text-gray-400 mt-0.5">Dates, assessment types, and escalation rules</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setSiteModalConfig({ ...siteCustomSetups[groupSites[0]]! })}
+                          className="shrink-0 h-8 px-3 rounded-lg border border-[#c7d7ee] text-[12px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Group name (multi-site only) */}
+              {siteModalTargets.length > 1 && (
+                <div>
+                  <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Group name <span className="normal-case tracking-normal font-normal">(optional)</span></p>
+                  <input
+                    type="text"
+                    value={siteModalGroupName}
+                    onChange={(e) => setSiteModalGroupName(e.target.value)}
+                    placeholder="e.g. Title I Schools, District North…"
+                    className="w-full text-[22px] font-semibold text-gray-800 border-0 border-b-2 border-[#e8ecf0] focus:border-[#1a4e8a] focus:outline-none bg-transparent pb-1 placeholder:text-gray-300 placeholder:font-normal placeholder:text-[22px]"
+                  />
+                </div>
+              )}
+
+              {/* Per-window config */}
+              {Array.from({ length: windowCount }, (_, i) => (
+                <div key={i} className="rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3">
+                  <p className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{labels[i]}</p>
+                  <div>
+                    <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
+                    <div className="w-[200px]">
+                      <DatePicker
+                        value={siteModalConfig.dates[i] ?? ""}
+                        onChange={(v) => {
+                          const newDates = [...siteModalConfig.dates];
+                          newDates[i] = v;
+                          setSiteModalConfig((prev) => prev ? { ...prev, dates: newDates } : prev);
+                        }}
+                        popoverClassName="z-[70]"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[13px] text-gray-500 mb-1.5">Assessment type</p>
+                    <div className="space-y-2">
+                      {ASSESSMENT_OPTIONS.map(({ value, label }) => (
+                        <label key={value} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`modal-window-${i}`}
+                            value={value}
+                            checked={siteModalConfig.windowConfigs[i]?.assessment === value}
+                            onChange={() => {
+                              const newWcs = siteModalConfig.windowConfigs.map((wc, idx) =>
+                                idx === i ? { ...wc, assessment: value as "screener" | "full" } : wc
+                              );
+                              setSiteModalConfig((prev) => prev ? { ...prev, windowConfigs: newWcs } : prev);
+                            }}
+                            className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
+                          />
+                          <span className="text-[14px] text-gray-800">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <AnimatePresence initial={false}>
+                    {siteModalConfig.windowConfigs[i]?.assessment === "screener" && (
+                      <motion.div key="esc" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
+                        <div className="pt-1 space-y-2">
+                          <p className="text-[13px] text-gray-500">If a student&apos;s screener score is low, should they automatically take the full DESSA?</p>
+                          <div className="space-y-2">
+                            {([{ value: true, label: "Yes" }, { value: false, label: "No" }] as const).map(({ value, label }) => (
+                              <label key={String(value)} className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`modal-escalate-${i}`}
+                                  checked={siteModalConfig.windowConfigs[i]?.conditionalAssignment === value}
+                                  onChange={() => {
+                                    const newWcs = siteModalConfig.windowConfigs.map((wc, idx) =>
+                                      idx === i ? { ...wc, conditionalAssignment: value } : wc
+                                    );
+                                    setSiteModalConfig((prev) => prev ? { ...prev, windowConfigs: newWcs } : prev);
+                                  }}
+                                  className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
+                                />
+                                <span className="text-[14px] text-gray-800">{label}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <AnimatePresence initial={false}>
+                            {siteModalConfig.windowConfigs[i]?.conditionalAssignment === true && (
+                              <motion.div key="tscore" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
+                                <div className="flex items-center gap-3 pt-2">
+                                  <span className="text-[13px] text-gray-600">Assign full DESSA at or below T-Score</span>
+                                  <input
+                                    type="number"
+                                    value={siteModalConfig.windowConfigs[i]?.tScore ?? "40"}
+                                    onChange={(e) => {
+                                      const newWcs = siteModalConfig.windowConfigs.map((wc, idx) =>
+                                        idx === i ? { ...wc, tScore: e.target.value } : wc
+                                      );
+                                      setSiteModalConfig((prev) => prev ? { ...prev, windowConfigs: newWcs } : prev);
+                                    }}
+                                    className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0]"
+                                  />
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+
+              {/* Extra windows */}
+              {siteModalConfig.extraWindows.map((ew, idx) => (
+                <div key={idx} className="space-y-3 pt-2 border-t border-dashed border-[#e8ecf0]">
+                  <div className="flex items-center justify-between">
+                    <input
+                      type="text"
+                      value={ew.label}
+                      onChange={(e) => {
+                        const newEw = siteModalConfig.extraWindows.map((w, i) => i === idx ? { ...w, label: e.target.value } : w);
+                        setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: newEw } : prev);
+                      }}
+                      placeholder="Window name (e.g. Summer School)"
+                      className="text-[13px] font-bold text-gray-700 uppercase tracking-wider bg-transparent border-b border-dashed border-gray-300 focus:outline-none focus:border-[#1a4e8a] placeholder:normal-case placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-400 w-64"
+                    />
+                    <button
+                      onClick={() => setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: prev.extraWindows.filter((_, i) => i !== idx) } : prev)}
+                      className="text-gray-300 hover:text-red-400 transition-colors cursor-pointer"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                  <div>
+                    <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
+                    <div className="w-[200px]">
+                      <DatePicker
+                        value={ew.date}
+                        onChange={(v) => {
+                          const newEw = siteModalConfig.extraWindows.map((w, i) => i === idx ? { ...w, date: v } : w);
+                          setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: newEw } : prev);
+                        }}
+                        popoverClassName="z-[70]"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[13px] text-gray-500 mb-1.5">Assessment type</p>
+                    <div className="space-y-2">
+                      {ASSESSMENT_OPTIONS.map(({ value, label }) => (
+                        <label key={value} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`modal-extra-${idx}`}
+                            value={value}
+                            checked={ew.assessment === value}
+                            onChange={() => {
+                              const newEw = siteModalConfig.extraWindows.map((w, i) => i === idx ? { ...w, assessment: value as "screener" | "full" } : w);
+                              setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: newEw } : prev);
+                            }}
+                            className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
+                          />
+                          <span className="text-[14px] text-gray-800">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                onClick={() => setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: [...prev.extraWindows, { label: "", date: "", assessment: null }] } : prev)}
+                className="flex items-center gap-1.5 text-[13px] text-[#1a4e8a] hover:text-[#15407a] font-medium transition-colors cursor-pointer"
+              >
+                <span className="text-lg leading-none">+</span> Add a window
+              </button>
+
+              {/* Timeline — bottom of body */}
+              {siteModalConfig.dates.some(Boolean) && (
+                <div className="rounded-xl border border-[#e8ecf0] bg-[#f8fafc] px-5 py-4 mt-2">
+                  <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-4">Year at a glance</p>
+                  <WizardTimeline dates={siteModalConfig.dates.filter(Boolean)} labels={labels} />
+                </div>
+              )}
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex items-center justify-between px-8 py-4 border-t border-[#e8ecf0] bg-[#f0f4f8] shrink-0">
+              <button
+                onClick={() => {
+                  setSiteCustomSetups((prev) => {
+                    const next = { ...prev };
+                    siteModalTargets.forEach((s) => { next[s] = null; });
+                    return next;
+                  });
+                  setSiteModalOpen(false);
+                  setSelectedSiteRows([]);
+                }}
+                className="text-[13px] text-gray-400 hover:text-gray-600 transition-colors cursor-pointer underline"
+              >
+                Reset to default
+              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSiteModalOpen(false)} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                  Cancel
+                </button>
+                <button onClick={saveSiteModal} className="h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer">
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

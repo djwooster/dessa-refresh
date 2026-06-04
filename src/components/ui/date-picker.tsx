@@ -10,9 +10,10 @@ interface DatePickerProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  popoverClassName?: string;
 }
 
-export function DatePicker({ value, onChange, placeholder = "Pick a date" }: DatePickerProps) {
+export function DatePicker({ value, onChange, placeholder = "Pick a date", popoverClassName }: DatePickerProps) {
   const [open, setOpen] = useState(false);
 
   const parsed = value ? parseISO(value) : undefined;
@@ -31,7 +32,7 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date" }: Dat
         </span>
         <CalendarIcon size={13} className="text-gray-400 shrink-0" />
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start" side="bottom">
+      <PopoverContent className={`w-auto p-0 ${popoverClassName ?? ""}`} align="start" side="bottom">
         <Calendar
           mode="single"
           selected={selected}
