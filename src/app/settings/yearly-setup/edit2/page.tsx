@@ -85,8 +85,7 @@ type WindowConfig = {
   resetBehavior: "rescreen" | "skip" | null;
 };
 
-type SiteExtraWindow = { label: string; date: string; assessment: "screener" | "full" | null };
-type SiteCustomConfig = { dates: string[]; windowConfigs: WindowConfig[]; extraWindows: SiteExtraWindow[]; groupName?: string };
+type SiteCustomConfig = { windowCount: number; dates: string[]; windowConfigs: WindowConfig[]; groupName?: string };
 
 const DEFAULT_WINDOW_CONFIG: WindowConfig = {
   assessment: null,
@@ -134,9 +133,11 @@ const MONTH_NAMES = [
 function WizardTimeline({
   dates,
   labels,
+  configuredCount,
 }: {
   dates: string[];
   labels: string[];
+  configuredCount?: number;
 }) {
   const parsed = dates.map((d) => (d ? new Date(d + "T00:00:00") : null));
   const valid = parsed.filter(Boolean) as Date[];
@@ -191,14 +192,17 @@ function WizardTimeline({
           if (!date) return null;
           const next = parsed[i + 1];
           const width = pct(next ?? rangeEnd) - pct(date);
-          const color = BAND_COLORS[i % BAND_COLORS.length];
+          const isGhost = configuredCount !== undefined && i >= configuredCount;
+          const color = isGhost
+            ? { bg: "#f1f5f9", text: "#94a3b8" }
+            : BAND_COLORS[i % BAND_COLORS.length];
           const shortLabel =
             labels[i]?.replace(/\s*-?\s*Assessment/i, "").trim() || `W${i + 1}`;
           return (
             <div
               key={i}
               className="flex items-center justify-center overflow-hidden shrink-0"
-              style={{ width: `${width}%`, backgroundColor: color.bg }}
+              style={{ width: `${width}%`, backgroundColor: color.bg, borderRight: parsed[i + 1] ? "2px solid white" : undefined }}
             >
               <span
                 className="text-[10px] font-bold truncate px-1"
@@ -658,6 +662,7 @@ function EditSetupPage() {
   const [siteModalTargets, setSiteModalTargets] = useState<string[]>([]);
   const [siteModalConfig, setSiteModalConfig] = useState<SiteCustomConfig | null>(null);
   const [siteModalGroupName, setSiteModalGroupName] = useState("");
+  const [siteModalValidated, setSiteModalValidated] = useState(false);
 
   // UI state
   const [currentScreenId, setCurrentScreenId] = useState(isOverride ? "name" : "window-count");
@@ -670,7 +675,7 @@ function EditSetupPage() {
   const [showReview, setShowReview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [openReviewSections, setOpenReviewSections] = useState<string[]>([]);
+  const [openReviewSections, setOpenReviewSections] = useState<string[]>(["windows", "assessment", "sites", "students"]);
 
   const initialStateRef = useRef({
     ...DEFAULT_STATE,
@@ -853,8 +858,8 @@ function EditSetupPage() {
         }
 
         for (const [groupName, { sites, cfg }] of groups) {
-          const allDates = [...cfg.dates, ...cfg.extraWindows.map((ew) => ew.date)];
-          const totalCount = cfg.windowConfigs.length + cfg.extraWindows.length;
+          const allDates = cfg.dates;
+          const totalCount = cfg.windowCount;
           const siteAssessmentType = cfg.windowConfigs.some((wc) => wc.assessment === "screener") ? "screener" : "full";
           const { data: newRecord } = await db
             .from("yearly_setups")
@@ -1069,9 +1074,9 @@ function EditSetupPage() {
   // ─── Screen content ────────────────────────────────────────────────────────
 
   const defaultSiteConfig = (): SiteCustomConfig => ({
+    windowCount,
     dates: [...dates],
     windowConfigs: windowConfigs.map((wc) => ({ ...wc })),
-    extraWindows: [],
   });
 
   const openSiteModal = (targets: string[]) => {
@@ -1085,6 +1090,11 @@ function EditSetupPage() {
 
   const saveSiteModal = () => {
     if (!siteModalConfig) return;
+    if (siteModalConfig.windowConfigs.some((wc) => wc.assessment === null)) {
+      setSiteModalValidated(true);
+      return;
+    }
+    setSiteModalValidated(false);
     const configWithGroup: SiteCustomConfig = {
       ...siteModalConfig,
       groupName: siteModalGroupName.trim() || undefined,
@@ -1193,7 +1203,7 @@ function EditSetupPage() {
                 {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}
               </p>
               <p className="text-[15px] font-semibold text-gray-800 mb-3">Year at a glance</p>
-              <WizardTimeline dates={dates.slice(0, i + 1)} labels={labels.slice(0, i + 1)} />
+              <WizardTimeline dates={dates} labels={labels} configuredCount={i + 1} />
             </div>
           )}
           <div>
@@ -1428,7 +1438,7 @@ function EditSetupPage() {
                 <div className="rounded-xl border border-[#e8ecf0] overflow-hidden bg-white">
                   {/* Toolbar */}
                   <div className="flex items-center gap-3 px-4 py-3 bg-[#f8fafc] border-b border-[#e8ecf0]">
-                    <div className="flex-1 relative">
+                    <div className="relative max-w-[300px] w-full">
                       <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                       <input
                         type="text"
@@ -1438,39 +1448,15 @@ function EditSetupPage() {
                         className="w-full h-8 pl-8 pr-3 text-[13px] border border-[#d1d5db] rounded-lg bg-white focus:outline-none focus:border-[#1a4e8a] placeholder:text-gray-400"
                       />
                     </div>
-                    <button
-                      disabled={selectedSiteRows.length === 0}
-                      onClick={() => openSiteModal(selectedSiteRows)}
-                      className="shrink-0 h-8 px-4 rounded-lg text-[13px] font-semibold transition-colors cursor-pointer bg-[#1a4e8a] text-white hover:bg-[#15407a] disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {selectedSiteRows.length > 0
-                        ? `Configure ${selectedSiteRows.length} site${selectedSiteRows.length > 1 ? "s" : ""}`
-                        : "Configure"}
-                    </button>
-                  </div>
-
-                  {/* Quick select */}
-                  <div className="flex items-center gap-2 px-4 py-2 border-b border-[#e8ecf0] bg-white">
-                    <span className="text-[11px] text-gray-400 font-medium shrink-0">Quick select:</span>
-                    {(["Elementary", "Middle", "High"] as const).map((keyword) => {
-                      const group = MOCK_SITES.filter((s) => s.includes(keyword));
-                      const allOn = group.length > 0 && group.every((s) => selectedSiteRows.includes(s));
-                      return (
-                        <button
-                          key={keyword}
-                          onClick={() =>
-                            setSelectedSiteRows((prev) =>
-                              allOn
-                                ? prev.filter((s) => !group.includes(s))
-                                : [...new Set([...prev, ...group])]
-                            )
-                          }
-                          className={`h-6 px-2.5 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${allOn ? "bg-[#1a4e8a] text-white border-[#1a4e8a]" : "bg-white text-[#1a4e8a] border-[#c7d7ee] hover:bg-[#eef2f8]"}`}
-                        >
-                          {keyword}
-                        </button>
-                      );
-                    })}
+                    <div className="flex-1" />
+                    {(() => {
+                      const count = Object.values(siteCustomSetups).filter(Boolean).length;
+                      return count > 0 ? (
+                        <span className="text-[12px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-3 py-1">
+                          {count} custom {count === 1 ? "setup" : "setups"}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
 
                   {/* Header row */}
@@ -1543,6 +1529,19 @@ function EditSetupPage() {
                     {filteredSites.length === 0 && (
                       <div className="px-4 py-8 text-center text-[13px] text-gray-400">No sites match your search.</div>
                     )}
+                  </div>
+
+                  {/* Bottom toolbar */}
+                  <div className="flex items-center justify-end px-4 py-3 bg-[#f8fafc] border-t border-[#e8ecf0]">
+                    <button
+                      disabled={selectedSiteRows.length === 0}
+                      onClick={() => openSiteModal(selectedSiteRows)}
+                      className="shrink-0 h-8 px-4 rounded-lg text-[13px] font-semibold transition-colors cursor-pointer bg-[#1a4e8a] text-white hover:bg-[#15407a] disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {selectedSiteRows.length > 0
+                        ? `Configure ${selectedSiteRows.length} site${selectedSiteRows.length > 1 ? "s" : ""}`
+                        : "Configure"}
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -2153,13 +2152,13 @@ function EditSetupPage() {
       {/* ── Site config modal ──────────────────────────────────────────────── */}
       {siteModalOpen && siteModalConfig && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setSiteModalOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl flex flex-col" style={{ width: "80vw", height: "80vh" }}>
+          <div className="absolute inset-0 bg-black/40" onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} />
+          <div className="relative bg-white rounded-2xl shadow-2xl flex flex-col" style={{ width: "85vw", height: "85vh" }}>
             {/* Modal header */}
             <div className="flex items-center justify-between px-8 py-5 border-b border-[#e8ecf0] bg-[#f0f4f8] shrink-0">
               <div>
                 <h2 className="text-[18px] font-bold text-gray-900">
-                  {siteModalTargets.length === 1 ? siteModalTargets[0] : `Configure ${siteModalTargets.length} sites`}
+                  {siteModalTargets.length === 1 ? siteModalTargets[0] : `Custom settings for ${siteModalTargets.length} sites`}
                 </h2>
                 {siteModalTargets.length > 1 && (
                   <p className="text-[13px] text-gray-400 mt-0.5">
@@ -2167,13 +2166,77 @@ function EditSetupPage() {
                   </p>
                 )}
               </div>
-              <button onClick={() => setSiteModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+              <button onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
                 <X size={16} />
               </button>
             </div>
 
             {/* Modal body */}
-            <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+            <div className="flex-1 overflow-y-auto px-8 py-6 space-y-10">
+              {/* Group name (multi-site only) */}
+              {siteModalTargets.length > 1 && (
+                <div>
+                  <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Group name <span className="normal-case tracking-normal font-normal">(optional)</span></p>
+                  <input
+                    type="text"
+                    value={siteModalGroupName}
+                    onChange={(e) => setSiteModalGroupName(e.target.value)}
+                    placeholder="e.g. Title I Schools, District North…"
+                    className="w-full text-[22px] font-semibold text-gray-800 border-0 border-b-2 border-[#e8ecf0] focus:border-[#1a4e8a] focus:outline-none bg-transparent pb-1 placeholder:text-gray-300 placeholder:font-normal placeholder:text-[22px]"
+                  />
+                </div>
+              )}
+
+              {/* Window count selector */}
+              <div>
+                <p className="text-[18px] font-semibold text-gray-700 mb-2">How many rating windows?</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {WINDOW_OPTIONS.map(({ count, desc }) => {
+                    const isSelected = siteModalConfig.windowCount === count;
+                    return (
+                      <button
+                        key={count}
+                        onClick={() => setSiteModalConfig((prev) => {
+                          if (!prev || count === prev.windowCount) return prev;
+                          return {
+                            ...prev,
+                            windowCount: count,
+                            dates: DEFAULT_DATES[count],
+                            windowConfigs: count > prev.windowCount
+                              ? [...prev.windowConfigs, ...Array(count - prev.windowCount).fill(null).map(() => ({ ...DEFAULT_WINDOW_CONFIG }))]
+                              : prev.windowConfigs.slice(0, count),
+                          };
+                        })}
+                        className={`text-left rounded-xl border p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                      >
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}>
+                          {count}
+                        </div>
+                        <p className={`text-[14px] font-semibold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>
+                          {count === 1 ? "1 Window" : `${count} Windows`}
+                        </p>
+                        <p className="text-[12px] text-gray-500 leading-snug">{desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Timeline */}
+              {siteModalConfig.dates.some(Boolean) && (() => {
+                const siteLabels = WINDOW_OPTIONS.find((o) => o.count === siteModalConfig.windowCount)?.labels ?? [];
+                const allDates = siteModalConfig.dates
+                  .map((d, i) => ({ date: d, label: siteLabels[i] ?? `W${i + 1}` }))
+                  .filter((e) => e.date);
+                return (
+                  <div className="rounded-xl border border-[#e8ecf0] bg-[#f8fafc] px-5 py-4">
+                    <p className="text-[14px] font-bold text-gray-700">Year at a glance</p>
+                    <p className="text-[12px] text-gray-400 mb-4">{searchParams.get("year")?.replace("-", "–") ?? "2025–2026"} School Year</p>
+                    <WizardTimeline dates={allDates.map((e) => e.date)} labels={allDates.map((e) => e.label)} />
+                  </div>
+                );
+              })()}
+
               {/* Copy-from rows */}
               {(() => {
                 const otherCustomSites = MOCK_SITES.filter((s) => !siteModalTargets.includes(s) && !!siteCustomSetups[s]);
@@ -2214,24 +2277,19 @@ function EditSetupPage() {
                 );
               })()}
 
-              {/* Group name (multi-site only) */}
-              {siteModalTargets.length > 1 && (
-                <div>
-                  <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Group name <span className="normal-case tracking-normal font-normal">(optional)</span></p>
-                  <input
-                    type="text"
-                    value={siteModalGroupName}
-                    onChange={(e) => setSiteModalGroupName(e.target.value)}
-                    placeholder="e.g. Title I Schools, District North…"
-                    className="w-full text-[22px] font-semibold text-gray-800 border-0 border-b-2 border-[#e8ecf0] focus:border-[#1a4e8a] focus:outline-none bg-transparent pb-1 placeholder:text-gray-300 placeholder:font-normal placeholder:text-[22px]"
-                  />
-                </div>
-              )}
-
               {/* Per-window config */}
-              {Array.from({ length: windowCount }, (_, i) => (
-                <div key={i} className="rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3">
-                  <p className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">{labels[i]}</p>
+              <div className="grid grid-cols-3 gap-4">
+              {Array.from({ length: siteModalConfig.windowCount }, (_, i) => {
+                const siteLabels = WINDOW_OPTIONS.find((o) => o.count === siteModalConfig.windowCount)?.labels ?? [];
+                const windowLabel = siteLabels[i] ?? `W${i + 1}`;
+                return (
+                <div key={i} className="relative rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3">
+                  {siteModalConfig.windowConfigs[i]?.assessment === null && (
+                    <span className={`absolute top-3 right-3 text-[11px] font-semibold px-2 py-0.5 rounded-full ${siteModalValidated ? "bg-red-100 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>
+                      make a selection
+                    </span>
+                  )}
+                  <p className="text-[14px] font-bold text-gray-700">{windowLabel}</p>
                   <div>
                     <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
                     <div className="w-[200px]">
@@ -2318,86 +2376,10 @@ function EditSetupPage() {
                     )}
                   </AnimatePresence>
                 </div>
-              ))}
-
-              {/* Extra windows */}
-              {siteModalConfig.extraWindows.map((ew, idx) => (
-                <div key={idx} className="space-y-3 pt-2 border-t border-dashed border-[#e8ecf0]">
-                  <div className="flex items-center justify-between">
-                    <input
-                      type="text"
-                      value={ew.label}
-                      onChange={(e) => {
-                        const newEw = siteModalConfig.extraWindows.map((w, i) => i === idx ? { ...w, label: e.target.value } : w);
-                        setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: newEw } : prev);
-                      }}
-                      placeholder="Window name (e.g. Summer School)"
-                      className="text-[13px] font-bold text-gray-700 uppercase tracking-wider bg-transparent border-b border-dashed border-gray-300 focus:outline-none focus:border-[#1a4e8a] placeholder:normal-case placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-400 w-64"
-                    />
-                    <button
-                      onClick={() => setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: prev.extraWindows.filter((_, i) => i !== idx) } : prev)}
-                      className="text-gray-300 hover:text-red-400 transition-colors cursor-pointer"
-                    >
-                      <X size={15} />
-                    </button>
-                  </div>
-                  <div>
-                    <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
-                    <div className="w-[200px]">
-                      <DatePicker
-                        value={ew.date}
-                        onChange={(v) => {
-                          const newEw = siteModalConfig.extraWindows.map((w, i) => i === idx ? { ...w, date: v } : w);
-                          setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: newEw } : prev);
-                        }}
-                        popoverClassName="z-[70]"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[13px] text-gray-500 mb-1.5">Assessment type</p>
-                    <div className="space-y-2">
-                      {ASSESSMENT_OPTIONS.map(({ value, label }) => (
-                        <label key={value} className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`modal-extra-${idx}`}
-                            value={value}
-                            checked={ew.assessment === value}
-                            onChange={() => {
-                              const newEw = siteModalConfig.extraWindows.map((w, i) => i === idx ? { ...w, assessment: value as "screener" | "full" } : w);
-                              setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: newEw } : prev);
-                            }}
-                            className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
-                          />
-                          <span className="text-[14px] text-gray-800">{label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <button
-                onClick={() => setSiteModalConfig((prev) => prev ? { ...prev, extraWindows: [...prev.extraWindows, { label: "", date: "", assessment: null }] } : prev)}
-                className="flex items-center gap-1.5 text-[13px] text-[#1a4e8a] hover:text-[#15407a] font-medium transition-colors cursor-pointer"
-              >
-                <span className="text-lg leading-none">+</span> Add a window
-              </button>
-
-              {/* Timeline — bottom of body */}
-              {(siteModalConfig.dates.some(Boolean) || siteModalConfig.extraWindows.some((ew) => ew.date)) && (() => {
-                const allDates = [
-                  ...siteModalConfig.dates.map((d, i) => ({ date: d, label: labels[i] ?? `W${i + 1}` })),
-                  ...siteModalConfig.extraWindows.map((ew) => ({ date: ew.date, label: ew.label || "Extra" })),
-                ].filter((e) => e.date).sort((a, b) => a.date.localeCompare(b.date));
-                return (
-                  <div className="rounded-xl border border-[#e8ecf0] bg-[#f8fafc] px-5 py-4 mt-2">
-                    <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-4">Year at a glance</p>
-                    <WizardTimeline dates={allDates.map((e) => e.date)} labels={allDates.map((e) => e.label)} />
-                  </div>
                 );
-              })()}
+              })}
+              </div>
+
             </div>
 
             {/* Modal footer */}
@@ -2417,7 +2399,7 @@ function EditSetupPage() {
                 Reset to default
               </button>
               <div className="flex items-center gap-2">
-                <button onClick={() => setSiteModalOpen(false)} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                <button onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
                   Cancel
                 </button>
                 <button onClick={saveSiteModal} className="h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer">
