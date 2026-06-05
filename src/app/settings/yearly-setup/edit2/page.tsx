@@ -18,9 +18,12 @@ import {
   Building2,
   Ban,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Equal,
   Search,
+  AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -676,6 +679,8 @@ function EditSetupPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [openReviewSections, setOpenReviewSections] = useState<string[]>(["windows", "assessment", "sites", "students"]);
+
+  const chipsScrollRef = useRef<HTMLDivElement>(null);
 
   const initialStateRef = useRef({
     ...DEFAULT_STATE,
@@ -1450,10 +1455,14 @@ function EditSetupPage() {
                     </div>
                     <div className="flex-1" />
                     {(() => {
-                      const count = Object.values(siteCustomSetups).filter(Boolean).length;
-                      return count > 0 ? (
+                      const groupCount = new Set(
+                        Object.values(siteCustomSetups)
+                          .filter(Boolean)
+                          .map((cfg) => cfg!.groupName?.trim() || "__ungrouped__" + JSON.stringify(cfg))
+                      ).size;
+                      return groupCount > 0 ? (
                         <span className="text-[12px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-3 py-1">
-                          {count} custom {count === 1 ? "setup" : "setups"}
+                          {groupCount} custom {groupCount === 1 ? "setup" : "setups"}
                         </span>
                       ) : null;
                     })()}
@@ -1511,13 +1520,20 @@ function EditSetupPage() {
                             <span className="text-[14px] text-gray-800">{site}</span>
                           </div>
                           <div className="px-3 py-3 flex items-center">
-                            <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${hasCustom ? "bg-[#eef2f8] text-[#1a4e8a]" : "bg-gray-100 text-gray-400"}`}>
-                              {hasCustom ? "Custom" : "Default"}
+                            <span title={hasCustom ? (siteCustomSetups[site]?.groupName?.trim() || "Custom") : "Default"} className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md max-w-[120px] truncate block ${hasCustom ? "bg-[#eef2f8] text-[#1a4e8a]" : "bg-gray-100 text-gray-400"}`}>
+                              {hasCustom ? (siteCustomSetups[site]?.groupName?.trim() || "Custom") : "Default"}
                             </span>
                           </div>
                           <div className="flex items-center justify-center py-3">
                             <button
-                              onClick={(e) => { e.stopPropagation(); openSiteModal([site]); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const groupName = siteCustomSetups[site]?.groupName?.trim();
+                                const targets = groupName
+                                  ? MOCK_SITES.filter((s) => siteCustomSetups[s]?.groupName?.trim() === groupName)
+                                  : [site];
+                                openSiteModal(targets);
+                              }}
                               className="text-[12px] font-medium text-[#1a4e8a] hover:underline cursor-pointer"
                             >
                               Edit
@@ -2155,20 +2171,44 @@ function EditSetupPage() {
           <div className="absolute inset-0 bg-black/40" onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} />
           <div className="relative bg-white rounded-2xl shadow-2xl flex flex-col" style={{ width: "85vw", height: "85vh" }}>
             {/* Modal header */}
-            <div className="flex items-center justify-between px-8 py-5 border-b border-[#e8ecf0] bg-[#f0f4f8] shrink-0">
-              <div>
+            <div className="px-8 pt-5 pb-4 border-b border-[#e8ecf0] bg-[#f0f4f8] shrink-0">
+              <div className="flex items-start justify-between mb-2">
                 <h2 className="text-[18px] font-bold text-gray-900">
                   {siteModalTargets.length === 1 ? siteModalTargets[0] : `Custom settings for ${siteModalTargets.length} sites`}
                 </h2>
-                {siteModalTargets.length > 1 && (
-                  <p className="text-[13px] text-gray-400 mt-0.5">
-                    {siteModalTargets.slice(0, 3).join(", ")}{siteModalTargets.length > 3 ? ` +${siteModalTargets.length - 3} more` : ""}
-                  </p>
-                )}
+                <button onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer shrink-0 ml-4">
+                  <X size={16} />
+                </button>
               </div>
-              <button onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
-                <X size={16} />
-              </button>
+              {siteModalTargets.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => chipsScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" })}
+                    className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <div ref={chipsScrollRef} className="flex gap-1.5 flex-1 overflow-x-auto scrollbar-hide">
+                    {siteModalTargets.map((s) => (
+                      <span key={s} className="flex items-center gap-1 shrink-0 bg-white border border-[#d1d5db] text-[12px] text-gray-600 rounded-full px-2.5 py-0.5">
+                        {s}
+                        <button
+                          onClick={() => setSiteModalTargets((prev) => prev.filter((t) => t !== s))}
+                          className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer ml-0.5"
+                        >
+                          <X size={11} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => chipsScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" })}
+                    className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Modal body */}
@@ -2283,12 +2323,7 @@ function EditSetupPage() {
                 const siteLabels = WINDOW_OPTIONS.find((o) => o.count === siteModalConfig.windowCount)?.labels ?? [];
                 const windowLabel = siteLabels[i] ?? `W${i + 1}`;
                 return (
-                <div key={i} className="relative rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3">
-                  {siteModalConfig.windowConfigs[i]?.assessment === null && (
-                    <span className={`absolute top-3 right-3 text-[11px] font-semibold px-2 py-0.5 rounded-full ${siteModalValidated ? "bg-red-100 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>
-                      make a selection
-                    </span>
-                  )}
+                <div key={i} className="rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3">
                   <p className="text-[14px] font-bold text-gray-700">{windowLabel}</p>
                   <div>
                     <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
@@ -2305,7 +2340,15 @@ function EditSetupPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-[13px] text-gray-500 mb-1.5">Assessment type</p>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <p className="text-[13px] text-gray-500">Assessment type</p>
+                      {siteModalValidated && siteModalConfig.windowConfigs[i]?.assessment === null && (
+                        <span className="flex items-center gap-1 bg-red-100 text-red-600 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                          <AlertTriangle size={11} />
+                          Make a selection
+                        </span>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {ASSESSMENT_OPTIONS.map(({ value, label }) => (
                         <label key={value} className="flex items-center gap-3 cursor-pointer">
