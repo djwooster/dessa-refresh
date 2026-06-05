@@ -609,7 +609,13 @@ export default function YearlySetupPage() {
                                 assessmentType={override.assessment_type as "screener" | "full"}
                                 windowConfigs={override.yearly_setup_window_configs ?? []}
                               />
-                              <div className="flex justify-end mt-4">
+                              <div className="flex items-center justify-end gap-4 mt-4">
+                                <button
+                                  onClick={() => setConfirmDeleteId(override.id)}
+                                  className="text-[13px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                >
+                                  Revert to default
+                                </button>
                                 <button
                                   onClick={() => router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`)}
                                   className="h-9 px-5 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[13px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
