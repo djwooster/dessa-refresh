@@ -8,7 +8,9 @@ import {
   Plus,
   Trash2,
   MoreHorizontal,
+  ChevronDown,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -253,7 +255,15 @@ export default function YearlySetupPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [openSetupIds, setOpenSetupIds] = useState<Set<string>>(new Set());
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const toggleSetup = (id: string) =>
+    setOpenSetupIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   useEffect(() => {
     const handle = (e: MouseEvent) => {
@@ -298,6 +308,11 @@ export default function YearlySetupPage() {
   );
   const sitesInOverrides = overrides.reduce((acc, o) => acc + o.yearly_setup_sites.length, 0);
   const defaultSiteCount = Math.max(0, TOTAL_SITES - sitesInOverrides);
+
+  // Open default setup when it first loads
+  useEffect(() => {
+    if (defaultSetup?.id) setOpenSetupIds(new Set([defaultSetup.id]));
+  }, [defaultSetup?.id]);
 
   if (loading) {
     return (
@@ -420,41 +435,59 @@ export default function YearlySetupPage() {
       ) : (
         <>
           <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden mb-4">
-            <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
-              <YearSelect
-                selectedYear={selectedYear}
-                onSelect={setSelectedYear}
-              />
+            <div className="flex items-center gap-4 px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
+              <YearSelect selectedYear={selectedYear} onSelect={setSelectedYear} />
+              <div className="flex items-center gap-2 flex-1 text-[12px] text-gray-400">
+                <span>{defaultSiteCount} {defaultSiteCount === 1 ? "site" : "sites"}</span>
+                <span>·</span>
+                <span>{defaultSetup.window_count} {defaultSetup.window_count === 1 ? "window" : "windows"}</span>
+                <span>·</span>
+                <span>{defaultSetup.assessment_type === "screener" ? "Screener" : "Full Assessment"}</span>
+              </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() =>
-                    router.push(
-                      `/settings/yearly-setup/edit2?id=${defaultSetup.id}&year=${selectedYear}`,
-                    )
-                  }
+                  onClick={() => router.push(`/settings/yearly-setup/edit2?id=${defaultSetup.id}&year=${selectedYear}`)}
                   className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                 >
                   Edit Setup
                 </button>
+                <button
+                  onClick={() => toggleSetup(defaultSetup.id)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <motion.div animate={{ rotate: openSetupIds.has(defaultSetup.id) ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <ChevronDown size={16} />
+                  </motion.div>
+                </button>
               </div>
             </div>
 
-            <div className="px-6 py-5 border-b border-[#f0f4f8]">
-              <h3 className="text-[20px] font-semibold text-gray-800 mb-0.5">
-                Default rating windows
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">Applies to {defaultSiteCount} {defaultSiteCount === 1 ? "site" : "sites"}</p>
-              <ConceptC showYearLabel={false} />
-            </div>
-
-            <div className="px-6 py-5">
-              <AssessmentConfigRows
-                windowCount={defaultSetup.window_count}
-                dates={(defaultSetup.dates as string[]) ?? []}
-                assessmentType={defaultSetup.assessment_type as "screener" | "full"}
-                windowConfigs={defaultSetup.yearly_setup_window_configs ?? []}
-              />
-            </div>
+            <AnimatePresence initial={false}>
+              {openSetupIds.has(defaultSetup.id) && (
+                <motion.div
+                  key="body"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-6 py-5 border-b border-[#f0f4f8]">
+                    <h3 className="text-[20px] font-semibold text-gray-800 mb-0.5">Default rating windows</h3>
+                    <p className="text-sm text-gray-500 mb-4">Applies to {defaultSiteCount} {defaultSiteCount === 1 ? "site" : "sites"}</p>
+                    <ConceptC showYearLabel={false} />
+                  </div>
+                  <div className="px-6 py-5">
+                    <AssessmentConfigRows
+                      windowCount={defaultSetup.window_count}
+                      dates={(defaultSetup.dates as string[]) ?? []}
+                      assessmentType={defaultSetup.assessment_type as "screener" | "full"}
+                      windowConfigs={defaultSetup.yearly_setup_window_configs ?? []}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Aug 1 reset callout */}
@@ -535,21 +568,29 @@ export default function YearlySetupPage() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {overrides.map((override) => (
-                    <div key={override.id} className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden">
-                      <div className="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
-                        <div>
-                          <p className="text-[14px] font-bold text-gray-900">
-                            {override.group_name}
-                          </p>
-                          <p className="text-[12px] text-gray-400 mt-0.5">
-                            {override.yearly_setup_sites
-                              .map((s) => s.site_name)
-                              .join(", ")}
-                          </p>
-                        </div>
-                        <div className="relative" ref={openMenuId === override.id ? menuRef : null}>
+                    <div key={override.id} className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm">
+                      <div className={`flex items-center px-6 py-4 bg-[#f8fafc] gap-2 ${openSetupIds.has(override.id) ? "rounded-t-xl border-b border-[#e8ecf0]" : "rounded-xl"}`}>
+                        <button
+                          onClick={() => toggleSetup(override.id)}
+                          className="flex items-center gap-3 flex-1 text-left cursor-pointer min-w-0"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[14px] font-bold text-gray-900">{override.group_name}</p>
+                            <div className="flex items-center gap-2 mt-0.5 text-[12px] text-gray-400">
+                              <span>{override.yearly_setup_sites.length} {override.yearly_setup_sites.length === 1 ? "site" : "sites"}</span>
+                              <span>·</span>
+                              <span>{override.window_count} {override.window_count === 1 ? "window" : "windows"}</span>
+                              <span>·</span>
+                              <span>{override.assessment_type === "screener" ? "Screener" : "Full Assessment"}</span>
+                            </div>
+                          </div>
+                          <motion.div animate={{ rotate: openSetupIds.has(override.id) ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
+                            <ChevronDown size={16} className="text-gray-400" />
+                          </motion.div>
+                        </button>
+                        <div className="relative shrink-0" ref={openMenuId === override.id ? menuRef : null}>
                           <button
                             onClick={() => setOpenMenuId(openMenuId === override.id ? null : override.id)}
                             className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
@@ -574,25 +615,39 @@ export default function YearlySetupPage() {
                           )}
                         </div>
                       </div>
-                      <div className="px-6 py-5 border-b border-[#f0f4f8]">
-                        <h3 className="text-[20px] font-semibold text-gray-800 mb-0.5">Rating windows</h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                          Applies to {override.yearly_setup_sites.length} {override.yearly_setup_sites.length === 1 ? "site" : "sites"}
-                        </p>
-                        <ScheduleTimeline
-                          dates={(override.dates as string[]) ?? []}
-                          labels={WINDOW_LABELS[override.window_count] ?? []}
-                          showToday
-                        />
-                      </div>
-                      <div className="px-6 py-5">
-                        <AssessmentConfigRows
-                          windowCount={override.window_count}
-                          dates={(override.dates as string[]) ?? []}
-                          assessmentType={override.assessment_type as "screener" | "full"}
-                          windowConfigs={override.yearly_setup_window_configs ?? []}
-                        />
-                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {openSetupIds.has(override.id) && (
+                          <motion.div
+                            key="body"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-6 py-5 border-b border-[#f0f4f8]">
+                              <h3 className="text-[20px] font-semibold text-gray-800 mb-0.5">Rating windows</h3>
+                              <p className="text-sm text-gray-500 mb-4">
+                                Applies to {override.yearly_setup_sites.length} {override.yearly_setup_sites.length === 1 ? "site" : "sites"}
+                              </p>
+                              <ScheduleTimeline
+                                dates={(override.dates as string[]) ?? []}
+                                labels={WINDOW_LABELS[override.window_count] ?? []}
+                                showToday
+                              />
+                            </div>
+                            <div className="px-6 py-5">
+                              <AssessmentConfigRows
+                                windowCount={override.window_count}
+                                dates={(override.dates as string[]) ?? []}
+                                assessmentType={override.assessment_type as "screener" | "full"}
+                                windowConfigs={override.yearly_setup_window_configs ?? []}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   ))}
                 </div>
