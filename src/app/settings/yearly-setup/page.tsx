@@ -455,7 +455,7 @@ export default function YearlySetupPage() {
                   onClick={() => toggleSetup(defaultSetup.id)}
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
-                  <motion.div animate={{ rotate: openSetupIds.has(defaultSetup.id) ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <motion.div animate={{ rotate: openSetupIds.has(defaultSetup.id) ? 0 : -90 }} transition={{ duration: 0.2 }}>
                     <ChevronDown size={16} />
                   </motion.div>
                 </button>
@@ -533,17 +533,6 @@ export default function YearlySetupPage() {
                   schedule.
                 </p>
               </div>
-              {overrides.length > 0 && (
-                <button
-                  onClick={() =>
-                    router.push("/settings/yearly-setup/edit2?override=true")
-                  }
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
-                >
-                  <Plus size={13} strokeWidth={2} />
-                  Add Custom Schedule
-                </button>
-              )}
             </div>
 
             <div className={overrides.length === 0 ? "bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden" : ""}>
@@ -566,7 +555,7 @@ export default function YearlySetupPage() {
                     <Plus size={13} strokeWidth={2} />
                     Add Custom Schedule
                   </button>
-                </div>
+</div>
               ) : (
                 <div className="space-y-3">
                   {overrides.map((override) => (
@@ -586,34 +575,10 @@ export default function YearlySetupPage() {
                               <span>{override.assessment_type === "screener" ? "Screener" : "Full Assessment"}</span>
                             </div>
                           </div>
-                          <motion.div animate={{ rotate: openSetupIds.has(override.id) ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
+                          <motion.div animate={{ rotate: openSetupIds.has(override.id) ? 0 : -90 }} transition={{ duration: 0.2 }} className="shrink-0">
                             <ChevronDown size={16} className="text-gray-400" />
                           </motion.div>
                         </button>
-                        <div className="relative shrink-0" ref={openMenuId === override.id ? menuRef : null}>
-                          <button
-                            onClick={() => setOpenMenuId(openMenuId === override.id ? null : override.id)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                          >
-                            <MoreHorizontal size={16} strokeWidth={1.75} />
-                          </button>
-                          {openMenuId === override.id && (
-                            <div className="absolute right-0 top-9 z-20 w-36 bg-white rounded-xl border border-[#e8ecf0] shadow-lg py-1 overflow-hidden">
-                              <button
-                                onClick={() => { setOpenMenuId(null); router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`); }}
-                                className="w-full text-left px-4 py-2 text-[13px] font-medium text-gray-700 hover:bg-[#f8fafc] cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => { setOpenMenuId(null); setConfirmDeleteId(override.id); }}
-                                className="w-full text-left px-4 py-2 text-[13px] font-medium text-red-500 hover:bg-red-50 cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          )}
-                        </div>
                       </div>
 
                       <AnimatePresence initial={false}>
@@ -644,6 +609,14 @@ export default function YearlySetupPage() {
                                 assessmentType={override.assessment_type as "screener" | "full"}
                                 windowConfigs={override.yearly_setup_window_configs ?? []}
                               />
+                              <div className="flex justify-end mt-4">
+                                <button
+                                  onClick={() => router.push(`/settings/yearly-setup/edit2?id=${override.id}&override=true`)}
+                                  className="h-9 px-5 rounded-lg border border-[#1a4e8a] text-[#1a4e8a] text-[13px] font-semibold hover:bg-[#eef2f8] transition-colors cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                              </div>
                             </div>
                           </motion.div>
                         )}
