@@ -1089,7 +1089,7 @@ function EditSetupPage() {
     const base = (first && siteCustomSetups[first]) ? { ...siteCustomSetups[first]! } : defaultSiteConfig();
     setSiteModalTargets(targets);
     setSiteModalConfig(base);
-    setSiteModalGroupName(base.groupName ?? "");
+    setSiteModalGroupName(base.groupName ?? (targets.length > 1 ? "Custom Group" : ""));
     setSiteModalOpen(true);
   };
 
@@ -1204,10 +1204,10 @@ function EditSetupPage() {
           </div>
           {dates.some(Boolean) && (
             <div className="bg-white border border-[#e8ecf0] rounded-xl p-4">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Year at a glance</p>
+              <p className="text-[15px] font-semibold text-gray-800 mb-3">
                 {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}
               </p>
-              <p className="text-[15px] font-semibold text-gray-800 mb-3">Year at a glance</p>
               <WizardTimeline dates={dates} labels={labels} configuredCount={i + 1} />
             </div>
           )}
@@ -1484,7 +1484,7 @@ function EditSetupPage() {
                       <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Site</span>
                     </div>
                     <div className="px-3 py-2.5 flex items-center">
-                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</span>
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Group</span>
                     </div>
                     <div />
                   </div>
@@ -2184,11 +2184,11 @@ function EditSetupPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => chipsScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" })}
-                    className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+                    className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     <ChevronLeft size={14} />
                   </button>
-                  <div ref={chipsScrollRef} className="flex gap-1.5 flex-1 overflow-x-auto scrollbar-hide">
+                  <div ref={chipsScrollRef} className="flex gap-1.5 flex-1 overflow-x-auto scrollbar-hide pb-2">
                     {siteModalTargets.map((s) => (
                       <span key={s} className="flex items-center gap-1 shrink-0 bg-white border border-[#d1d5db] text-[12px] text-gray-600 rounded-full px-2.5 py-0.5">
                         {s}
@@ -2203,7 +2203,7 @@ function EditSetupPage() {
                   </div>
                   <button
                     onClick={() => chipsScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" })}
-                    className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+                    className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     <ChevronRight size={14} />
                   </button>
@@ -2216,11 +2216,12 @@ function EditSetupPage() {
               {/* Group name (multi-site only) */}
               {siteModalTargets.length > 1 && (
                 <div>
-                  <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Group name <span className="normal-case tracking-normal font-normal">(optional)</span></p>
+                  <p className="text-[18px] font-semibold text-gray-700 mb-2">Group name</p>
                   <input
                     type="text"
                     value={siteModalGroupName}
                     onChange={(e) => setSiteModalGroupName(e.target.value)}
+                    onFocus={(e) => e.target.select()}
                     placeholder="e.g. Title I Schools, District North…"
                     className="w-full text-[22px] font-semibold text-gray-800 border-0 border-b-2 border-[#e8ecf0] focus:border-[#1a4e8a] focus:outline-none bg-transparent pb-1 placeholder:text-gray-300 placeholder:font-normal placeholder:text-[22px]"
                   />
@@ -2270,8 +2271,8 @@ function EditSetupPage() {
                   .filter((e) => e.date);
                 return (
                   <div className="rounded-xl border border-[#e8ecf0] bg-[#f8fafc] px-5 py-4">
-                    <p className="text-[14px] font-bold text-gray-700">Year at a glance</p>
-                    <p className="text-[12px] text-gray-400 mb-4">{searchParams.get("year")?.replace("-", "–") ?? "2025–2026"} School Year</p>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Year at a glance</p>
+                    <p className="text-[14px] font-semibold text-gray-800 mb-3">{searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}</p>
                     <WizardTimeline dates={allDates.map((e) => e.date)} labels={allDates.map((e) => e.label)} />
                   </div>
                 );
@@ -2426,21 +2427,7 @@ function EditSetupPage() {
             </div>
 
             {/* Modal footer */}
-            <div className="flex items-center justify-between px-8 py-4 border-t border-[#e8ecf0] bg-[#f0f4f8] shrink-0">
-              <button
-                onClick={() => {
-                  setSiteCustomSetups((prev) => {
-                    const next = { ...prev };
-                    siteModalTargets.forEach((s) => { next[s] = null; });
-                    return next;
-                  });
-                  setSiteModalOpen(false);
-                  setSelectedSiteRows([]);
-                }}
-                className="text-[13px] text-gray-400 hover:text-gray-600 transition-colors cursor-pointer underline"
-              >
-                Reset to default
-              </button>
+            <div className="flex items-center justify-end px-8 py-4 border-t border-[#e8ecf0] bg-[#f0f4f8] shrink-0">
               <div className="flex items-center gap-2">
                 <button onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
                   Cancel
