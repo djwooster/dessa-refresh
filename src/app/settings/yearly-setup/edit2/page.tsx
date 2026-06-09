@@ -602,6 +602,107 @@ function LastYearModal({
   );
 }
 
+// ─── Reusable radio group field with inline validation ───────────────────────
+// RadioGroupField: wraps children with a red border when hasError.
+// FieldErrorText: renders the inline error message — place it right after the question text.
+
+function RadioGroupField({ hasError, children }: {
+  hasError: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`rounded-xl border p-4 transition-colors ${
+        hasError ? "border-red-400 bg-red-50/40" : "border-transparent"
+      }`}
+      style={hasError ? { boxShadow: "0 0 0 1px rgba(239,68,68,0.25)" } : undefined}
+    >
+      {children}
+    </div>
+  );
+}
+
+function FieldErrorText({ message, show }: { message: string; show: boolean }) {
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="overflow-hidden"
+        >
+          <p className="text-[12px] text-red-500 font-medium mb-4">{message}</p>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── Success animation ────────────────────────────────────────────────────────
+
+function SuccessAnimation() {
+  const r = 44;
+  const circumference = 2 * Math.PI * r;
+  return (
+    <motion.div
+      initial={{ scale: 0.7, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative"
+    >
+      {/* Ripple rings */}
+      {[0, 1].map((n) => (
+        <motion.div
+          key={n}
+          className="absolute inset-0 rounded-full border-2 border-[#1a4e8a]"
+          initial={{ scale: 1, opacity: 0.4 }}
+          animate={{ scale: 2.2, opacity: 0 }}
+          transition={{ duration: 1.8, delay: n * 0.7, repeat: Infinity, ease: "easeOut" }}
+        />
+      ))}
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        {/* Background circle fill */}
+        <motion.circle
+          cx="60" cy="60" r={r}
+          fill="#eef2f8"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          style={{ transformOrigin: "60px 60px" }}
+        />
+        {/* Animated stroke circle */}
+        <motion.circle
+          cx="60" cy="60" r={r}
+          fill="none"
+          stroke="#1a4e8a"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference, rotate: -90 }}
+          animate={{ strokeDashoffset: 0 }}
+          transition={{ duration: 0.6, ease: "easeInOut", delay: 0.1 }}
+          style={{ transformOrigin: "60px 60px" }}
+        />
+        {/* Checkmark */}
+        <motion.path
+          d="M38 60 L52 74 L82 44"
+          fill="none"
+          stroke="#1a4e8a"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray="60"
+          initial={{ strokeDashoffset: 60 }}
+          animate={{ strokeDashoffset: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut", delay: 0.65 }}
+        />
+      </svg>
+    </motion.div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 function EditSetupPage() {
@@ -654,12 +755,17 @@ function EditSetupPage() {
   // UI state
   const [currentScreenId, setCurrentScreenId] = useState(isOverride ? "name" : "window-count");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [assessmentError, setAssessmentError] = useState(false);
+  const [escalationError, setEscalationError] = useState(false);
+  const [siteOverridesError, setSiteOverridesError] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpContent, setHelpContent] = useState<{ title: string; body: React.ReactNode } | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLastYear, setShowLastYear] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(4);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [openReviewSections, setOpenReviewSections] = useState<string[]>(["windows", "assessment", "sites", "students"]);
@@ -674,7 +780,7 @@ function EditSetupPage() {
 
   // ─── Apply past year on mount ──────────────────────────────────────────────
 
-  useEffect(() => { setValidationError(null); }, [currentScreenId]);
+  useEffect(() => { setValidationError(null); setAssessmentError(false); setEscalationError(false); setSiteOverridesError(false); }, [currentScreenId]);
 
   useEffect(() => {
     if (!addSiteOpen) return;
@@ -922,18 +1028,20 @@ function EditSetupPage() {
   const handleSave = async () => {
     await saveToSupabase();
     setShowReview(false);
-    toast.custom((t) => (
-      <SuccessToast
-        id={t}
-        title="Setup saved"
-        description="Don't forget to configure rating window reminder emails."
-        actionLabel="Set reminders"
-        onAction={() => router.push("/settings/rating-window-reminders")}
-      />
-    ));
-    router.refresh();
-    router.push("/settings/yearly-setup");
+    setCountdown(4);
+    setShowSuccess(true);
   };
+
+  useEffect(() => {
+    if (!showSuccess) return;
+    if (countdown <= 0) {
+      router.refresh();
+      router.push("/settings/yearly-setup");
+      return;
+    }
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [showSuccess, countdown]);
 
   // ─── Derived state ─────────────────────────────────────────────────────────
 
@@ -1010,11 +1118,23 @@ function EditSetupPage() {
 
   const handleNext = () => {
     if (!currentScreenValid()) {
-      setValidationError(getValidationError());
+      const dateMatch = currentScreen.id.match(/^date-(\d+)$/);
+      const idx = dateMatch ? parseInt(dateMatch[1]) : -1;
+      if (idx >= 0 && windowConfigs[idx]?.assessment === null) {
+        setAssessmentError(true); setEscalationError(false); setSiteOverridesError(false); setValidationError(null);
+      } else if (idx >= 0 && windowConfigs[idx]?.assessment === "screener" && windowConfigs[idx]?.conditionalAssignment === null) {
+        setEscalationError(true); setAssessmentError(false); setSiteOverridesError(false); setValidationError(null);
+      } else if (currentScreen.id === "site-overrides") {
+        setSiteOverridesError(true); setAssessmentError(false); setEscalationError(false); setValidationError(null);
+      } else {
+        setAssessmentError(false); setEscalationError(false); setSiteOverridesError(false);
+        setValidationError(getValidationError());
+      }
       return;
     }
     setValidationError(null);
-    if (isLastScreen) { setShowReview(true); return; }
+    setAssessmentError(false); setEscalationError(false); setSiteOverridesError(false);
+    if (isLastScreen) { handleSave(); return; }
     const next = screenSequence[currentScreenIdx + 1];
     if (next) setCurrentScreenId(next.id);
   };
@@ -1260,11 +1380,70 @@ function EditSetupPage() {
       const showHandoff = i > 0 && prevCfg?.assessment === "screener" && prevCfg?.conditionalAssignment;
       return (
         <div className="space-y-10">
+          <div>
+            <p className="text-[15px] font-semibold text-gray-700 mb-2">Opening date</p>
+            <div className="w-[200px]">
+              <DatePicker value={dates[i]} onChange={(v) => updateDate(i, v)} />
+            </div>
+          </div>
+          {dates.some(Boolean) && (
+            <div className="bg-white border border-[#e8ecf0] rounded-xl p-4">
+              <p className="text-[15px] font-medium text-gray-400 mb-0.5">Year at a glance</p>
+              <p className="text-[15px] font-semibold text-gray-800 mb-3">
+                {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}
+              </p>
+              <WizardTimeline dates={dates} labels={labels} configuredCount={i + 1} />
+              {dates.slice(0, i + 1).some(Boolean) && (
+                <div className={`flex mt-4 pt-4 border-t border-[#f0f4f8] ${i + 1 === windowCount ? "justify-between" : "gap-8"}`}>
+                  {labels.slice(0, i + 1).map((label, j) => {
+                    if (!dates[j]) return null;
+                    return (
+                      <div key={j}>
+                        <p className="text-[15px] font-medium text-gray-400 leading-tight">{label}</p>
+                        <p className="text-[15px] font-semibold text-gray-800 mt-0.5">
+                          {new Date(dates[j] + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           {showHandoff && (
             <div>
-              <p className="text-[15px] font-semibold text-gray-800 mb-4">
-                If a student scored below the threshold in {labels[i - 1]}, how should they start this window?
-              </p>
+              <div className="flex items-start gap-2 mb-0">
+                <p className="text-[15px] font-semibold text-gray-800">
+                  If a student scored below the T-score threshold in {labels[i - 1]}, how should they be assessed at the beginning of this window?
+                </p>
+                <button
+                  onClick={() => {
+                    setHelpContent({
+                      title: "Carrying Over Low Scorers",
+                      body: (
+                        <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
+                          <div>
+                            <p className="text-[18px] font-semibold text-gray-800 mb-1">Screen again</p>
+                            <p>The student takes the screener again at the start of this window. Useful if enough time has passed that their score may have changed — a student who struggled in the fall may have grown by spring.</p>
+                          </div>
+                          <div>
+                            <p className="text-[18px] font-semibold text-gray-800 mb-1">Full DESSA</p>
+                            <p>The student skips the screener and goes straight to the full assessment. This gives a more detailed picture of their social-emotional competencies without requiring them to take an extra step first.</p>
+                          </div>
+                          <div>
+                            <p className="text-[18px] font-semibold text-gray-800 mb-1">In Summary</p>
+                            <p>Both options are valid — the right choice depends on how much time has passed and whether your program needs updated screening data or deeper competency scores for these students.</p>
+                          </div>
+                        </div>
+                      ),
+                    });
+                    setHelpOpen(true);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
+                >
+                  <HelpCircle size={15} />
+                </button>
+              </div>
               <div className="space-y-3">
                 {([
                   { value: "rescreen" as const, label: "Screen again", desc: `They take the screener again in ${labels[i]}.` },
@@ -1288,39 +1467,28 @@ function EditSetupPage() {
               </div>
             </div>
           )}
+          <RadioGroupField hasError={assessmentError}>
           <div>
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Opening date</p>
-            <div className="w-[200px]">
-              <DatePicker value={dates[i]} onChange={(v) => updateDate(i, v)} />
-            </div>
-          </div>
-          {dates.some(Boolean) && (
-            <div className="bg-white border border-[#e8ecf0] rounded-xl p-4">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Year at a glance</p>
-              <p className="text-[15px] font-semibold text-gray-800 mb-3">
-                {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}
-              </p>
-              <WizardTimeline dates={dates} labels={labels} configuredCount={i + 1} />
-            </div>
-          )}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <p className="text-[15px] font-semibold text-gray-800">What assessment will teachers use?</p>
+            <div className="flex items-start gap-2 mb-0">
+              <p className="text-[15px] font-semibold text-gray-800">{showHandoff ? "For students that scored above the T-score threshold, which assessment should educators administer this window?" : "Which assessment should educators administer this window?"}</p>
               <button
                 onClick={() => {
                   setHelpContent({
                     title: "Screener vs. Full Assessment",
                     body: (
-                      <div className="space-y-4 text-[14px] text-gray-600 leading-relaxed">
+                      <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
                         <div>
-                          <p className="font-semibold text-gray-800 mb-1">Screener</p>
+                          <p className="text-[18px] font-semibold text-gray-800 mb-1">Screener</p>
                           <p>A short, 8-item form that quickly identifies students who may need additional support. Includes the DESSA 2 mini and DESSA HSE-mini.</p>
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-800 mb-1">Full Assessment</p>
+                          <p className="text-[18px] font-semibold text-gray-800 mb-1">Full Assessment</p>
                           <p>A comprehensive form measuring eight social-emotional competencies in depth. Includes the DESSA 2 and DESSA HSE.</p>
                         </div>
-                        <p className="text-gray-500 text-[13px]">Many programs use a screener for most windows and only escalate to the full assessment when a student scores below a threshold.</p>
+                        <div>
+                          <p className="text-[18px] font-semibold text-gray-800 mb-1">In Summary</p>
+                          <p>The DESSA screener gives a quick overall score and works well when educators need to assess many students efficiently. The full DESSA takes longer but provides a score for each social-emotional competency. You can still require a full DESSA for students who score below a set threshold.</p>
+                        </div>
                       </div>
                     ),
                   });
@@ -1331,7 +1499,8 @@ function EditSetupPage() {
                 <HelpCircle size={15} />
               </button>
             </div>
-            <div className="space-y-3">
+            <FieldErrorText message="Please select an assessment type to continue." show={assessmentError} />
+            <div className={`space-y-3 ${assessmentError ? "" : "mt-4"}`}>
               {ASSESSMENT_OPTIONS.map(({ value, label }) => (
                 <label key={value} className="flex items-center gap-3 cursor-pointer">
                   <input
@@ -1339,7 +1508,7 @@ function EditSetupPage() {
                     name={`assess-type-${i}`}
                     value={value}
                     checked={cfg?.assessment === value}
-                    onChange={() => updateWindowConfig(i, { assessment: value as "screener" | "full" })}
+                    onChange={() => { updateWindowConfig(i, { assessment: value as "screener" | "full" }); setAssessmentError(false); }}
                     className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0"
                   />
                   <span className="text-[15px] text-gray-800">{label}</span>
@@ -1347,6 +1516,7 @@ function EditSetupPage() {
               ))}
             </div>
           </div>
+          </RadioGroupField>
           <AnimatePresence initial={false}>
             {cfg?.assessment === "screener" && (
               <motion.div
@@ -1357,10 +1527,11 @@ function EditSetupPage() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
+                <RadioGroupField hasError={escalationError}>
                 <div className="pt-2">
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-start gap-2 mb-0">
                     <p className="text-[15px] font-semibold text-gray-800">
-                      If a student&apos;s screener score is low, should they automatically take the full DESSA?
+                      If a student&apos;s screener score is below a threshold, should they automatically take the full DESSA?
                     </p>
                     <button
                       onClick={() => {
@@ -1381,7 +1552,8 @@ function EditSetupPage() {
                       <HelpCircle size={15} />
                     </button>
                   </div>
-                  <div className="space-y-3">
+                  <FieldErrorText message="Please answer this question to continue." show={escalationError} />
+                  <div className={`space-y-3 ${escalationError ? "" : "mt-4"}`}>
                     {([
                       { value: true, label: "Yes" },
                       { value: false, label: "No" },
@@ -1391,7 +1563,7 @@ function EditSetupPage() {
                           type="radio"
                           name={`assess-escalate-${i}`}
                           checked={cfg?.conditionalAssignment === value}
-                          onChange={() => updateWindowConfig(i, { conditionalAssignment: value })}
+                          onChange={() => { updateWindowConfig(i, { conditionalAssignment: value }); setEscalationError(false); }}
                           className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0"
                         />
                         <span className="text-[15px] text-gray-800">{label}</span>
@@ -1421,7 +1593,7 @@ function EditSetupPage() {
                               setHelpContent({
                                 title: "T-Score Ranges",
                                 body: (
-                                  <div className="space-y-4 text-[14px] text-gray-600 leading-relaxed">
+                                  <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
                                     <p>T-Scores indicate how a student&apos;s social-emotional skills compare to their peers. The standard ranges are:</p>
                                     <div className="h-5 rounded-md overflow-hidden flex">
                                       {TSCORE_RANGES.map(({ label, value, bg, text, flex }) => (
@@ -1454,6 +1626,7 @@ function EditSetupPage() {
                     )}
                   </AnimatePresence>
                 </div>
+                </RadioGroupField>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1501,6 +1674,7 @@ function EditSetupPage() {
 
       return (
         <div className="space-y-6">
+          <RadioGroupField hasError={siteOverridesError}>
           <div className="space-y-3">
             {([
               { value: false, label: "Yes, all sites use the same setup", desc: "Every site follows the windows and assessment types you configured." },
@@ -1511,7 +1685,7 @@ function EditSetupPage() {
                   type="radio"
                   name="site-overrides"
                   checked={hasSiteCustomSetups === value}
-                  onChange={() => { setHasSiteCustomSetups(value); if (!value) setSelectedSiteRows([]); }}
+                  onChange={() => { setHasSiteCustomSetups(value); if (!value) setSelectedSiteRows([]); setSiteOverridesError(false); }}
                   className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
                 />
                 <div>
@@ -1521,6 +1695,8 @@ function EditSetupPage() {
               </label>
             ))}
           </div>
+          <FieldErrorText message="Please make a selection to continue." show={siteOverridesError} />
+          </RadioGroupField>
 
           <AnimatePresence initial={false}>
             {hasSiteCustomSetups === true && (
@@ -1832,7 +2008,21 @@ function EditSetupPage() {
         <LastYearModal onClose={() => setShowLastYear(false)} onUse={applyLastYear} />
       )}
 
-      {showReview ? (
+      {showSuccess ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+          <SuccessAnimation />
+          <h2 className="text-[28px] font-bold text-gray-900 mt-8 mb-3">Setup complete</h2>
+          <p className="text-[16px] text-gray-500 max-w-sm">
+            Your rating windows have been saved. Taking you to the overview in {countdown}…
+          </p>
+          <button
+            onClick={() => { router.refresh(); router.push("/settings/yearly-setup"); }}
+            className="mt-6 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
+          >
+            Go now
+          </button>
+        </div>
+      ) : false /* showReview */ ? (
         <>
           {/* Review header */}
           <header className="h-[60px] shrink-0 flex items-center justify-between px-8 border-b border-[#e8ecf0] bg-white">
@@ -2211,7 +2401,7 @@ function EditSetupPage() {
                         onClick={handleNext}
                         className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                       >
-                        {isLastScreen ? "Review & Save" : "Continue"}
+                        {isLastScreen ? "Save" : "Continue"}
                       </button>
                     </div>
                   </div>
@@ -2249,6 +2439,14 @@ function EditSetupPage() {
                   </div>
                   <div className="flex-1 overflow-y-auto px-8 py-6">
                     {helpContent?.body ?? currentScreen.helpBody}
+                  </div>
+                  <div className="px-8 py-5 border-t border-[#e8ecf0] shrink-0">
+                    <button
+                      onClick={() => { setHelpOpen(false); setHelpContent(null); }}
+                      className="w-full h-9 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      Close
+                    </button>
                   </div>
                 </motion.aside>
               </>
@@ -2415,7 +2613,7 @@ function EditSetupPage() {
                   .filter((e) => e.date);
                 return (
                   <div className="rounded-xl border border-[#e8ecf0] bg-[#f8fafc] px-5 py-4">
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Year at a glance</p>
+                    <p className="text-[15px] font-medium text-gray-400 mb-0.5">Year at a glance</p>
                     <p className="text-[14px] font-semibold text-gray-800 mb-3">{searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}</p>
                     <WizardTimeline dates={allDates.map((e) => e.date)} labels={allDates.map((e) => e.label)} />
                   </div>
@@ -2490,16 +2688,10 @@ function EditSetupPage() {
                       />
                     </div>
                   </div>
+                  <RadioGroupField hasError={siteModalValidated && siteModalConfig.windowConfigs[i]?.assessment === null}>
                   <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <p className="text-[13px] text-gray-500">Assessment type</p>
-                      {siteModalValidated && siteModalConfig.windowConfigs[i]?.assessment === null && (
-                        <span className="flex items-center gap-1 bg-red-100 text-red-600 text-[11px] font-semibold px-2 py-0.5 rounded-full">
-                          <AlertTriangle size={11} />
-                          Make a selection
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-[13px] text-gray-500 mb-0">Assessment type</p>
+                    <FieldErrorText message="Please make a selection." show={siteModalValidated && siteModalConfig.windowConfigs[i]?.assessment === null} />
                     <div className="space-y-2">
                       {ASSESSMENT_OPTIONS.map(({ value, label }) => (
                         <label key={value} className="flex items-center gap-3 cursor-pointer">
@@ -2521,11 +2713,12 @@ function EditSetupPage() {
                       ))}
                     </div>
                   </div>
+                  </RadioGroupField>
                   <AnimatePresence initial={false}>
                     {siteModalConfig.windowConfigs[i]?.assessment === "screener" && (
                       <motion.div key="esc" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
                         <div className="pt-1 space-y-2">
-                          <p className="text-[13px] text-gray-500">If a student&apos;s screener score is low, should they automatically take the full DESSA?</p>
+                          <p className="text-[13px] text-gray-500">If a student&apos;s screener score is below a threshold, should they automatically take the full DESSA?</p>
                           <div className="space-y-2">
                             {([{ value: true, label: "Yes" }, { value: false, label: "No" }] as const).map(({ value, label }) => (
                               <label key={String(value)} className="flex items-center gap-3 cursor-pointer">
