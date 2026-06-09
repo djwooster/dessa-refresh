@@ -24,6 +24,7 @@ import {
   Equal,
   Search,
   AlertTriangle,
+  Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -358,32 +359,9 @@ function buildScreens(
       ),
     });
 
-    if (windowConfigs[i]?.assessment === "screener") {
-      if (i < windowCount - 1 && windowConfigs[i + 1]?.assessment === "screener") {
-        screens.push({
-          id: `assess-handoff-${i}`,
-          title: `How should low scorers start ${labels[i + 1]}?`,
-          subtitle: `These are students who scored below the threshold in ${labels[i]}.`,
-          helpTitle: "Carrying Over Low Scorers",
-          helpBody: (
-            <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
-              <p>When a student scores below the threshold in one window, you decide how they start the next.</p>
-              <div>
-                <p className="font-semibold text-gray-800 mb-1">Screen again</p>
-                <p>They take the screener again. Useful if enough time has passed that their score may have changed.</p>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-800 mb-1">Full DESSA</p>
-                <p>They skip the screener and go straight to the full assessment in the next window.</p>
-              </div>
-            </div>
-          ),
-        });
-      }
-    }
   }
 
-  screens.push({
+  if (!isOverride) screens.push({
     id: "site-overrides",
     title: "Should all sites follow this setup?",
     subtitle: "You can give individual sites their own windows, dates, and assessment types.",
@@ -666,6 +644,12 @@ function EditSetupPage() {
   const [siteModalConfig, setSiteModalConfig] = useState<SiteCustomConfig | null>(null);
   const [siteModalGroupName, setSiteModalGroupName] = useState("");
   const [siteModalValidated, setSiteModalValidated] = useState(false);
+  const [addSiteOpen, setAddSiteOpen] = useState(false);
+  const [addSiteSearch, setAddSiteSearch] = useState("");
+  const addSiteRef = useRef<HTMLDivElement>(null);
+  const [pulsingWindowIndices, setPulsingWindowIndices] = useState<Set<number>>(new Set());
+  const prevModalWindowCountRef = useRef<number>(0);
+  const windowCardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // UI state
   const [currentScreenId, setCurrentScreenId] = useState(isOverride ? "name" : "window-count");
@@ -691,6 +675,34 @@ function EditSetupPage() {
   // ─── Apply past year on mount ──────────────────────────────────────────────
 
   useEffect(() => { setValidationError(null); }, [currentScreenId]);
+
+  useEffect(() => {
+    if (!addSiteOpen) return;
+    const handle = (e: MouseEvent) => {
+      if (addSiteRef.current && !addSiteRef.current.contains(e.target as Node)) {
+        setAddSiteOpen(false);
+        setAddSiteSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [addSiteOpen]);
+
+  useEffect(() => {
+    if (!siteModalConfig) return;
+    const prev = prevModalWindowCountRef.current;
+    const curr = siteModalConfig.windowCount;
+    if (curr > prev && prev > 0) {
+      const newIndices = new Set(Array.from({ length: curr - prev }, (_, k) => prev + k));
+      setPulsingWindowIndices(newIndices);
+      const firstNewCard = windowCardRefs.current[prev];
+      if (firstNewCard) firstNewCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      const t = setTimeout(() => setPulsingWindowIndices(new Set()), 3200);
+      prevModalWindowCountRef.current = curr;
+      return () => clearTimeout(t);
+    }
+    prevModalWindowCountRef.current = curr;
+  }, [siteModalConfig?.windowCount]);
 
   useEffect(() => {
     if (!fromPastYear) return;
@@ -1090,6 +1102,8 @@ function EditSetupPage() {
     setSiteModalTargets(targets);
     setSiteModalConfig(base);
     setSiteModalGroupName(base.groupName ?? (targets.length > 1 ? "Custom Group" : ""));
+    prevModalWindowCountRef.current = base.windowCount;
+    setPulsingWindowIndices(new Set());
     setSiteModalOpen(true);
   };
 
@@ -1097,6 +1111,10 @@ function EditSetupPage() {
     if (!siteModalConfig) return;
     if (siteModalConfig.windowConfigs.some((wc) => wc.assessment === null)) {
       setSiteModalValidated(true);
+      const firstInvalidIndex = siteModalConfig.windowConfigs.findIndex((wc) => wc.assessment === null);
+      if (firstInvalidIndex !== -1) {
+        windowCardRefs.current[firstInvalidIndex]?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
     setSiteModalValidated(false);
@@ -1138,27 +1156,71 @@ function EditSetupPage() {
 
     // ── Override: site selection ───────────────────────────────────────────
     if (screenId === "sites") {
+      const availableSites = MOCK_SITES.filter((site) => !SITES_IN_OTHER_OVERRIDES[site] || selectedSites.includes(site));
+      const filteredSitesForGroup = availableSites.filter((s) =>
+        s.toLowerCase().includes(siteSearchQuery.toLowerCase())
+      );
+      const allGroupFiltered = filteredSitesForGroup.length > 0 && filteredSitesForGroup.every((s) => selectedSites.includes(s));
       return (
-        <div className="grid grid-cols-2 gap-2">
-          {MOCK_SITES.filter((site) => !SITES_IN_OTHER_OVERRIDES[site] || selectedSites.includes(site)).map((site) => {
-            const isSelected = selectedSites.includes(site);
-            return (
-              <button
-                key={site}
-                onClick={() => toggleSite(site)}
-                className={`flex items-center gap-3 text-left rounded-xl border px-4 py-3 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-              >
-                <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[#1a4e8a] border-[#1a4e8a]" : "border-gray-300"}`}>
-                  {isSelected && (
-                    <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                      <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
+        <div className="rounded-xl border border-[#e8ecf0] overflow-hidden bg-white">
+          {/* Toolbar */}
+          <div className="flex items-center gap-3 px-4 py-3 bg-[#f8fafc] border-b border-[#e8ecf0]">
+            <div className="relative max-w-[300px] w-full">
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search sites…"
+                value={siteSearchQuery}
+                onChange={(e) => setSiteSearchQuery(e.target.value)}
+                className="w-full h-8 pl-8 pr-3 text-[13px] border border-[#d1d5db] rounded-lg bg-white focus:outline-none focus:border-[#1a4e8a] placeholder:text-gray-400"
+              />
+            </div>
+            <div className="flex-1" />
+            {selectedSites.length > 0 && (
+              <span className="text-[12px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-3 py-1">
+                {selectedSites.length} selected
+              </span>
+            )}
+          </div>
+          {/* Header */}
+          <div className="grid grid-cols-[44px_1fr] border-b border-[#e8ecf0] bg-[#f8fafc]">
+            <div className="flex items-center justify-center py-2.5">
+              <input
+                type="checkbox"
+                checked={allGroupFiltered}
+                onChange={(e) => setSelectedSites(e.target.checked ? filteredSitesForGroup : [])}
+                className="w-4 h-4 accent-[#1a4e8a] cursor-pointer"
+              />
+            </div>
+            <div className="px-3 py-2.5 flex items-center">
+              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Site</span>
+            </div>
+          </div>
+          {/* Rows */}
+          <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+            {filteredSitesForGroup.map((site) => {
+              const isSelected = selectedSites.includes(site);
+              return (
+                <div
+                  key={site}
+                  onClick={() => toggleSite(site)}
+                  className={`grid grid-cols-[44px_1fr] border-b border-[#f0f4f8] last:border-0 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2f8]" : "bg-white hover:bg-[#f8fafc]"}`}
+                >
+                  <div className="flex items-center justify-center py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSite(site)}
+                      className="w-4 h-4 accent-[#1a4e8a] cursor-pointer"
+                    />
+                  </div>
+                  <div className="px-3 py-3 flex items-center">
+                    <span className="text-[14px] text-gray-800">{site}</span>
+                  </div>
                 </div>
-                <span className={`text-[14px] font-semibold ${isSelected ? "text-[#1a4e8a]" : "text-gray-800"}`}>{site}</span>
-              </button>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       );
     }
@@ -1194,8 +1256,38 @@ function EditSetupPage() {
     if (dateMatch) {
       const i = parseInt(dateMatch[1]);
       const cfg = windowConfigs[i];
+      const prevCfg = windowConfigs[i - 1];
+      const showHandoff = i > 0 && prevCfg?.assessment === "screener" && prevCfg?.conditionalAssignment;
       return (
         <div className="space-y-10">
+          {showHandoff && (
+            <div>
+              <p className="text-[15px] font-semibold text-gray-800 mb-4">
+                If a student scored below the threshold in {labels[i - 1]}, how should they start this window?
+              </p>
+              <div className="space-y-3">
+                {([
+                  { value: "rescreen" as const, label: "Screen again", desc: `They take the screener again in ${labels[i]}.` },
+                  { value: "skip" as const, label: "Full DESSA", desc: `They skip the screener and go straight to the full assessment.` },
+                ] as const).map(({ value, label, desc }) => (
+                  <label key={value} className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name={`handoff-${i}`}
+                      value={value}
+                      checked={cfg?.resetBehavior === value}
+                      onChange={() => updateWindowConfig(i, { resetBehavior: value })}
+                      className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
+                    />
+                    <div>
+                      <p className="text-[15px] text-gray-800">{label}</p>
+                      <p className="text-[13px] text-gray-500 mt-0.5">{desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Opening date</p>
             <div className="w-[200px]">
@@ -1484,7 +1576,7 @@ function EditSetupPage() {
                       <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Site</span>
                     </div>
                     <div className="px-3 py-2.5 flex items-center">
-                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Group</span>
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Schedule</span>
                     </div>
                     <div />
                   </div>
@@ -1555,8 +1647,8 @@ function EditSetupPage() {
                       className="shrink-0 h-8 px-4 rounded-lg text-[13px] font-semibold transition-colors cursor-pointer bg-[#1a4e8a] text-white hover:bg-[#15407a] disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {selectedSiteRows.length > 0
-                        ? `Configure ${selectedSiteRows.length} site${selectedSiteRows.length > 1 ? "s" : ""}`
-                        : "Configure"}
+                        ? `Edit ${selectedSiteRows.length} schedule${selectedSiteRows.length > 1 ? "s" : ""}`
+                        : "Edit schedules"}
                     </button>
                   </div>
                 </div>
@@ -2168,6 +2260,7 @@ function EditSetupPage() {
       {/* ── Site config modal ──────────────────────────────────────────────── */}
       {siteModalOpen && siteModalConfig && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <style>{`@keyframes pulse-border{0%{box-shadow:0 0 0 0 rgba(26,78,138,0.55);border-color:#1a4e8a}65%{box-shadow:0 0 0 10px rgba(26,78,138,0);border-color:#1a4e8a}100%{box-shadow:0 0 0 0 rgba(26,78,138,0);border-color:#e8ecf0}}`}</style>
           <div className="absolute inset-0 bg-black/40" onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} />
           <div className="relative bg-white rounded-2xl shadow-2xl flex flex-col" style={{ width: "85vw", height: "85vh" }}>
             {/* Modal header */}
@@ -2181,32 +2274,83 @@ function EditSetupPage() {
                 </button>
               </div>
               {siteModalTargets.length > 1 && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => chipsScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" })}
-                    className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-                  <div ref={chipsScrollRef} className="flex gap-1.5 flex-1 overflow-x-auto scrollbar-hide pb-2">
-                    {siteModalTargets.map((s) => (
-                      <span key={s} className="flex items-center gap-1 shrink-0 bg-white border border-[#d1d5db] text-[12px] text-gray-600 rounded-full px-2.5 py-0.5">
-                        {s}
-                        <button
-                          onClick={() => setSiteModalTargets((prev) => prev.filter((t) => t !== s))}
-                          className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer ml-0.5"
-                        >
-                          <X size={11} />
-                        </button>
-                      </span>
-                    ))}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => chipsScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" })}
+                      className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <div ref={chipsScrollRef} className="flex items-center gap-1.5 flex-1 overflow-x-auto scrollbar-hide p-2">
+                      {siteModalTargets.map((s) => (
+                        <span key={s} className="flex items-center gap-1 shrink-0 bg-white border border-[#d1d5db] text-[12px] text-gray-600 rounded-full px-2.5 py-0.5">
+                          {s}
+                          <button
+                            onClick={() => setSiteModalTargets((prev) => prev.filter((t) => t !== s))}
+                            className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer ml-0.5"
+                          >
+                            <X size={11} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => chipsScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" })}
+                      className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => chipsScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" })}
-                    className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                  >
-                    <ChevronRight size={14} />
-                  </button>
+                  {/* Add site */}
+                  <div ref={addSiteRef} className="relative inline-block">
+                    <button
+                      onClick={() => { setAddSiteOpen((o) => !o); setAddSiteSearch(""); }}
+                      className="flex items-center gap-1 text-[12px] font-semibold text-[#1a4e8a] hover:text-[#15407a] transition-colors cursor-pointer"
+                    >
+                      <Plus size={12} strokeWidth={2.5} />
+                      Add site
+                    </button>
+                    {addSiteOpen && (() => {
+                      const remaining = MOCK_SITES.filter(
+                        (s) => !siteModalTargets.includes(s) &&
+                          s.toLowerCase().includes(addSiteSearch.toLowerCase())
+                      );
+                      return (
+                        <div className="absolute left-0 top-full mt-1.5 z-[80] w-64 bg-white rounded-xl border border-[#e8ecf0] shadow-lg flex flex-col overflow-hidden">
+                          <div className="px-3 py-2 border-b border-[#f0f4f8]">
+                            <div className="flex items-center gap-2">
+                              <Search size={12} className="text-gray-400 shrink-0" />
+                              <input
+                                autoFocus
+                                type="text"
+                                value={addSiteSearch}
+                                onChange={(e) => setAddSiteSearch(e.target.value)}
+                                placeholder="Search sites…"
+                                className="flex-1 text-[13px] text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                          <div className="overflow-y-auto max-h-52">
+                            {remaining.length === 0 ? (
+                              <p className="text-[12px] text-gray-400 text-center py-4">No sites found</p>
+                            ) : remaining.map((s) => (
+                              <button
+                                key={s}
+                                onClick={() => {
+                                  setSiteModalTargets((prev) => [...prev, s]);
+                                  setAddSiteSearch("");
+                                }}
+                                className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-[#f0f4f8] transition-colors cursor-pointer"
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
             </div>
@@ -2323,8 +2467,14 @@ function EditSetupPage() {
               {Array.from({ length: siteModalConfig.windowCount }, (_, i) => {
                 const siteLabels = WINDOW_OPTIONS.find((o) => o.count === siteModalConfig.windowCount)?.labels ?? [];
                 const windowLabel = siteLabels[i] ?? `W${i + 1}`;
+                const isPulsing = pulsingWindowIndices.has(i);
                 return (
-                <div key={i} className="rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3">
+                <div
+                  key={i}
+                  ref={(el) => { windowCardRefs.current[i] = el; }}
+                  style={isPulsing ? { animation: "pulse-border 1.5s ease-out 2" } : undefined}
+                  className="rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3"
+                >
                   <p className="text-[14px] font-bold text-gray-700">{windowLabel}</p>
                   <div>
                     <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>

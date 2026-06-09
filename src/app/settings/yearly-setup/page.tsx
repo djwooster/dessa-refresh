@@ -50,7 +50,7 @@ const PAST_YEAR_MOCK = {
   t_score: "40",
 };
 
-const TOTAL_SITES = 7;
+const TOTAL_SITES = 128;
 
 const WINDOW_LABELS: Record<number, string[]> = {
   1: ["Annual Assessment"],
@@ -232,7 +232,7 @@ function AssessmentConfigRows({
                 </div>
                 <span className="text-[13px] text-gray-700">{isScreener ? "Screener" : "Full Assessment"}</span>
               </div>
-              <div>
+              <div className="flex items-center">
                 {wc?.conditional_assignment
                   ? <p className="text-[13px] text-gray-700">T-score ≤ {wc.t_score}</p>
                   : <p className="text-[13px] text-gray-400">Disabled</p>}
@@ -437,27 +437,13 @@ export default function YearlySetupPage() {
           <div className="bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden mb-4">
             <div className="flex items-center gap-4 px-6 py-4 bg-[#f8fafc] border-b border-[#e8ecf0]">
               <YearSelect selectedYear={selectedYear} onSelect={setSelectedYear} />
-              <div className="flex items-center gap-2 flex-1 text-[12px] text-gray-400">
-                <span>{defaultSiteCount} {defaultSiteCount === 1 ? "site" : "sites"}</span>
-                <span>·</span>
-                <span>{defaultSetup.window_count} {defaultSetup.window_count === 1 ? "window" : "windows"}</span>
-                <span>·</span>
-                <span>{defaultSetup.assessment_type === "screener" ? "Screener" : "Full Assessment"}</span>
-              </div>
+              <div className="flex-1" />
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => router.push(`/settings/yearly-setup/edit2?id=${defaultSetup.id}&year=${selectedYear}`)}
                   className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                 >
                   Edit Setup
-                </button>
-                <button
-                  onClick={() => toggleSetup(defaultSetup.id)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                >
-                  <motion.div animate={{ rotate: openSetupIds.has(defaultSetup.id) ? 0 : -90 }} transition={{ duration: 0.2 }}>
-                    <ChevronDown size={16} />
-                  </motion.div>
                 </button>
               </div>
             </div>
