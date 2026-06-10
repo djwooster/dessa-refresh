@@ -86,7 +86,7 @@ type WindowConfig = {
   assessment: "screener" | "full" | null;
   conditionalAssignment: boolean | null;
   tScore: string;
-  resetBehavior: "rescreen" | "skip" | null;
+  resetBehavior: "rescreen" | "skip" | "rescreen-threshold" | null;
 };
 
 type SiteCustomConfig = { windowCount: number; dates: string[]; windowConfigs: WindowConfig[]; groupName?: string };
@@ -613,7 +613,7 @@ function RadioGroupField({ hasError, children }: {
   return (
     <div
       className={`rounded-xl border p-4 transition-colors ${
-        hasError ? "border-red-400 bg-red-50/40" : "border-transparent"
+        hasError ? "border-red-400 bg-red-50/40" : "border-[#e8ecf0]"
       }`}
       style={hasError ? { boxShadow: "0 0 0 1px rgba(239,68,68,0.25)" } : undefined}
     >
@@ -1085,12 +1085,8 @@ function EditSetupPage() {
       if (!dates[i]) return false;
       if (cfg?.assessment === null) return false;
       if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === null) return false;
+      if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === true && i < windowCount - 1 && cfg?.resetBehavior === null) return false;
       return true;
-    }
-    const handoffMatch = currentScreen.id.match(/^assess-handoff-(\d+)$/);
-    if (handoffMatch) {
-      const i = parseInt(handoffMatch[1]);
-      return windowConfigs[i + 1]?.resetBehavior !== null;
     }
     if (currentScreen.id === "site-overrides") return hasSiteCustomSetups !== null;
     if (currentScreen.id === "students") return siteLeaderManage !== null;
@@ -1105,11 +1101,7 @@ function EditSetupPage() {
       if (!dates[i]) return "Please select an opening date.";
       if (cfg?.assessment === null) return "Please select an assessment type.";
       if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === null) return "Please answer the auto-escalation question.";
-    }
-    const handoffMatch = currentScreen.id.match(/^assess-handoff-(\d+)$/);
-    if (handoffMatch) {
-      const i = parseInt(handoffMatch[1]);
-      if (windowConfigs[i + 1]?.resetBehavior === null) return "Please make a selection.";
+      if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === true && i < windowCount - 1 && cfg?.resetBehavior === null) return "Please select a reset behavior.";
     }
     if (currentScreen.id === "site-overrides" && hasSiteCustomSetups === null) return "Please make a selection.";
     if (currentScreen.id === "students" && siteLeaderManage === null) return "Please make a selection.";
@@ -1410,67 +1402,10 @@ function EditSetupPage() {
               )}
             </div>
           )}
-          {showHandoff && (
-            <div>
-              <div className="flex items-start gap-2 mb-0">
-                <p className="text-[15px] font-semibold text-gray-800">
-                  If a student scored below the T-score threshold in {labels[i - 1]}, how should they be assessed at the beginning of this window?
-                </p>
-                <button
-                  onClick={() => {
-                    setHelpContent({
-                      title: "Carrying Over Low Scorers",
-                      body: (
-                        <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
-                          <div>
-                            <p className="text-[18px] font-semibold text-gray-800 mb-1">Screen again</p>
-                            <p>The student takes the screener again at the start of this window. Useful if enough time has passed that their score may have changed — a student who struggled in the fall may have grown by spring.</p>
-                          </div>
-                          <div>
-                            <p className="text-[18px] font-semibold text-gray-800 mb-1">Full DESSA</p>
-                            <p>The student skips the screener and goes straight to the full assessment. This gives a more detailed picture of their social-emotional competencies without requiring them to take an extra step first.</p>
-                          </div>
-                          <div>
-                            <p className="text-[18px] font-semibold text-gray-800 mb-1">In Summary</p>
-                            <p>Both options are valid — the right choice depends on how much time has passed and whether your program needs updated screening data or deeper competency scores for these students.</p>
-                          </div>
-                        </div>
-                      ),
-                    });
-                    setHelpOpen(true);
-                  }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
-                >
-                  <HelpCircle size={15} />
-                </button>
-              </div>
-              <div className="space-y-3">
-                {([
-                  { value: "rescreen" as const, label: "Screen again", desc: `They take the screener again in ${labels[i]}.` },
-                  { value: "skip" as const, label: "Full DESSA", desc: `They skip the screener and go straight to the full assessment.` },
-                ] as const).map(({ value, label, desc }) => (
-                  <label key={value} className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`handoff-${i}`}
-                      value={value}
-                      checked={cfg?.resetBehavior === value}
-                      onChange={() => updateWindowConfig(i, { resetBehavior: value })}
-                      className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
-                    />
-                    <div>
-                      <p className="text-[15px] text-gray-800">{label}</p>
-                      <p className="text-[13px] text-gray-500 mt-0.5">{desc}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
           <RadioGroupField hasError={assessmentError}>
           <div>
             <div className="flex items-start gap-2 mb-0">
-              <p className="text-[15px] font-semibold text-gray-800">{showHandoff ? "For students that scored above the T-score threshold, which assessment should educators administer this window?" : "Which assessment should educators administer this window?"}</p>
+              <p className="text-[15px] font-semibold text-gray-800">Should educators start with the DESSA screener or the full DESSA?</p>
               <button
                 onClick={() => {
                   setHelpContent({
@@ -1525,13 +1460,14 @@ function EditSetupPage() {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
-                className="overflow-hidden"
+                className="overflow-hidden space-y-10"
               >
+                {/* Q2: Follow-up escalation */}
                 <RadioGroupField hasError={escalationError}>
-                <div className="pt-2">
+                <div>
                   <div className="flex items-start gap-2 mb-0">
                     <p className="text-[15px] font-semibold text-gray-800">
-                      If a student&apos;s screener score is below a threshold, should they automatically take the full DESSA?
+                      Should students who score below a threshold automatically require a full DESSA?
                     </p>
                     <button
                       onClick={() => {
@@ -1570,6 +1506,7 @@ function EditSetupPage() {
                       </label>
                     ))}
                   </div>
+                  {/* T-score input */}
                   <AnimatePresence initial={false}>
                     {cfg?.conditionalAssignment && (
                       <motion.div
@@ -1580,14 +1517,15 @@ function EditSetupPage() {
                         transition={{ duration: 0.18, ease: "easeOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="flex items-center gap-3 pt-4">
-                          <span className="text-[14px] text-gray-600">Assign full DESSA to students scoring at or below T-Score</span>
+                        <div className="flex items-center gap-3 mt-4 bg-[#f8fafc] border border-[#e8ecf0] rounded-xl px-4 py-3">
+                          <span className="text-[14px] text-gray-600">Assign the full DESSA to students who score</span>
                           <input
                             type="number"
                             value={cfg.tScore}
                             onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
-                            className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0]"
+                            className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1a4e8a]"
                           />
+                          <span className="text-[14px] text-gray-600 flex-1">or below</span>
                           <button
                             onClick={() => {
                               setHelpContent({
@@ -1625,8 +1563,89 @@ function EditSetupPage() {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  {/* Q3: Reset behavior — inside Q2 container, only when escalation enabled and not last window */}
+                  <AnimatePresence initial={false}>
+                    {cfg?.conditionalAssignment && i < windowCount - 1 && (
+                      <motion.div
+                        key="reset-behavior"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-6 pt-6 border-t border-[#e8ecf0]">
+                        <p className="text-[15px] font-semibold text-gray-800 mb-4">
+                          How should students who scored below the threshold begin the next window?
+                        </p>
+                        <div className="space-y-3">
+                          {([
+                            {
+                              value: "rescreen" as const,
+                              label: "Assess using the screener",
+                              desc: `The same threshold of ${cfg?.tScore ?? "40"} applies. If a student scores below, they will automatically be assessed using the full DESSA.`,
+                            },
+                            {
+                              value: "skip" as const,
+                              label: "Assess using the full DESSA",
+                              desc: "Students who previously scored below the threshold skip the screener and go straight to the full assessment in future windows.",
+                            },
+                          ]).map(({ value, label, desc }) => {
+                            const isSelected = cfg?.resetBehavior === value;
+                            return (
+                              <label key={value} className="flex items-start gap-3 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`reset-behavior-${i}`}
+                                  value={value}
+                                  checked={isSelected}
+                                  onChange={() => updateWindowConfig(i, { resetBehavior: value })}
+                                  className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
+                                />
+                                <div>
+                                  <p className="text-[15px] text-gray-800">{label}</p>
+                                  <p className="text-[13px] text-gray-500 mt-0.5">{desc}</p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 </RadioGroupField>
+
+                {/* Summary callout — commented out
+                <AnimatePresence initial={false}>
+                  {cfg?.conditionalAssignment !== null && cfg?.assessment === "screener" && (
+                    <motion.div
+                      key="summary"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="rounded-xl border border-[#c7d7ee] bg-[#eef2f8] px-5 py-4 text-[13.5px] text-gray-700 leading-relaxed space-y-1">
+                        <p>
+                          Educators administer a screener for all students.
+                          {cfg.conditionalAssignment && cfg.tScore
+                            ? Students who score {cfg.tScore} or below are automatically assigned the full DESSA.
+                            : No follow-up assessment is assigned based on score.
+                          }
+                        </p>
+                        {cfg.conditionalAssignment && i < windowCount - 1 && cfg.resetBehavior && (
+                          <p>
+                            Subsequent windows...
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                */}
               </motion.div>
             )}
           </AnimatePresence>
