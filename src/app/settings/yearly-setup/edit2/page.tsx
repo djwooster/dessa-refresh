@@ -1402,6 +1402,24 @@ function EditSetupPage() {
               )}
             </div>
           )}
+          {(() => {
+            const boldLabel = (name: string) => <span key={name} className="font-semibold text-[#15407a]">{name}</span>;
+            const joinLabels = (names: string[]) => {
+              if (names.length === 1) return boldLabel(names[0]);
+              return names.map((name, idx) => (
+                <span key={name}>{idx > 0 && (idx === names.length - 1 ? " and " : ", ")}{boldLabel(name)}</span>
+              ));
+            };
+            const skipWindows = Array.from({ length: i }, (_, j) => j)
+              .filter(j => windowConfigs[j]?.assessment === "screener" && windowConfigs[j]?.conditionalAssignment === true && windowConfigs[j]?.resetBehavior === "skip")
+              .map(j => labels[j]);
+            return skipWindows.length > 0 ? (
+              <div className="rounded-xl bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3 text-[13.5px] text-[#1a4e8a] leading-relaxed flex items-start gap-2.5">
+                <Info size={15} className="shrink-0 mt-0.5" />
+                <span>Students who scored below the threshold in {joinLabels(skipWindows)} are automatically assessed using the full DESSA for the rest of the year. Your selection below applies to all other students.</span>
+              </div>
+            ) : null;
+          })()}
           <RadioGroupField hasError={assessmentError}>
           <div>
             <div className="flex items-start gap-2 mb-0">
@@ -1467,7 +1485,7 @@ function EditSetupPage() {
                 <div>
                   <div className="flex items-start gap-2 mb-0">
                     <p className="text-[15px] font-semibold text-gray-800">
-                      Should students who score below a threshold automatically require a full DESSA?
+                      Should students who score below a threshold on the screener automatically require a full DESSA?
                     </p>
                     <button
                       onClick={() => {
@@ -1575,40 +1593,66 @@ function EditSetupPage() {
                         className="overflow-hidden"
                       >
                         <div className="mt-6 pt-6 border-t border-[#e8ecf0]">
-                        <p className="text-[15px] font-semibold text-gray-800 mb-4">
-                          How should students who scored below the threshold begin the next window?
-                        </p>
+                        <div className="flex items-start gap-2 mb-4">
+                          <p className="text-[15px] font-semibold text-gray-800">
+                            If a student scores below the threshold in this rating window, should they automatically be assessed using the full DESSA for the rest of the year?
+                          </p>
+                          <button
+                            onClick={() => {
+                              setHelpContent({
+                                title: "Full DESSA for the Rest of the Year",
+                                body: (
+                                  <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
+                                    <div>
+                                      <p className="text-[18px] font-semibold text-gray-800 mb-1">Yes — full DESSA for the rest of the year</p>
+                                      <p>Once a student scores below the threshold, they are automatically assigned the full DESSA for every remaining window this year.</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-[18px] font-semibold text-gray-800 mb-1">No — start fresh each window</p>
+                                      <p>Students begin each new window alongside everyone else, regardless of previous results.</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-[18px] font-semibold text-gray-800 mb-1">Which should I choose?</p>
+                                      <p>Choose <strong>Yes</strong> if students who need additional support should consistently receive a deeper assessment. Choose <strong>No</strong> if you want to re-evaluate each window to track growth over time, regardless of previous results.</p>
+                                    </div>
+                                  </div>
+                                ),
+                              });
+                              setHelpOpen(true);
+                            }}
+                            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
+                          >
+                            <HelpCircle size={15} />
+                          </button>
+                        </div>
                         <div className="space-y-3">
                           {([
                             {
-                              value: "rescreen" as const,
-                              label: "Assess using the screener",
-                              desc: `The same threshold of ${cfg?.tScore ?? "40"} applies. If a student scores below, they will automatically be assessed using the full DESSA.`,
+                              value: "skip" as const,
+                              label: "Yes",
+                              desc: <>Students with an identified <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setHelpContent({ title: "Need for Instruction", body: ( <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed"> <div> <p className="text-[18px] font-semibold text-gray-800 mb-1">What it means</p> <p>A student is classified as <strong>Need for Instruction</strong> when their DESSA T-score falls at or below the threshold you set. This indicates they may benefit from targeted social-emotional support.</p> </div> <div> <p className="text-[18px] font-semibold text-gray-800 mb-2">T-Score ranges</p> <div className="h-5 rounded-md overflow-hidden flex mb-3"> {TSCORE_RANGES.map(({ label, value, bg, text, flex }) => ( <div key={label} className="flex items-center justify-center" style={{ flex, backgroundColor: bg }}> <span className="text-[9px] font-bold" style={{ color: text }}>{value}</span> </div> ))} </div> <div className="space-y-2"> {TSCORE_RANGES.map(({ label, value, bg, text }) => ( <div key={label} className="flex items-center gap-2"> <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: bg, border: "1px solid #e5e7eb" }} /> <span className="flex-1 text-gray-700">{label}</span> <span className="font-semibold" style={{ color: text }}>{value}</span> </div> ))} </div> </div> </div> ) }); setHelpOpen(true); }} className="font-semibold text-[#1a4e8a] underline underline-offset-2 cursor-pointer hover:text-[#15407a] transition-colors">Need for Instruction</button> will be assessed using the full DESSA for all remaining rating windows.</>,
                             },
                             {
-                              value: "skip" as const,
-                              label: "Assess using the full DESSA",
-                              desc: "Students who previously scored below the threshold skip the screener and go straight to the full assessment in future windows.",
+                              value: "rescreen" as const,
+                              label: "No",
+                              desc: <>They start each new window fresh, assessed alongside all other students.</>,
                             },
-                          ]).map(({ value, label, desc }) => {
-                            const isSelected = cfg?.resetBehavior === value;
-                            return (
-                              <label key={value} className="flex items-start gap-3 cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name={`reset-behavior-${i}`}
-                                  value={value}
-                                  checked={isSelected}
-                                  onChange={() => updateWindowConfig(i, { resetBehavior: value })}
-                                  className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
-                                />
-                                <div>
-                                  <p className="text-[15px] text-gray-800">{label}</p>
-                                  <p className="text-[13px] text-gray-500 mt-0.5">{desc}</p>
-                                </div>
-                              </label>
-                            );
-                          })}
+                          ] as { value: "skip" | "rescreen"; label: string; desc: React.ReactNode }[]).map(({ value, label, desc }) => (
+                            <label key={value} className="flex items-start gap-3 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`reset-behavior-${i}`}
+                                value={value}
+                                checked={cfg?.resetBehavior === value}
+                                onChange={() => updateWindowConfig(i, { resetBehavior: value })}
+                                className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
+                              />
+                              <div>
+                                <p className="text-[15px] text-gray-800">{label}</p>
+                                <p className="text-[13px] text-gray-500 mt-0.5">{desc}</p>
+                              </div>
+                            </label>
+                          ))}
                         </div>
                         </div>
                       </motion.div>
