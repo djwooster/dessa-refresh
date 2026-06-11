@@ -884,6 +884,27 @@ function EditSetupPage() {
     load();
   }, [existingId]);
 
+  // ─── Read site config results on return ────────────────────────────────────
+
+  useEffect(() => {
+    if (searchParams.get("siteConfigSaved") !== "1") return;
+    try {
+      const stored = sessionStorage.getItem("site-config-context");
+      if (!stored) return;
+      const ctx = JSON.parse(stored);
+      if (!ctx.configs) return;
+      setSiteCustomSetups((prev) => {
+        const next = { ...prev };
+        for (const [key, val] of Object.entries(ctx.configs)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          next[key] = val as any;
+        }
+        return next;
+      });
+      setHasSiteCustomSetups(true);
+    } catch { /* ignore */ }
+  }, []);
+
   // ─── Save ──────────────────────────────────────────────────────────────────
 
   const saveToSupabase = async () => {
@@ -1882,7 +1903,26 @@ function EditSetupPage() {
                   <div className="flex items-center justify-end px-4 py-3 bg-[#f8fafc] border-t border-[#e8ecf0]">
                     <button
                       disabled={selectedSiteRows.length === 0}
-                      onClick={() => openSiteModal(selectedSiteRows)}
+                      onClick={() => {
+                        const params = new URLSearchParams({
+                          sites: selectedSiteRows.join(","),
+                          year: searchParams.get("year") ?? "2025-2026",
+                          windowCount: String(windowCount),
+                          dates: dates.join(","),
+                          returnTo: `/settings/yearly-setup/edit2${existingId ? `?id=${existingId}` : ""}`,
+                        });
+                        // Store current site configs in sessionStorage for the config page to read
+                        try {
+                          const existing = sessionStorage.getItem("site-config-context");
+                          const ctx = existing ? JSON.parse(existing) : { configs: {} };
+                          ctx.configs = ctx.configs ?? {};
+                          selectedSiteRows.forEach(site => {
+                            if (siteCustomSetups[site]) ctx.configs[site] = siteCustomSetups[site];
+                          });
+                          sessionStorage.setItem("site-config-context", JSON.stringify(ctx));
+                        } catch { /* ignore */ }
+                        router.push(`/settings/yearly-setup/site-config?${params.toString()}`);
+                      }}
                       className="shrink-0 h-8 px-4 rounded-lg text-[13px] font-semibold transition-colors cursor-pointer bg-[#1a4e8a] text-white hover:bg-[#15407a] disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {selectedSiteRows.length > 0
