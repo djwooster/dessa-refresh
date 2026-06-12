@@ -9,6 +9,7 @@ const SETTINGS_NAV = [
   { label: "Students",                 href: "/settings/students" },
   { label: "Staff",                    href: "/settings/staff" },
   { label: "Yearly Setup",             href: "/settings/yearly-setup" },
+  { label: "Yearly Setup (Single)",    href: "/settings/yearly-setup/single" },
   { label: "Assignment Review",        href: "/settings/assignment-review" },
   { label: "Student Self-Report",      href: "/settings/student-self-report" },
   { label: "Rating Window Reminders",  href: "/settings/rating-window-reminders" },

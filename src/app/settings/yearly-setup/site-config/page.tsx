@@ -397,22 +397,9 @@ function SiteConfigPage() {
         <span className="text-[13px] text-gray-400 shrink-0">{yearDisplay}</span>
       </header>
 
-      {/* Breadcrumb */}
-      <div className="px-8 py-3 border-b border-[#f0f4f8] bg-white sticky top-[60px] z-10">
-        <nav className="flex items-center gap-1.5 text-[12px] text-gray-400">
-          <span>Yearly Setup</span>
-          <span>›</span>
-          <span>Custom Schedule Setup</span>
-          <span>›</span>
-          <span className="text-gray-700 font-medium">
-            {sites.length === 1 ? sites[0] : `${sites.length} sites`}
-          </span>
-        </nav>
-      </div>
-
       {/* Body */}
       <main className="flex-1 overflow-y-auto pb-28">
-        <div className="max-w-[900px] mx-auto px-8 py-8 space-y-10">
+        <div className="px-8 py-8 space-y-10">
 
           {/* Group name */}
           {sites.length > 1 && (
@@ -509,7 +496,7 @@ function SiteConfigPage() {
           {/* Per-window sections */}
           <div>
             <p className="text-[18px] font-bold text-gray-900 mb-5">Configure each window</p>
-            <div className="space-y-6">
+            <div className="grid grid-cols-3 gap-6 items-start">
               {Array.from({ length: windowCount }, (_, i) => (
                 <WindowSection
                   key={i}

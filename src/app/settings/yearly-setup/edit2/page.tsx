@@ -7,6 +7,7 @@ import {
   ArrowRight,
   HelpCircle,
   Info,
+  ExternalLink,
   Zap,
   ClipboardList,
   X,
@@ -28,7 +29,13 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -89,7 +96,12 @@ type WindowConfig = {
   resetBehavior: "rescreen" | "skip" | "rescreen-threshold" | null;
 };
 
-type SiteCustomConfig = { windowCount: number; dates: string[]; windowConfigs: WindowConfig[]; groupName?: string };
+type SiteCustomConfig = {
+  windowCount: number;
+  dates: string[];
+  windowConfigs: WindowConfig[];
+  groupName?: string;
+};
 
 const DEFAULT_WINDOW_CONFIG: WindowConfig = {
   assessment: null,
@@ -206,7 +218,11 @@ function WizardTimeline({
             <div
               key={i}
               className="flex items-center justify-center overflow-hidden shrink-0"
-              style={{ width: `${width}%`, backgroundColor: color.bg, borderRight: parsed[i + 1] ? "2px solid white" : undefined }}
+              style={{
+                width: `${width}%`,
+                backgroundColor: color.bg,
+                borderRight: parsed[i + 1] ? "2px solid white" : undefined,
+              }}
             >
               <span
                 className="text-[10px] font-bold truncate px-1"
@@ -223,9 +239,15 @@ function WizardTimeline({
 }
 
 const TSCORE_RANGES = [
-  { label: "Need for Instruction", value: "≤ 40", bg: "#fecaca", text: "#b91c1c", flex: 2 },
-  { label: "Typical",              value: "41–59", bg: "#dbeafe", text: "#1e40af", flex: 3 },
-  { label: "Strength",             value: "≥ 60",  bg: "#dcfce7", text: "#166534", flex: 2 },
+  {
+    label: "Need for Instruction",
+    value: "≤ 40",
+    bg: "#fecaca",
+    text: "#b91c1c",
+    flex: 2,
+  },
+  { label: "Typical", value: "41–59", bg: "#dbeafe", text: "#1e40af", flex: 3 },
+  { label: "Strength", value: "≥ 60", bg: "#dcfce7", text: "#166534", flex: 2 },
 ];
 
 function TScoreInfoTooltip() {
@@ -257,20 +279,38 @@ function TScoreInfoTooltip() {
           className="fixed w-[260px] bg-white border border-[#e8ecf0] rounded-xl shadow-lg p-4 z-[100]"
           style={{ bottom: pos.bottom, right: pos.right }}
         >
-          <p className="text-[12px] font-semibold text-gray-700 mb-3">T-Score ranges</p>
+          <p className="text-[12px] font-semibold text-gray-700 mb-3">
+            T-Score ranges
+          </p>
           <div className="h-5 rounded-md overflow-hidden flex mb-3">
             {TSCORE_RANGES.map(({ label, value, bg, text, flex }) => (
-              <div key={label} className="flex items-center justify-center" style={{ flex, backgroundColor: bg }}>
-                <span className="text-[9px] font-bold" style={{ color: text }}>{value}</span>
+              <div
+                key={label}
+                className="flex items-center justify-center"
+                style={{ flex, backgroundColor: bg }}
+              >
+                <span className="text-[9px] font-bold" style={{ color: text }}>
+                  {value}
+                </span>
               </div>
             ))}
           </div>
           <div className="space-y-1.5">
             {TSCORE_RANGES.map(({ label, value, bg, text }) => (
               <div key={label} className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: bg, border: "1px solid #e5e7eb" }} />
-                <span className="text-[12px] text-gray-600 flex-1">{label}</span>
-                <span className="text-[12px] font-semibold" style={{ color: text }}>{value}</span>
+                <div
+                  className="w-2.5 h-2.5 rounded-sm shrink-0"
+                  style={{ backgroundColor: bg, border: "1px solid #e5e7eb" }}
+                />
+                <span className="text-[12px] text-gray-600 flex-1">
+                  {label}
+                </span>
+                <span
+                  className="text-[12px] font-semibold"
+                  style={{ color: text }}
+                >
+                  {value}
+                </span>
               </div>
             ))}
           </div>
@@ -323,7 +363,8 @@ function buildScreens(
     screens.push({
       id: "name",
       title: "What should we call this group?",
-      subtitle: "Give this custom schedule a name so Site Leaders and admins can identify it.",
+      subtitle:
+        "Give this custom schedule a name so Site Leaders and admins can identify it.",
     });
     screens.push({
       id: "sites",
@@ -338,9 +379,18 @@ function buildScreens(
     helpTitle: "About Rating Windows",
     helpBody: (
       <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
-        <p>A rating window is a period during the school year when teachers complete DESSA assessments for their students.</p>
-        <p>Most programs use <strong>3 windows</strong> — Pre, Mid, and Post — which lets you track social-emotional growth across the year.</p>
-        <p>Choose a number that matches your program&apos;s schedule. You can adjust this in future years.</p>
+        <p>
+          A rating window is a period during the school year when teachers
+          complete DESSA assessments for their students.
+        </p>
+        <p>
+          Most programs use <strong>3 windows</strong> — Pre, Mid, and Post —
+          which lets you track social-emotional growth across the year.
+        </p>
+        <p>
+          Choose a number that matches your program&apos;s schedule. You can
+          adjust this in future years.
+        </p>
       </div>
     ),
   });
@@ -352,28 +402,75 @@ function buildScreens(
       helpTitle: "About Start Dates",
       helpBody: (
         <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
-          <p>The start date is when this rating window opens. Once it opens, teachers can begin submitting assessments for students in this period.</p>
-          <p>Good choices are dates that align with your school calendar — the start of a semester, after a break, or at the beginning of a grading period.</p>
-          <p>Make sure there&apos;s enough time between windows for teachers to complete their assessments.</p>
+          <p>
+            The start date is when this rating window opens. Once it opens,
+            teachers can begin submitting assessments for students in this
+            period.
+          </p>
+          <p>
+            Good choices are dates that align with your school calendar — the
+            start of a semester, after a break, or at the beginning of a grading
+            period.
+          </p>
+          <p>
+            Make sure there&apos;s enough time between windows for teachers to
+            complete their assessments.
+          </p>
         </div>
       ),
     });
-
   }
 
-  if (!isOverride) screens.push({
-    id: "site-overrides",
-    title: "Should all sites follow this setup?",
-    subtitle: "You can give individual sites their own windows, dates, and assessment types.",
-    helpTitle: "Site Custom Setups",
-    helpBody: (
-      <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
-        <p>By default, every site in your organization follows the same rating windows and assessment configuration.</p>
-        <p>If a site has a different schedule — for example, a school on a trimester calendar — you can give it a custom setup with its own dates and assessment types.</p>
-        <p>Custom setups are independent from the default. Changes to the default setup won&apos;t affect sites with a custom setup.</p>
-      </div>
-    ),
-  });
+  // reset-behavior screen commented out — question now appears inline on first screener window
+  /* if (windowConfigs.some((wc) => wc.assessment === "screener")) {
+    screens.push({
+      id: "reset-behavior",
+      title: "If a student scores below the threshold on a screener in any rating window, should they automatically be assessed using the full DESSA for the rest of the year?",
+      helpTitle: "Year-round Escalation",
+      helpBody: (
+        <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
+          <div>
+            <p className="text-[18px] font-semibold text-gray-800 mb-1">Yes — full DESSA for the rest of the year</p>
+            <p>Once a student scores below the threshold in any screener window, they are automatically assigned the full DESSA for every remaining window this year.</p>
+          </div>
+          <div>
+            <p className="text-[18px] font-semibold text-gray-800 mb-1">No — start fresh each window</p>
+            <p>Students begin each new window alongside everyone else, regardless of previous screener results.</p>
+          </div>
+          <div>
+            <p className="text-[18px] font-semibold text-gray-800 mb-1">Which should I choose?</p>
+            <p>Choose <strong>Yes</strong> if students who need additional support should consistently receive a deeper assessment. Choose <strong>No</strong> if you want to re-evaluate each window to track growth over time.</p>
+          </div>
+        </div>
+      ),
+    });
+  } */
+
+  if (!isOverride)
+    screens.push({
+      id: "site-overrides",
+      title: "Should all sites follow this setup?",
+      subtitle:
+        "You can give individual sites their own windows, dates, and assessment types.",
+      helpTitle: "Site Custom Setups",
+      helpBody: (
+        <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
+          <p>
+            By default, every site in your organization follows the same rating
+            windows and assessment configuration.
+          </p>
+          <p>
+            If a site has a different schedule — for example, a school on a
+            trimester calendar — you can give it a custom setup with its own
+            dates and assessment types.
+          </p>
+          <p>
+            Custom setups are independent from the default. Changes to the
+            default setup won&apos;t affect sites with a custom setup.
+          </p>
+        </div>
+      ),
+    });
 
   screens.push({
     id: "students",
@@ -381,9 +478,19 @@ function buildScreens(
     helpTitle: "Student Self-Assessment Access",
     helpBody: (
       <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
-        <p>The DESSA student self-report lets students rate themselves on social-emotional skills.</p>
-        <p>By default, student assessments open automatically when a rating window opens — no extra step needed.</p>
-        <p>If you enable Site Leader management, each Site Leader can choose exactly when students at their site can access their self-assessment within the window, giving them more control over timing.</p>
+        <p>
+          The DESSA student self-report lets students rate themselves on
+          social-emotional skills.
+        </p>
+        <p>
+          By default, student assessments open automatically when a rating
+          window opens — no extra step needed.
+        </p>
+        <p>
+          If you enable Site Leader management, each Site Leader can choose
+          exactly when students at their site can access their self-assessment
+          within the window, giving them more control over timing.
+        </p>
       </div>
     ),
   });
@@ -411,40 +518,135 @@ const LAST_YEAR = {
 };
 
 const MOCK_SITES = [
-  "Adams Middle","Agave High","Arroyo Seco Elementary","Arthur Elementary",
-  "Aspen Grove Middle","Bayshore Middle","Birchwood Middle","Blackrock High",
-  "Bluehills High","Bluffview Middle","Bridgeview Elementary","Bronzedale High",
-  "Buchanan Middle","Bush Elementary","Cactus Wren Elementary","Canyon View Middle",
-  "Capstone High","Carter Middle","Cedarbrook Elementary","Chaparral Middle",
-  "Clearwater Middle","Cleveland Middle","Cliffside Elementary","Clinton Middle",
-  "Coastline High","Coolidge Middle","Copperfield Middle","Coral Reef High",
-  "Cornerstone High","Cottonwood Elementary","Creekside Elementary","Crestwood High",
-  "Desert Ridge Elementary","Dolphin Bay Elementary","Eagle View Elementary","Eastview Middle",
-  "Eisenhower High","Elmwood High","Fairview High","Falcon Ridge High",
-  "FDR Elementary","Fillmore High","Flint Ridge Middle","Ford Elementary",
-  "Garfield High","Glenview Middle","Goldfield Middle","Granite Ridge Middle",
-  "Grant Elementary","Greenlawn Elementary","GW Bush High","Harborview Elementary",
-  "Harding Elementary","Harrison Prep","Hawk Creek Middle","Hayes Middle",
-  "Heron Bay Elementary","Hillcrest High","Hillside High","Hoover High",
-  "Inland Empire Elementary","Ironwood Elementary","Jackson Academy","Jefferson Elementary",
-  "Johnson High","Juniper Valley Elementary","Kennedy Elementary","Keystone Elementary",
-  "Lakeshore Middle","Lakeview Middle","LBJ Middle","Limestone High",
-  "Lincoln Elementary","Madison High","Manatee Middle","Maplewood High",
-  "Marble Falls Elementary","McKinley High","Meadowbrook Elementary","Mesa Verde High",
-  "Mesquite Middle","Milestone Middle","Monroe Elementary","Nixon High",
-  "Northside High","Oakwood Middle","Obama Elementary","Ocotillo Middle",
-  "Osprey High","Palo Verde High","Parkview Elementary","Pelican Cove Middle",
-  "Pierce Elementary","Pinecrest Elementary","Pinnacle Middle","Plains High",
-  "Polk Elementary","Pondview Middle","Prairie View Middle","Reagan High",
-  "Redwood High","Ridgecrest High","Riverbend High","Riverside Elementary",
-  "Roadrunner Middle","Roosevelt Elementary","Roosevelt Middle","Sage Hills High",
-  "Sagebrush Middle","Saguaro Elementary","Sandstone Elementary","Seagull Shores High",
-  "Silverstone Elementary","Southside Elementary","Summit Elementary","Sunrise Middle",
-  "Sunset Elementary","Taft Middle","Taylor Middle","Truman Middle",
-  "Tumbleweed High","Tyler Charter","Valley High","Washington High",
-  "Westwood High","Whitewater Middle","Willowbrook Elementary","Wilson High",
+  "Adams Middle",
+  "Agave High",
+  "Arroyo Seco Elementary",
+  "Arthur Elementary",
+  "Aspen Grove Middle",
+  "Bayshore Middle",
+  "Birchwood Middle",
+  "Blackrock High",
+  "Bluehills High",
+  "Bluffview Middle",
+  "Bridgeview Elementary",
+  "Bronzedale High",
+  "Buchanan Middle",
+  "Bush Elementary",
+  "Cactus Wren Elementary",
+  "Canyon View Middle",
+  "Capstone High",
+  "Carter Middle",
+  "Cedarbrook Elementary",
+  "Chaparral Middle",
+  "Clearwater Middle",
+  "Cleveland Middle",
+  "Cliffside Elementary",
+  "Clinton Middle",
+  "Coastline High",
+  "Coolidge Middle",
+  "Copperfield Middle",
+  "Coral Reef High",
+  "Cornerstone High",
+  "Cottonwood Elementary",
+  "Creekside Elementary",
+  "Crestwood High",
+  "Desert Ridge Elementary",
+  "Dolphin Bay Elementary",
+  "Eagle View Elementary",
+  "Eastview Middle",
+  "Eisenhower High",
+  "Elmwood High",
+  "Fairview High",
+  "Falcon Ridge High",
+  "FDR Elementary",
+  "Fillmore High",
+  "Flint Ridge Middle",
+  "Ford Elementary",
+  "Garfield High",
+  "Glenview Middle",
+  "Goldfield Middle",
+  "Granite Ridge Middle",
+  "Grant Elementary",
+  "Greenlawn Elementary",
+  "GW Bush High",
+  "Harborview Elementary",
+  "Harding Elementary",
+  "Harrison Prep",
+  "Hawk Creek Middle",
+  "Hayes Middle",
+  "Heron Bay Elementary",
+  "Hillcrest High",
+  "Hillside High",
+  "Hoover High",
+  "Inland Empire Elementary",
+  "Ironwood Elementary",
+  "Jackson Academy",
+  "Jefferson Elementary",
+  "Johnson High",
+  "Juniper Valley Elementary",
+  "Kennedy Elementary",
+  "Keystone Elementary",
+  "Lakeshore Middle",
+  "Lakeview Middle",
+  "LBJ Middle",
+  "Limestone High",
+  "Lincoln Elementary",
+  "Madison High",
+  "Manatee Middle",
+  "Maplewood High",
+  "Marble Falls Elementary",
+  "McKinley High",
+  "Meadowbrook Elementary",
+  "Mesa Verde High",
+  "Mesquite Middle",
+  "Milestone Middle",
+  "Monroe Elementary",
+  "Nixon High",
+  "Northside High",
+  "Oakwood Middle",
+  "Obama Elementary",
+  "Ocotillo Middle",
+  "Osprey High",
+  "Palo Verde High",
+  "Parkview Elementary",
+  "Pelican Cove Middle",
+  "Pierce Elementary",
+  "Pinecrest Elementary",
+  "Pinnacle Middle",
+  "Plains High",
+  "Polk Elementary",
+  "Pondview Middle",
+  "Prairie View Middle",
+  "Reagan High",
+  "Redwood High",
+  "Ridgecrest High",
+  "Riverbend High",
+  "Riverside Elementary",
+  "Roadrunner Middle",
+  "Roosevelt Elementary",
+  "Roosevelt Middle",
+  "Sage Hills High",
+  "Sagebrush Middle",
+  "Saguaro Elementary",
+  "Sandstone Elementary",
+  "Seagull Shores High",
+  "Silverstone Elementary",
+  "Southside Elementary",
+  "Summit Elementary",
+  "Sunrise Middle",
+  "Sunset Elementary",
+  "Taft Middle",
+  "Taylor Middle",
+  "Truman Middle",
+  "Tumbleweed High",
+  "Tyler Charter",
+  "Valley High",
+  "Washington High",
+  "Westwood High",
+  "Whitewater Middle",
+  "Willowbrook Elementary",
+  "Wilson High",
 ];
-
 
 const SITES_IN_OTHER_OVERRIDES: Record<string, string> = {};
 
@@ -606,7 +808,10 @@ function LastYearModal({
 // RadioGroupField: wraps children with a red border when hasError.
 // FieldErrorText: renders the inline error message — place it right after the question text.
 
-function RadioGroupField({ hasError, children }: {
+function RadioGroupField({
+  hasError,
+  children,
+}: {
   hasError: boolean;
   children: React.ReactNode;
 }) {
@@ -615,7 +820,9 @@ function RadioGroupField({ hasError, children }: {
       className={`rounded-xl border p-4 transition-colors ${
         hasError ? "border-red-400 bg-red-50/40" : "border-[#e8ecf0]"
       }`}
-      style={hasError ? { boxShadow: "0 0 0 1px rgba(239,68,68,0.25)" } : undefined}
+      style={
+        hasError ? { boxShadow: "0 0 0 1px rgba(239,68,68,0.25)" } : undefined
+      }
     >
       {children}
     </div>
@@ -659,13 +866,20 @@ function SuccessAnimation() {
           className="absolute inset-0 rounded-full border-2 border-[#1a4e8a]"
           initial={{ scale: 1, opacity: 0.4 }}
           animate={{ scale: 2.2, opacity: 0 }}
-          transition={{ duration: 1.8, delay: n * 0.7, repeat: Infinity, ease: "easeOut" }}
+          transition={{
+            duration: 1.8,
+            delay: n * 0.7,
+            repeat: Infinity,
+            ease: "easeOut",
+          }}
         />
       ))}
       <svg width="120" height="120" viewBox="0 0 120 120">
         {/* Background circle fill */}
         <motion.circle
-          cx="60" cy="60" r={r}
+          cx="60"
+          cy="60"
+          r={r}
           fill="#eef2f8"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -674,7 +888,9 @@ function SuccessAnimation() {
         />
         {/* Animated stroke circle */}
         <motion.circle
-          cx="60" cy="60" r={r}
+          cx="60"
+          cy="60"
+          r={r}
           fill="none"
           stroke="#1a4e8a"
           strokeWidth="3.5"
@@ -727,39 +943,51 @@ function EditSetupPage() {
     DEFAULT_STATE.conditionalAssignment,
   );
   const [tScore, setTScore] = useState(DEFAULT_STATE.tScore);
-  const [resetBehavior, setResetBehavior] = useState<"rescreen" | "skip" | null>(
-    DEFAULT_STATE.resetBehavior,
-  );
+  const [resetBehavior, setResetBehavior] = useState<
+    "rescreen" | "skip" | null
+  >(DEFAULT_STATE.resetBehavior);
   const [windowConfigs, setWindowConfigs] = useState<WindowConfig[]>(
     DEFAULT_STATE.windowConfigs,
   );
   const [siteLeaderManage, setSiteLeaderManage] = useState(
     DEFAULT_STATE.siteLeaderManage,
   );
-  const [hasSiteCustomSetups, setHasSiteCustomSetups] = useState<boolean | null>(null);
-  const [siteCustomSetups, setSiteCustomSetups] = useState<Record<string, SiteCustomConfig | null>>({});
+  const [hasSiteCustomSetups, setHasSiteCustomSetups] = useState<
+    boolean | null
+  >(null);
+  const [siteCustomSetups, setSiteCustomSetups] = useState<
+    Record<string, SiteCustomConfig | null>
+  >({});
   const [siteSearchQuery, setSiteSearchQuery] = useState("");
   const [selectedSiteRows, setSelectedSiteRows] = useState<string[]>([]);
   const [siteModalOpen, setSiteModalOpen] = useState(false);
   const [siteModalTargets, setSiteModalTargets] = useState<string[]>([]);
-  const [siteModalConfig, setSiteModalConfig] = useState<SiteCustomConfig | null>(null);
+  const [siteModalConfig, setSiteModalConfig] =
+    useState<SiteCustomConfig | null>(null);
   const [siteModalGroupName, setSiteModalGroupName] = useState("");
   const [siteModalValidated, setSiteModalValidated] = useState(false);
   const [addSiteOpen, setAddSiteOpen] = useState(false);
   const [addSiteSearch, setAddSiteSearch] = useState("");
   const addSiteRef = useRef<HTMLDivElement>(null);
-  const [pulsingWindowIndices, setPulsingWindowIndices] = useState<Set<number>>(new Set());
+  const [pulsingWindowIndices, setPulsingWindowIndices] = useState<Set<number>>(
+    new Set(),
+  );
   const prevModalWindowCountRef = useRef<number>(0);
   const windowCardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // UI state
-  const [currentScreenId, setCurrentScreenId] = useState(isOverride ? "name" : "window-count");
+  const [currentScreenId, setCurrentScreenId] = useState(
+    isOverride ? "name" : "window-count",
+  );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [assessmentError, setAssessmentError] = useState(false);
   const [escalationError, setEscalationError] = useState(false);
   const [siteOverridesError, setSiteOverridesError] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [helpContent, setHelpContent] = useState<{ title: string; body: React.ReactNode } | null>(null);
+  const [helpContent, setHelpContent] = useState<{
+    title: string;
+    body: React.ReactNode;
+  } | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLastYear, setShowLastYear] = useState(false);
@@ -768,9 +996,16 @@ function EditSetupPage() {
   const [countdown, setCountdown] = useState(4);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [openReviewSections, setOpenReviewSections] = useState<string[]>(["windows", "assessment", "sites", "students"]);
+  const [openReviewSections, setOpenReviewSections] = useState<string[]>([
+    "windows",
+    "assessment",
+    "sites",
+    "students",
+  ]);
 
   const chipsScrollRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const siteTableRef = useRef<HTMLDivElement>(null);
 
   const initialStateRef = useRef({
     ...DEFAULT_STATE,
@@ -780,12 +1015,33 @@ function EditSetupPage() {
 
   // ─── Apply past year on mount ──────────────────────────────────────────────
 
-  useEffect(() => { setValidationError(null); setAssessmentError(false); setEscalationError(false); setSiteOverridesError(false); }, [currentScreenId]);
+  useEffect(() => {
+    setValidationError(null);
+    setAssessmentError(false);
+    setEscalationError(false);
+    setSiteOverridesError(false);
+  }, [currentScreenId]);
+
+  useEffect(() => {
+    if (hasSiteCustomSetups !== true) return;
+    setTimeout(() => {
+      const table = siteTableRef.current;
+      if (!table) return;
+      // SCROLL_OFFSET: px from the top of the viewport where the table should land.
+      // App header (~60) + wizard header (~60) + gap — adjust to taste.
+      const SCROLL_OFFSET = 1;
+      table.style.scrollMarginTop = `${SCROLL_OFFSET}px`;
+      table.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+  }, [hasSiteCustomSetups]);
 
   useEffect(() => {
     if (!addSiteOpen) return;
     const handle = (e: MouseEvent) => {
-      if (addSiteRef.current && !addSiteRef.current.contains(e.target as Node)) {
+      if (
+        addSiteRef.current &&
+        !addSiteRef.current.contains(e.target as Node)
+      ) {
         setAddSiteOpen(false);
         setAddSiteSearch("");
       }
@@ -799,10 +1055,13 @@ function EditSetupPage() {
     const prev = prevModalWindowCountRef.current;
     const curr = siteModalConfig.windowCount;
     if (curr > prev && prev > 0) {
-      const newIndices = new Set(Array.from({ length: curr - prev }, (_, k) => prev + k));
+      const newIndices = new Set(
+        Array.from({ length: curr - prev }, (_, k) => prev + k),
+      );
       setPulsingWindowIndices(newIndices);
       const firstNewCard = windowCardRefs.current[prev];
-      if (firstNewCard) firstNewCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      if (firstNewCard)
+        firstNewCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
       const t = setTimeout(() => setPulsingWindowIndices(new Set()), 3200);
       prevModalWindowCountRef.current = curr;
       return () => clearTimeout(t);
@@ -815,16 +1074,20 @@ function EditSetupPage() {
     setWindowCount(LAST_YEAR.windowCount);
     setDates(LAST_YEAR.windows.map((w) => w.iso));
     setWindowConfigs(
-      Array(LAST_YEAR.windowCount).fill(null).map(() => ({
-        assessment: "screener" as const,
-        conditionalAssignment: LAST_YEAR.conditionalAssignment,
-        tScore: LAST_YEAR.tScore,
-        resetBehavior: LAST_YEAR.resetEachWindow ? "rescreen" as const : "skip" as const,
-      }))
+      Array(LAST_YEAR.windowCount)
+        .fill(null)
+        .map(() => ({
+          assessment: "screener" as const,
+          conditionalAssignment: LAST_YEAR.conditionalAssignment,
+          tScore: LAST_YEAR.tScore,
+          resetBehavior: LAST_YEAR.resetEachWindow
+            ? ("rescreen" as const)
+            : ("skip" as const),
+        })),
     );
     setSiteLeaderManage(LAST_YEAR.siteLeaderManage);
     setShowReview(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ─── Load existing setup ───────────────────────────────────────────────────
@@ -846,12 +1109,19 @@ function EditSetupPage() {
         );
         return wc
           ? {
-              assessment: (wc.assessment_type ?? data.assessment_type ?? "screener") as "screener" | "full",
+              assessment: (wc.assessment_type ??
+                data.assessment_type ??
+                "screener") as "screener" | "full",
               conditionalAssignment: wc.conditional_assignment,
               tScore: wc.t_score,
               resetBehavior: wc.reset_behavior as "rescreen" | "skip",
             }
-          : { ...DEFAULT_WINDOW_CONFIG, assessment: (data.assessment_type ?? "screener") as "screener" | "full" };
+          : {
+              ...DEFAULT_WINDOW_CONFIG,
+              assessment: (data.assessment_type ?? "screener") as
+                | "screener"
+                | "full",
+            };
       });
       const loadedSites =
         data.yearly_setup_sites?.map(
@@ -902,14 +1172,20 @@ function EditSetupPage() {
         return next;
       });
       setHasSiteCustomSetups(true);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // ─── Save ──────────────────────────────────────────────────────────────────
 
   const saveToSupabase = async () => {
     setSaving(true);
-    const derivedAssessment = windowConfigs.some((wc) => wc.assessment === "screener") ? "screener" : "full";
+    const derivedAssessment = windowConfigs.some(
+      (wc) => wc.assessment === "screener",
+    )
+      ? "screener"
+      : "full";
     const payload = {
       is_default: !isOverride,
       group_name: isOverride ? overrideName || null : null,
@@ -917,9 +1193,12 @@ function EditSetupPage() {
       window_count: windowCount,
       dates,
       assessment_type: derivedAssessment,
-      conditional_assignment: windowConfigs.some((wc) => wc.conditionalAssignment === true),
+      conditional_assignment: windowConfigs.some(
+        (wc) => wc.conditionalAssignment === true,
+      ),
       t_score: windowConfigs[0]?.tScore ?? tScore,
-      reset_behavior: windowConfigs[0]?.resetBehavior ?? resetBehavior ?? "rescreen",
+      reset_behavior:
+        windowConfigs[0]?.resetBehavior ?? resetBehavior ?? "rescreen",
       same_config_all_windows: false,
       site_leader_manage: siteLeaderManage ?? false,
     };
@@ -975,7 +1254,11 @@ function EditSetupPage() {
         .select("setup_id")
         .in("site_name", MOCK_SITES);
       if (existingSiteLinks?.length) {
-        const linkedIds = [...new Set(existingSiteLinks.map((r: { setup_id: string }) => r.setup_id))];
+        const linkedIds = [
+          ...new Set(
+            existingSiteLinks.map((r: { setup_id: string }) => r.setup_id),
+          ),
+        ];
         const { data: staleSetups } = await db
           .from("yearly_setups")
           .select("id")
@@ -984,7 +1267,10 @@ function EditSetupPage() {
           .eq("year", "2025-2026");
         if (staleSetups?.length) {
           const ids = staleSetups.map((r: { id: string }) => r.id);
-          await db.from("yearly_setup_window_configs").delete().in("setup_id", ids);
+          await db
+            .from("yearly_setup_window_configs")
+            .delete()
+            .in("setup_id", ids);
           await db.from("yearly_setup_sites").delete().in("setup_id", ids);
           await db.from("yearly_setups").delete().in("id", ids);
         }
@@ -993,7 +1279,10 @@ function EditSetupPage() {
       // Re-insert, one DB record per unique group name
       if (hasSiteCustomSetups === true) {
         // Bucket sites by their group name (falling back to the site name for ungrouped sites)
-        const groups = new Map<string, { sites: string[]; cfg: SiteCustomConfig }>();
+        const groups = new Map<
+          string,
+          { sites: string[]; cfg: SiteCustomConfig }
+        >();
         for (const [siteName, siteCfg] of Object.entries(siteCustomSetups)) {
           if (!siteCfg) continue;
           const key = siteCfg.groupName?.trim() || siteName;
@@ -1004,7 +1293,11 @@ function EditSetupPage() {
         for (const [groupName, { sites, cfg }] of groups) {
           const allDates = cfg.dates;
           const totalCount = cfg.windowCount;
-          const siteAssessmentType = cfg.windowConfigs.some((wc) => wc.assessment === "screener") ? "screener" : "full";
+          const siteAssessmentType = cfg.windowConfigs.some(
+            (wc) => wc.assessment === "screener",
+          )
+            ? "screener"
+            : "full";
           const { data: newRecord } = await db
             .from("yearly_setups")
             .insert({
@@ -1014,7 +1307,9 @@ function EditSetupPage() {
               window_count: totalCount,
               dates: allDates,
               assessment_type: siteAssessmentType,
-              conditional_assignment: cfg.windowConfigs.some((wc) => wc.conditionalAssignment === true),
+              conditional_assignment: cfg.windowConfigs.some(
+                (wc) => wc.conditionalAssignment === true,
+              ),
               t_score: cfg.windowConfigs[0]?.tScore ?? "40",
               reset_behavior: cfg.windowConfigs[0]?.resetBehavior ?? "rescreen",
               same_config_all_windows: false,
@@ -1024,9 +1319,11 @@ function EditSetupPage() {
             .single();
           const setupId = newRecord?.id;
           if (setupId) {
-            await db.from("yearly_setup_sites").insert(
-              sites.map((site) => ({ setup_id: setupId, site_name: site }))
-            );
+            await db
+              .from("yearly_setup_sites")
+              .insert(
+                sites.map((site) => ({ setup_id: setupId, site_name: site })),
+              );
             if (cfg.windowConfigs.length > 0) {
               await db.from("yearly_setup_window_configs").insert(
                 cfg.windowConfigs.map((wc, i) => ({
@@ -1035,7 +1332,7 @@ function EditSetupPage() {
                   conditional_assignment: wc.conditionalAssignment,
                   t_score: wc.tScore,
                   reset_behavior: wc.resetBehavior,
-                }))
+                })),
               );
             }
           }
@@ -1082,12 +1379,16 @@ function EditSetupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [isOverride, windowCount, JSON.stringify(windowConfigs), labels.join(",")],
   );
-  const currentScreenIdx = Math.max(0, screenSequence.findIndex((s) => s.id === currentScreenId));
+  const currentScreenIdx = Math.max(
+    0,
+    screenSequence.findIndex((s) => s.id === currentScreenId),
+  );
   const currentScreen = screenSequence[currentScreenIdx] ?? screenSequence[0];
   const totalScreens = screenSequence.length;
   const isFirstScreen = currentScreenIdx === 0;
   const isLastScreen = currentScreenIdx === totalScreens - 1;
-  const progress = totalScreens > 0 ? ((currentScreenIdx + 1) / totalScreens) * 100 : 0;
+  const progress =
+    totalScreens > 0 ? ((currentScreenIdx + 1) / totalScreens) * 100 : 0;
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
@@ -1105,11 +1406,23 @@ function EditSetupPage() {
       const cfg = windowConfigs[i];
       if (!dates[i]) return false;
       if (cfg?.assessment === null) return false;
-      if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === null) return false;
-      if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === true && i < windowCount - 1 && cfg?.resetBehavior === null) return false;
+      if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === null)
+        return false;
+      const isFirstScreener = !windowConfigs
+        .slice(0, i)
+        .some((wc) => wc.assessment === "screener");
+      if (
+        isFirstScreener &&
+        cfg?.assessment === "screener" &&
+        cfg?.conditionalAssignment === true &&
+        resetBehavior === null
+      )
+        return false;
       return true;
     }
-    if (currentScreen.id === "site-overrides") return hasSiteCustomSetups !== null;
+    if (currentScreen.id === "reset-behavior") return resetBehavior !== null;
+    if (currentScreen.id === "site-overrides")
+      return hasSiteCustomSetups !== null;
     if (currentScreen.id === "students") return siteLeaderManage !== null;
     return true;
   };
@@ -1121,11 +1434,25 @@ function EditSetupPage() {
       const cfg = windowConfigs[i];
       if (!dates[i]) return "Please select an opening date.";
       if (cfg?.assessment === null) return "Please select an assessment type.";
-      if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === null) return "Please answer the auto-escalation question.";
-      if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === true && i < windowCount - 1 && cfg?.resetBehavior === null) return "Please select a reset behavior.";
+      if (cfg?.assessment === "screener" && cfg?.conditionalAssignment === null)
+        return "Please answer the auto-escalation question.";
+      const isFirstScreener = !windowConfigs
+        .slice(0, i)
+        .some((wc) => wc.assessment === "screener");
+      if (
+        isFirstScreener &&
+        cfg?.assessment === "screener" &&
+        cfg?.conditionalAssignment === true &&
+        resetBehavior === null
+      )
+        return "Please answer the escalation question to continue.";
     }
-    if (currentScreen.id === "site-overrides" && hasSiteCustomSetups === null) return "Please make a selection.";
-    if (currentScreen.id === "students" && siteLeaderManage === null) return "Please make a selection.";
+    if (currentScreen.id === "reset-behavior" && resetBehavior === null)
+      return "Please make a selection.";
+    if (currentScreen.id === "site-overrides" && hasSiteCustomSetups === null)
+      return "Please make a selection.";
+    if (currentScreen.id === "students" && siteLeaderManage === null)
+      return "Please make a selection.";
     return null;
   };
 
@@ -1134,22 +1461,48 @@ function EditSetupPage() {
       const dateMatch = currentScreen.id.match(/^date-(\d+)$/);
       const idx = dateMatch ? parseInt(dateMatch[1]) : -1;
       if (idx >= 0 && windowConfigs[idx]?.assessment === null) {
-        setAssessmentError(true); setEscalationError(false); setSiteOverridesError(false); setValidationError(null);
-      } else if (idx >= 0 && windowConfigs[idx]?.assessment === "screener" && windowConfigs[idx]?.conditionalAssignment === null) {
-        setEscalationError(true); setAssessmentError(false); setSiteOverridesError(false); setValidationError(null);
+        setAssessmentError(true);
+        setEscalationError(false);
+        setSiteOverridesError(false);
+        setValidationError(null);
+      } else if (
+        idx >= 0 &&
+        windowConfigs[idx]?.assessment === "screener" &&
+        windowConfigs[idx]?.conditionalAssignment === null
+      ) {
+        setEscalationError(true);
+        setAssessmentError(false);
+        setSiteOverridesError(false);
+        setValidationError(null);
       } else if (currentScreen.id === "site-overrides") {
-        setSiteOverridesError(true); setAssessmentError(false); setEscalationError(false); setValidationError(null);
+        setSiteOverridesError(true);
+        setAssessmentError(false);
+        setEscalationError(false);
+        setValidationError(null);
       } else {
-        setAssessmentError(false); setEscalationError(false); setSiteOverridesError(false);
+        setAssessmentError(false);
+        setEscalationError(false);
+        setSiteOverridesError(false);
         setValidationError(getValidationError());
       }
       return;
     }
     setValidationError(null);
-    setAssessmentError(false); setEscalationError(false); setSiteOverridesError(false);
-    if (isLastScreen) { handleSave(); return; }
+    setAssessmentError(false);
+    setEscalationError(false);
+    setSiteOverridesError(false);
+    if (isLastScreen) {
+      handleSave();
+      return;
+    }
     const next = screenSequence[currentScreenIdx + 1];
-    if (next) setCurrentScreenId(next.id);
+    if (next) {
+      setCurrentScreenId(next.id);
+      setTimeout(
+        () => mainRef.current?.scrollTo({ top: 0, behavior: "instant" }),
+        0,
+      );
+    }
   };
 
   const handlePrev = () => {
@@ -1211,12 +1564,16 @@ function EditSetupPage() {
     setResetBehavior(LAST_YEAR.resetEachWindow ? "rescreen" : "skip");
     setSiteLeaderManage(LAST_YEAR.siteLeaderManage);
     setWindowConfigs(
-      Array(LAST_YEAR.windowCount).fill(null).map(() => ({
-        assessment: "screener" as const,
-        conditionalAssignment: LAST_YEAR.conditionalAssignment,
-        tScore: LAST_YEAR.tScore,
-        resetBehavior: LAST_YEAR.resetEachWindow ? "rescreen" as const : "skip" as const,
-      })),
+      Array(LAST_YEAR.windowCount)
+        .fill(null)
+        .map(() => ({
+          assessment: "screener" as const,
+          conditionalAssignment: LAST_YEAR.conditionalAssignment,
+          tScore: LAST_YEAR.tScore,
+          resetBehavior: LAST_YEAR.resetEachWindow
+            ? ("rescreen" as const)
+            : ("skip" as const),
+        })),
     );
     setShowLastYear(false);
   };
@@ -1231,10 +1588,15 @@ function EditSetupPage() {
 
   const openSiteModal = (targets: string[]) => {
     const first = targets[0];
-    const base = (first && siteCustomSetups[first]) ? { ...siteCustomSetups[first]! } : defaultSiteConfig();
+    const base =
+      first && siteCustomSetups[first]
+        ? { ...siteCustomSetups[first]! }
+        : defaultSiteConfig();
     setSiteModalTargets(targets);
     setSiteModalConfig(base);
-    setSiteModalGroupName(base.groupName ?? (targets.length > 1 ? "Custom Group" : ""));
+    setSiteModalGroupName(
+      base.groupName ?? (targets.length > 1 ? "Custom Group" : ""),
+    );
     prevModalWindowCountRef.current = base.windowCount;
     setPulsingWindowIndices(new Set());
     setSiteModalOpen(true);
@@ -1244,9 +1606,14 @@ function EditSetupPage() {
     if (!siteModalConfig) return;
     if (siteModalConfig.windowConfigs.some((wc) => wc.assessment === null)) {
       setSiteModalValidated(true);
-      const firstInvalidIndex = siteModalConfig.windowConfigs.findIndex((wc) => wc.assessment === null);
+      const firstInvalidIndex = siteModalConfig.windowConfigs.findIndex(
+        (wc) => wc.assessment === null,
+      );
       if (firstInvalidIndex !== -1) {
-        windowCardRefs.current[firstInvalidIndex]?.scrollIntoView({ behavior: "smooth", block: "center" });
+        windowCardRefs.current[firstInvalidIndex]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
       return;
     }
@@ -1257,7 +1624,9 @@ function EditSetupPage() {
     };
     setSiteCustomSetups((prev) => {
       const next = { ...prev };
-      siteModalTargets.forEach((s) => { next[s] = { ...configWithGroup }; });
+      siteModalTargets.forEach((s) => {
+        next[s] = { ...configWithGroup };
+      });
       return next;
     });
     setSiteModalOpen(false);
@@ -1266,7 +1635,11 @@ function EditSetupPage() {
     toast.custom((t) => (
       <SuccessToast
         id={t}
-        title={count === 1 ? `${siteModalTargets[0]} configured` : `${count} sites configured`}
+        title={
+          count === 1
+            ? `${siteModalTargets[0]} configured`
+            : `${count} sites configured`
+        }
         description="Custom setup saved. You can adjust it anytime before saving."
       />
     ));
@@ -1289,17 +1662,25 @@ function EditSetupPage() {
 
     // ── Override: site selection ───────────────────────────────────────────
     if (screenId === "sites") {
-      const availableSites = MOCK_SITES.filter((site) => !SITES_IN_OTHER_OVERRIDES[site] || selectedSites.includes(site));
-      const filteredSitesForGroup = availableSites.filter((s) =>
-        s.toLowerCase().includes(siteSearchQuery.toLowerCase())
+      const availableSites = MOCK_SITES.filter(
+        (site) =>
+          !SITES_IN_OTHER_OVERRIDES[site] || selectedSites.includes(site),
       );
-      const allGroupFiltered = filteredSitesForGroup.length > 0 && filteredSitesForGroup.every((s) => selectedSites.includes(s));
+      const filteredSitesForGroup = availableSites.filter((s) =>
+        s.toLowerCase().includes(siteSearchQuery.toLowerCase()),
+      );
+      const allGroupFiltered =
+        filteredSitesForGroup.length > 0 &&
+        filteredSitesForGroup.every((s) => selectedSites.includes(s));
       return (
         <div className="rounded-xl border border-[#e8ecf0] overflow-hidden bg-white">
           {/* Toolbar */}
           <div className="flex items-center gap-3 px-4 py-3 bg-[#f8fafc] border-b border-[#e8ecf0]">
             <div className="relative max-w-[300px] w-full">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Search
+                size={13}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
               <input
                 type="text"
                 placeholder="Search sites…"
@@ -1321,12 +1702,18 @@ function EditSetupPage() {
               <input
                 type="checkbox"
                 checked={allGroupFiltered}
-                onChange={(e) => setSelectedSites(e.target.checked ? filteredSitesForGroup : [])}
+                onChange={(e) =>
+                  setSelectedSites(
+                    e.target.checked ? filteredSitesForGroup : [],
+                  )
+                }
                 className="w-4 h-4 accent-[#1a4e8a] cursor-pointer"
               />
             </div>
             <div className="px-3 py-2.5 flex items-center">
-              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Site</span>
+              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                Site
+              </span>
             </div>
           </div>
           {/* Rows */}
@@ -1339,7 +1726,10 @@ function EditSetupPage() {
                   onClick={() => toggleSite(site)}
                   className={`grid grid-cols-[44px_1fr] border-b border-[#f0f4f8] last:border-0 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2f8]" : "bg-white hover:bg-[#f8fafc]"}`}
                 >
-                  <div className="flex items-center justify-center py-3" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center justify-center py-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       type="checkbox"
                       checked={isSelected}
@@ -1370,10 +1760,14 @@ function EditSetupPage() {
                 onClick={() => handleCountChange(count)}
                 className={`text-left rounded-xl border p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}>
+                <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}
+                >
                   {count}
                 </div>
-                <p className={`text-[14px] font-semibold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>
+                <p
+                  className={`text-[14px] font-semibold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}
+                >
                   {count === 1 ? "1 Window" : `${count} Windows`}
                 </p>
                 <p className="text-[12px] text-gray-500 leading-snug">{desc}</p>
@@ -1390,31 +1784,52 @@ function EditSetupPage() {
       const i = parseInt(dateMatch[1]);
       const cfg = windowConfigs[i];
       const prevCfg = windowConfigs[i - 1];
-      const showHandoff = i > 0 && prevCfg?.assessment === "screener" && prevCfg?.conditionalAssignment;
+      const showHandoff =
+        i > 0 &&
+        prevCfg?.assessment === "screener" &&
+        prevCfg?.conditionalAssignment;
+      const isFirstScreener = !windowConfigs
+        .slice(0, i)
+        .some((wc) => wc.assessment === "screener");
       return (
         <div className="space-y-10">
           <div>
-            <p className="text-[15px] font-semibold text-gray-700 mb-2">Opening date</p>
+            <p className="text-[15px] font-semibold text-gray-700 mb-2">
+              Opening date
+            </p>
             <div className="w-[200px]">
               <DatePicker value={dates[i]} onChange={(v) => updateDate(i, v)} />
             </div>
           </div>
           {dates.some(Boolean) && (
             <div className="bg-white border border-[#e8ecf0] rounded-xl p-4">
-              <p className="text-[15px] font-medium text-gray-400 mb-0.5">Year at a glance</p>
+              <p className="text-[15px] font-medium text-gray-400 mb-0.5">
+                Year at a glance
+              </p>
               <p className="text-[15px] font-semibold text-gray-800 mb-3">
                 {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}
               </p>
-              <WizardTimeline dates={dates} labels={labels} configuredCount={i + 1} />
+              <WizardTimeline
+                dates={dates}
+                labels={labels}
+                configuredCount={i + 1}
+              />
               {dates.slice(0, i + 1).some(Boolean) && (
-                <div className={`flex mt-4 pt-4 border-t border-[#f0f4f8] ${i + 1 === windowCount ? "justify-between" : "gap-8"}`}>
+                <div
+                  className={`flex mt-4 pt-4 border-t border-[#f0f4f8] ${i + 1 === windowCount ? "justify-between" : "gap-8"}`}
+                >
                   {labels.slice(0, i + 1).map((label, j) => {
                     if (!dates[j]) return null;
                     return (
                       <div key={j}>
-                        <p className="text-[15px] font-medium text-gray-400 leading-tight">{label}</p>
+                        <p className="text-[15px] font-medium text-gray-400 leading-tight">
+                          {label}
+                        </p>
                         <p className="text-[15px] font-semibold text-gray-800 mt-0.5">
-                          {new Date(dates[j] + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          {new Date(dates[j] + "T00:00:00").toLocaleDateString(
+                            "en-US",
+                            { month: "short", day: "numeric", year: "numeric" },
+                          )}
                         </p>
                       </div>
                     );
@@ -1424,73 +1839,146 @@ function EditSetupPage() {
             </div>
           )}
           {(() => {
-            const boldLabel = (name: string) => <span key={name} className="font-semibold text-[#15407a]">{name}</span>;
+            const boldLabel = (name: string) => (
+              <span key={name} className="font-semibold text-[#15407a]">
+                {name}
+              </span>
+            );
             const joinLabels = (names: string[]) => {
               if (names.length === 1) return boldLabel(names[0]);
               return names.map((name, idx) => (
-                <span key={name}>{idx > 0 && (idx === names.length - 1 ? " and " : ", ")}{boldLabel(name)}</span>
+                <span key={name}>
+                  {idx > 0 && (idx === names.length - 1 ? " and " : ", ")}
+                  {boldLabel(name)}
+                </span>
               ));
             };
             const skipWindows = Array.from({ length: i }, (_, j) => j)
-              .filter(j => windowConfigs[j]?.assessment === "screener" && windowConfigs[j]?.conditionalAssignment === true && windowConfigs[j]?.resetBehavior === "skip")
-              .map(j => labels[j]);
+              .filter(
+                (j) =>
+                  windowConfigs[j]?.assessment === "screener" &&
+                  windowConfigs[j]?.conditionalAssignment === true &&
+                  windowConfigs[j]?.resetBehavior === "skip",
+              )
+              .map((j) => labels[j]);
             return skipWindows.length > 0 ? (
               <div className="rounded-xl bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3 text-[13.5px] text-[#1a4e8a] leading-relaxed flex items-start gap-2.5">
                 <Info size={15} className="shrink-0 mt-0.5" />
-                <span>Students who scored below the threshold in {joinLabels(skipWindows)} are automatically assessed using the full DESSA for the rest of the year. Your selection below applies to all other students.</span>
+                <span>
+                  Students who scored below the threshold in{" "}
+                  {joinLabels(skipWindows)} are automatically assessed using the
+                  full DESSA for the rest of the year. Your selection below
+                  applies to all other students.
+                </span>
               </div>
             ) : null;
           })()}
           <RadioGroupField hasError={assessmentError}>
-          <div>
-            <div className="flex items-start gap-2 mb-0">
-              <p className="text-[15px] font-semibold text-gray-800">Should educators start with the DESSA screener or the full DESSA?</p>
-              <button
-                onClick={() => {
-                  setHelpContent({
-                    title: "Screener vs. Full Assessment",
-                    body: (
-                      <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
-                        <div>
-                          <p className="text-[18px] font-semibold text-gray-800 mb-1">Screener</p>
-                          <p>A short, 8-item form that quickly identifies students who may need additional support. Includes the DESSA 2 mini and DESSA HSE-mini.</p>
+            <div>
+              <div className="flex items-start gap-2 mb-0">
+                <p className="text-[15px] font-semibold text-gray-800">
+                  Should educators start with the DESSA screener or the full
+                  DESSA?
+                </p>
+                <button
+                  onClick={() => {
+                    setHelpContent({
+                      title: "Screener vs. Full Assessment",
+                      body: (
+                        <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
+                          <div>
+                            <p className="text-[18px] font-semibold text-gray-800 mb-1">
+                              Screener
+                            </p>
+                            <p>
+                              A short, 8-item form that quickly identifies
+                              students who may need additional support. Includes
+                              the DESSA 2 mini and DESSA HSE-mini.
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[18px] font-semibold text-gray-800 mb-1">
+                              Full Assessment
+                            </p>
+                            <p>
+                              A comprehensive form measuring eight
+                              social-emotional competencies in depth. Includes
+                              the DESSA 2 and DESSA HSE.
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[18px] font-semibold text-gray-800 mb-1">
+                              In Summary
+                            </p>
+                            <p>
+                              The DESSA screener gives a quick overall score and
+                              works well when educators need to assess many
+                              students efficiently. The full DESSA takes longer
+                              but provides a score for each social-emotional
+                              competency. You can still require a full DESSA for
+                              students who score below a set threshold.
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-[18px] font-semibold text-gray-800 mb-1">Full Assessment</p>
-                          <p>A comprehensive form measuring eight social-emotional competencies in depth. Includes the DESSA 2 and DESSA HSE.</p>
-                        </div>
-                        <div>
-                          <p className="text-[18px] font-semibold text-gray-800 mb-1">In Summary</p>
-                          <p>The DESSA screener gives a quick overall score and works well when educators need to assess many students efficiently. The full DESSA takes longer but provides a score for each social-emotional competency. You can still require a full DESSA for students who score below a set threshold.</p>
-                        </div>
-                      </div>
-                    ),
-                  });
-                  setHelpOpen(true);
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
-              >
-                <HelpCircle size={15} />
-              </button>
+                      ),
+                    });
+                    setHelpOpen(true);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
+                >
+                  <HelpCircle size={15} />
+                </button>
+              </div>
+              <FieldErrorText
+                message="Please select an assessment type to continue."
+                show={assessmentError}
+              />
+              <div className={`space-y-3 ${assessmentError ? "" : "mt-4"}`}>
+                {ASSESSMENT_OPTIONS.map(({ value, label }) => (
+                  <label
+                    key={value}
+                    className="flex items-center gap-3 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name={`assess-type-${i}`}
+                      value={value}
+                      checked={cfg?.assessment === value}
+                      onChange={() => {
+                        updateWindowConfig(i, {
+                          assessment: value as "screener" | "full",
+                        });
+                        setAssessmentError(false);
+                      }}
+                      className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0"
+                    />
+                    <span className="text-[15px] text-gray-800">{label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-            <FieldErrorText message="Please select an assessment type to continue." show={assessmentError} />
-            <div className={`space-y-3 ${assessmentError ? "" : "mt-4"}`}>
-              {ASSESSMENT_OPTIONS.map(({ value, label }) => (
-                <label key={value} className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={`assess-type-${i}`}
-                    value={value}
-                    checked={cfg?.assessment === value}
-                    onChange={() => { updateWindowConfig(i, { assessment: value as "screener" | "full" }); setAssessmentError(false); }}
-                    className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0"
-                  />
-                  <span className="text-[15px] text-gray-800">{label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
           </RadioGroupField>
+          <AnimatePresence initial={false}>
+            {!isFirstScreener && cfg?.assessment === "screener" && (
+              <motion.div
+                key="subsequent-screener-alert"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="rounded-xl bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3 text-[13.5px] text-[#1a4e8a] leading-relaxed flex items-start gap-2.5">
+                  <Info size={15} className="shrink-0 mt-0.5" />
+                  <span>
+                    {resetBehavior === "skip"
+                      ? "Students who scored below the threshold in previous screener windows are already being assessed using the full DESSA. Students who score below the threshold in this window will be too."
+                      : "Students who score below the threshold will be re-screened in each new window."}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <AnimatePresence initial={false}>
             {cfg?.assessment === "screener" && (
               <motion.div
@@ -1503,184 +1991,438 @@ function EditSetupPage() {
               >
                 {/* Q2: Follow-up escalation */}
                 <RadioGroupField hasError={escalationError}>
-                <div>
-                  <div className="flex items-start gap-2 mb-0">
-                    <p className="text-[15px] font-semibold text-gray-800">
-                      Should students who score below a threshold on the screener automatically require a full DESSA?
-                    </p>
-                    <button
-                      onClick={() => {
-                        setHelpContent({
-                          title: "Auto-Escalation",
-                          body: (
-                            <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
-                              <p>When enabled, students who score at or below a T-Score threshold are automatically assigned the full DESSA — no manual review needed by teachers.</p>
-                              <p>A T-Score of <strong>40 or below</strong> is the standard cutoff for <strong>Need for Instruction</strong>, indicating the student may benefit from targeted social-emotional support.</p>
-                              <p>You can set the threshold higher or lower based on your program&apos;s criteria.</p>
-                            </div>
-                          ),
-                        });
-                        setHelpOpen(true);
-                      }}
-                      className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
-                    >
-                      <HelpCircle size={15} />
-                    </button>
-                  </div>
-                  <FieldErrorText message="Please answer this question to continue." show={escalationError} />
-                  <div className={`space-y-3 ${escalationError ? "" : "mt-4"}`}>
-                    {([
-                      { value: true, label: "Yes" },
-                      { value: false, label: "No" },
-                    ] as const).map(({ value, label }) => (
-                      <label key={String(value)} className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name={`assess-escalate-${i}`}
-                          checked={cfg?.conditionalAssignment === value}
-                          onChange={() => { updateWindowConfig(i, { conditionalAssignment: value }); setEscalationError(false); }}
-                          className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0"
-                        />
-                        <span className="text-[15px] text-gray-800">{label}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {/* T-score input */}
-                  <AnimatePresence initial={false}>
-                    {cfg?.conditionalAssignment && (
-                      <motion.div
-                        key="tscore"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.18, ease: "easeOut" }}
-                        className="overflow-hidden"
-                      >
-                        <div className="flex items-center gap-3 mt-4 bg-[#f8fafc] border border-[#e8ecf0] rounded-xl px-4 py-3">
-                          <span className="text-[14px] text-gray-600">Assign the full DESSA to students who score</span>
-                          <input
-                            type="number"
-                            value={cfg.tScore}
-                            onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
-                            className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1a4e8a]"
-                          />
-                          <span className="text-[14px] text-gray-600 flex-1">or below</span>
-                          <button
-                            onClick={() => {
-                              setHelpContent({
-                                title: "T-Score Ranges",
-                                body: (
-                                  <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
-                                    <p>T-Scores indicate how a student&apos;s social-emotional skills compare to their peers. The standard ranges are:</p>
-                                    <div className="h-5 rounded-md overflow-hidden flex">
-                                      {TSCORE_RANGES.map(({ label, value, bg, text, flex }) => (
-                                        <div key={label} className="flex items-center justify-center" style={{ flex, backgroundColor: bg }}>
-                                          <span className="text-[9px] font-bold" style={{ color: text }}>{value}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <div className="space-y-2">
-                                      {TSCORE_RANGES.map(({ label, value, bg, text }) => (
-                                        <div key={label} className="flex items-center gap-2">
-                                          <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: bg, border: "1px solid #e5e7eb" }} />
-                                          <span className="flex-1 text-gray-700">{label}</span>
-                                          <span className="font-semibold" style={{ color: text }}>{value}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <p className="text-gray-500 text-[13px]">A threshold of 40 or below is the standard cutoff for Need for Instruction. You can raise or lower it based on your program&apos;s criteria.</p>
-                                  </div>
-                                ),
-                              });
-                              setHelpOpen(true);
-                            }}
-                            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
-                          >
-                            <HelpCircle size={15} />
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  {/* Q3: Reset behavior — inside Q2 container, only when escalation enabled and not last window */}
-                  <AnimatePresence initial={false}>
-                    {cfg?.conditionalAssignment && i < windowCount - 1 && (
-                      <motion.div
-                        key="reset-behavior"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="mt-6 pt-6 border-t border-[#e8ecf0]">
-                        <div className="flex items-start gap-2 mb-4">
-                          <p className="text-[15px] font-semibold text-gray-800">
-                            If a student scores below the threshold in this rating window, should they automatically be assessed using the full DESSA for the rest of the year?
-                          </p>
-                          <button
-                            onClick={() => {
-                              setHelpContent({
-                                title: "Full DESSA for the Rest of the Year",
-                                body: (
-                                  <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
-                                    <div>
-                                      <p className="text-[18px] font-semibold text-gray-800 mb-1">Yes — full DESSA for the rest of the year</p>
-                                      <p>Once a student scores below the threshold, they are automatically assigned the full DESSA for every remaining window this year.</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-[18px] font-semibold text-gray-800 mb-1">No — start fresh each window</p>
-                                      <p>Students begin each new window alongside everyone else, regardless of previous results.</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-[18px] font-semibold text-gray-800 mb-1">Which should I choose?</p>
-                                      <p>Choose <strong>Yes</strong> if students who need additional support should consistently receive a deeper assessment. Choose <strong>No</strong> if you want to re-evaluate each window to track growth over time, regardless of previous results.</p>
-                                    </div>
-                                  </div>
-                                ),
-                              });
-                              setHelpOpen(true);
-                            }}
-                            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
-                          >
-                            <HelpCircle size={15} />
-                          </button>
-                        </div>
-                        <div className="space-y-3">
-                          {([
-                            {
-                              value: "skip" as const,
-                              label: "Yes",
-                              desc: <>Students with an identified <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setHelpContent({ title: "Need for Instruction", body: ( <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed"> <div> <p className="text-[18px] font-semibold text-gray-800 mb-1">What it means</p> <p>A student is classified as <strong>Need for Instruction</strong> when their DESSA T-score falls at or below the threshold you set. This indicates they may benefit from targeted social-emotional support.</p> </div> <div> <p className="text-[18px] font-semibold text-gray-800 mb-2">T-Score ranges</p> <div className="h-5 rounded-md overflow-hidden flex mb-3"> {TSCORE_RANGES.map(({ label, value, bg, text, flex }) => ( <div key={label} className="flex items-center justify-center" style={{ flex, backgroundColor: bg }}> <span className="text-[9px] font-bold" style={{ color: text }}>{value}</span> </div> ))} </div> <div className="space-y-2"> {TSCORE_RANGES.map(({ label, value, bg, text }) => ( <div key={label} className="flex items-center gap-2"> <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: bg, border: "1px solid #e5e7eb" }} /> <span className="flex-1 text-gray-700">{label}</span> <span className="font-semibold" style={{ color: text }}>{value}</span> </div> ))} </div> </div> </div> ) }); setHelpOpen(true); }} className="font-semibold text-[#1a4e8a] underline underline-offset-2 cursor-pointer hover:text-[#15407a] transition-colors">Need for Instruction</button> will be assessed using the full DESSA for all remaining rating windows.</>,
-                            },
-                            {
-                              value: "rescreen" as const,
-                              label: "No",
-                              desc: <>They start each new window fresh, assessed alongside all other students.</>,
-                            },
-                          ] as { value: "skip" | "rescreen"; label: string; desc: React.ReactNode }[]).map(({ value, label, desc }) => (
-                            <label key={value} className="flex items-start gap-3 cursor-pointer">
-                              <input
-                                type="radio"
-                                name={`reset-behavior-${i}`}
-                                value={value}
-                                checked={cfg?.resetBehavior === value}
-                                onChange={() => updateWindowConfig(i, { resetBehavior: value })}
-                                className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
-                              />
-                              <div>
-                                <p className="text-[15px] text-gray-800">{label}</p>
-                                <p className="text-[13px] text-gray-500 mt-0.5">{desc}</p>
+                  <div>
+                    <div className="flex items-start gap-2 mb-0">
+                      <p className="text-[15px] font-semibold text-gray-800">
+                        Should students who score below a threshold on the
+                        screener automatically require a full DESSA?
+                      </p>
+                      <button
+                        onClick={() => {
+                          setHelpContent({
+                            title: "Auto-Escalation",
+                            body: (
+                              <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
+                                <p>
+                                  When enabled, students who score at or below a
+                                  T-Score threshold are automatically assigned
+                                  the full DESSA — no manual review needed by
+                                  teachers.
+                                </p>
+                                <p>
+                                  A T-Score of <strong>40 or below</strong> is
+                                  the standard cutoff for{" "}
+                                  <strong>Need for Instruction</strong>,
+                                  indicating the student may benefit from
+                                  targeted social-emotional support.
+                                </p>
+                                <p>
+                                  You can set the threshold higher or lower
+                                  based on your program&apos;s criteria.
+                                </p>
                               </div>
-                            </label>
-                          ))}
-                        </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                            ),
+                          });
+                          setHelpOpen(true);
+                        }}
+                        className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
+                      >
+                        <HelpCircle size={15} />
+                      </button>
+                    </div>
+                    <FieldErrorText
+                      message="Please answer this question to continue."
+                      show={escalationError}
+                    />
+                    <div
+                      className={`space-y-3 ${escalationError ? "" : "mt-4"}`}
+                    >
+                      {(
+                        [
+                          { value: true, label: "Yes" },
+                          { value: false, label: "No" },
+                        ] as const
+                      ).map(({ value, label }) => (
+                        <label
+                          key={String(value)}
+                          className="flex items-center gap-3 cursor-pointer"
+                        >
+                          <input
+                            type="radio"
+                            name={`assess-escalate-${i}`}
+                            checked={cfg?.conditionalAssignment === value}
+                            onChange={() => {
+                              updateWindowConfig(i, {
+                                conditionalAssignment: value,
+                              });
+                              setEscalationError(false);
+                            }}
+                            className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0"
+                          />
+                          <span className="text-[15px] text-gray-800">
+                            {label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    {/* T-score input */}
+                    <AnimatePresence initial={false}>
+                      {cfg?.conditionalAssignment && (
+                        <motion.div
+                          key="tscore"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.18, ease: "easeOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div className="flex items-center gap-3 mt-4 bg-[#f8fafc] border border-[#e8ecf0] rounded-xl px-4 py-3">
+                            <span className="text-[14px] text-gray-600">
+                              Assign the full DESSA to students who score
+                            </span>
+                            <input
+                              type="number"
+                              value={cfg.tScore}
+                              onChange={(e) =>
+                                updateWindowConfig(i, {
+                                  tScore: e.target.value,
+                                })
+                              }
+                              className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1a4e8a]"
+                            />
+                            <span className="text-[14px] text-gray-600">
+                              or below
+                            </span>
+                            <button
+                              onClick={() => {
+                                setHelpContent({
+                                  title: "T-Score Ranges",
+                                  body: (
+                                    <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
+                                      <p>
+                                        T-Scores indicate how a student&apos;s
+                                        social-emotional skills compare to their
+                                        peers. The standard ranges are:
+                                      </p>
+                                      <div className="h-5 rounded-md overflow-hidden flex">
+                                        {TSCORE_RANGES.map(
+                                          ({
+                                            label,
+                                            value,
+                                            bg,
+                                            text,
+                                            flex,
+                                          }) => (
+                                            <div
+                                              key={label}
+                                              className="flex items-center justify-center"
+                                              style={{
+                                                flex,
+                                                backgroundColor: bg,
+                                              }}
+                                            >
+                                              <span
+                                                className="text-[9px] font-bold"
+                                                style={{ color: text }}
+                                              >
+                                                {value}
+                                              </span>
+                                            </div>
+                                          ),
+                                        )}
+                                      </div>
+                                      <div className="space-y-2">
+                                        {TSCORE_RANGES.map(
+                                          ({ label, value, bg, text }) => (
+                                            <div
+                                              key={label}
+                                              className="flex items-center gap-2"
+                                            >
+                                              <div
+                                                className="w-2.5 h-2.5 rounded-sm shrink-0"
+                                                style={{
+                                                  backgroundColor: bg,
+                                                  border: "1px solid #e5e7eb",
+                                                }}
+                                              />
+                                              <span className="flex-1 text-gray-700">
+                                                {label}
+                                              </span>
+                                              <span
+                                                className="font-semibold"
+                                                style={{ color: text }}
+                                              >
+                                                {value}
+                                              </span>
+                                            </div>
+                                          ),
+                                        )}
+                                      </div>
+                                      <p className="text-gray-500 text-[13px]">
+                                        A threshold of 40 or below is the
+                                        standard cutoff for Need for
+                                        Instruction. You can raise or lower it
+                                        based on your program&apos;s criteria.
+                                      </p>
+                                    </div>
+                                  ),
+                                });
+                                setHelpOpen(true);
+                              }}
+                              className="flex items-center gap-1 text-[13px] font-medium cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                              style={{ color: "#2443f0" }}
+                            >
+                              About T-Scores
+                              <ArrowRight size={12} strokeWidth={2} />
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </RadioGroupField>
+
+                {/* Q3: Global reset behavior — own container, sibling of Q2 */}
+                <AnimatePresence initial={false}>
+                  {isFirstScreener && cfg?.conditionalAssignment && (
+                    <motion.div
+                      key="reset-behavior-block"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      {true && (
+                        <div className="rounded-xl border border-[#e8ecf0] p-4 bg-white">
+                          <div className="flex items-start gap-2 mb-4">
+                            <p className="text-[15px] font-semibold text-gray-800">
+                              If a student scores below the threshold on a
+                              screener in any rating window, should they
+                              automatically be assessed using the full DESSA for
+                              the rest of the year?
+                            </p>
+                            <button
+                              onClick={() => {
+                                setHelpContent({
+                                  title: "Full DESSA for the Rest of the Year",
+                                  body: (
+                                    <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
+                                      <div>
+                                        <p className="text-[18px] font-semibold text-gray-800 mb-1">
+                                          Yes — full DESSA for the rest of the
+                                          year
+                                        </p>
+                                        <p>
+                                          Once a student scores below the
+                                          threshold in any screener window, they
+                                          are automatically assigned the full
+                                          DESSA for every remaining window this
+                                          year.
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-[18px] font-semibold text-gray-800 mb-1">
+                                          No — start fresh each window
+                                        </p>
+                                        <p>
+                                          Students begin each new window
+                                          alongside everyone else, regardless of
+                                          previous screener results.
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-[18px] font-semibold text-gray-800 mb-1">
+                                          Which should I choose?
+                                        </p>
+                                        <p>
+                                          Choose <strong>Yes</strong> if
+                                          students who need additional support
+                                          should consistently receive a deeper
+                                          assessment. Choose <strong>No</strong>{" "}
+                                          if you want to re-evaluate each window
+                                          to track growth over time.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ),
+                                });
+                                setHelpOpen(true);
+                              }}
+                              className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
+                            >
+                              <HelpCircle size={15} />
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {(
+                              [
+                                {
+                                  value: "skip" as const,
+                                  label: "Yes",
+                                  desc: (
+                                    <>
+                                      Students with an identified{" "}
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          setHelpContent({
+                                            title: "Need for Instruction",
+                                            body: (
+                                              <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
+                                                {" "}
+                                                <div>
+                                                  {" "}
+                                                  <p className="text-[18px] font-semibold text-gray-800 mb-1">
+                                                    What it means
+                                                  </p>{" "}
+                                                  <p>
+                                                    A student is classified as{" "}
+                                                    <strong>
+                                                      Need for Instruction
+                                                    </strong>{" "}
+                                                    when their DESSA T-score
+                                                    falls at or below the
+                                                    threshold you set. This
+                                                    indicates they may benefit
+                                                    from targeted
+                                                    social-emotional support.
+                                                  </p>{" "}
+                                                </div>{" "}
+                                                <div>
+                                                  {" "}
+                                                  <p className="text-[18px] font-semibold text-gray-800 mb-2">
+                                                    T-Score ranges
+                                                  </p>{" "}
+                                                  <div className="h-5 rounded-md overflow-hidden flex mb-3">
+                                                    {" "}
+                                                    {TSCORE_RANGES.map(
+                                                      ({
+                                                        label,
+                                                        value,
+                                                        bg,
+                                                        text,
+                                                        flex,
+                                                      }) => (
+                                                        <div
+                                                          key={label}
+                                                          className="flex items-center justify-center"
+                                                          style={{
+                                                            flex,
+                                                            backgroundColor: bg,
+                                                          }}
+                                                        >
+                                                          {" "}
+                                                          <span
+                                                            className="text-[9px] font-bold"
+                                                            style={{
+                                                              color: text,
+                                                            }}
+                                                          >
+                                                            {value}
+                                                          </span>{" "}
+                                                        </div>
+                                                      ),
+                                                    )}{" "}
+                                                  </div>{" "}
+                                                  <div className="space-y-2">
+                                                    {" "}
+                                                    {TSCORE_RANGES.map(
+                                                      ({
+                                                        label,
+                                                        value,
+                                                        bg,
+                                                        text,
+                                                      }) => (
+                                                        <div
+                                                          key={label}
+                                                          className="flex items-center gap-2"
+                                                        >
+                                                          {" "}
+                                                          <div
+                                                            className="w-2.5 h-2.5 rounded-sm shrink-0"
+                                                            style={{
+                                                              backgroundColor:
+                                                                bg,
+                                                              border:
+                                                                "1px solid #e5e7eb",
+                                                            }}
+                                                          />{" "}
+                                                          <span className="flex-1 text-gray-700">
+                                                            {label}
+                                                          </span>{" "}
+                                                          <span
+                                                            className="font-semibold"
+                                                            style={{
+                                                              color: text,
+                                                            }}
+                                                          >
+                                                            {value}
+                                                          </span>{" "}
+                                                        </div>
+                                                      ),
+                                                    )}{" "}
+                                                  </div>{" "}
+                                                </div>{" "}
+                                              </div>
+                                            ),
+                                          });
+                                          setHelpOpen(true);
+                                        }}
+                                        className="font-semibold text-[#1a4e8a] underline underline-offset-2 cursor-pointer hover:text-[#15407a] transition-colors"
+                                      >
+                                        Need for Instruction
+                                      </button>{" "}
+                                      will be assessed using the full DESSA for
+                                      all remaining rating windows.
+                                    </>
+                                  ),
+                                },
+                                {
+                                  value: "rescreen" as const,
+                                  label: "No",
+                                  desc: (
+                                    <>
+                                      They start each new window fresh, assessed
+                                      alongside all other students.
+                                    </>
+                                  ),
+                                },
+                              ] as {
+                                value: "skip" | "rescreen";
+                                label: string;
+                                desc: React.ReactNode;
+                              }[]
+                            ).map(({ value, label, desc }) => (
+                              <label
+                                key={value}
+                                className="flex items-start gap-3 cursor-pointer"
+                              >
+                                <input
+                                  type="radio"
+                                  name="global-reset-behavior"
+                                  value={value}
+                                  checked={resetBehavior === value}
+                                  onChange={() => setResetBehavior(value)}
+                                  className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
+                                />
+                                <div>
+                                  <p className="text-[15px] text-gray-800">
+                                    {label}
+                                  </p>
+                                  <p className="text-[13px] text-gray-500 mt-0.5">
+                                    {desc}
+                                  </p>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Summary callout — commented out
                 <AnimatePresence initial={false}>
@@ -1725,17 +2467,168 @@ function EditSetupPage() {
       const i = parseInt(assessHandoffMatch[1]);
       return (
         <div className="space-y-3">
-          {([
-            { value: "rescreen" as const, label: "Screen again", desc: `They take the screener again in ${labels[i + 1]}.` },
-            { value: "skip" as const, label: "Full DESSA", desc: `They go straight to the full assessment in ${labels[i + 1]}.` },
-          ]).map(({ value, label, desc }) => (
-            <label key={value} className="flex items-start gap-3 cursor-pointer">
+          {[
+            {
+              value: "rescreen" as const,
+              label: "Screen again",
+              desc: `They take the screener again in ${labels[i + 1]}.`,
+            },
+            {
+              value: "skip" as const,
+              label: "Full DESSA",
+              desc: `They go straight to the full assessment in ${labels[i + 1]}.`,
+            },
+          ].map(({ value, label, desc }) => (
+            <label
+              key={value}
+              className="flex items-start gap-3 cursor-pointer"
+            >
               <input
                 type="radio"
                 name={`assess-handoff-${i}`}
                 value={value}
                 checked={windowConfigs[i + 1]?.resetBehavior === value}
-                onChange={() => updateWindowConfig(i + 1, { resetBehavior: value })}
+                onChange={() =>
+                  updateWindowConfig(i + 1, { resetBehavior: value })
+                }
+                className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
+              />
+              <div>
+                <p className="text-[15px] text-gray-800">{label}</p>
+                <p className="text-[13px] text-gray-500 mt-0.5">{desc}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      );
+    }
+
+    // ── Global reset behavior ──────────────────────────────────────────────
+    if (screenId === "reset-behavior") {
+      return (
+        <div className="space-y-3">
+          {(
+            [
+              {
+                value: "skip" as const,
+                label: "Yes",
+                desc: (
+                  <>
+                    Students with an identified{" "}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setHelpContent({
+                          title: "Need for Instruction",
+                          body: (
+                            <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
+                              {" "}
+                              <div>
+                                {" "}
+                                <p className="text-[18px] font-semibold text-gray-800 mb-1">
+                                  What it means
+                                </p>{" "}
+                                <p>
+                                  A student is classified as{" "}
+                                  <strong>Need for Instruction</strong> when
+                                  their DESSA T-score falls at or below the
+                                  threshold you set.
+                                </p>{" "}
+                              </div>{" "}
+                              <div>
+                                {" "}
+                                <p className="text-[18px] font-semibold text-gray-800 mb-2">
+                                  T-Score ranges
+                                </p>{" "}
+                                <div className="h-5 rounded-md overflow-hidden flex mb-3">
+                                  {" "}
+                                  {TSCORE_RANGES.map(
+                                    ({ label, value, bg, text, flex }) => (
+                                      <div
+                                        key={label}
+                                        className="flex items-center justify-center"
+                                        style={{ flex, backgroundColor: bg }}
+                                      >
+                                        <span
+                                          className="text-[9px] font-bold"
+                                          style={{ color: text }}
+                                        >
+                                          {value}
+                                        </span>
+                                      </div>
+                                    ),
+                                  )}{" "}
+                                </div>{" "}
+                                <div className="space-y-2">
+                                  {" "}
+                                  {TSCORE_RANGES.map(
+                                    ({ label, value, bg, text }) => (
+                                      <div
+                                        key={label}
+                                        className="flex items-center gap-2"
+                                      >
+                                        <div
+                                          className="w-2.5 h-2.5 rounded-sm shrink-0"
+                                          style={{
+                                            backgroundColor: bg,
+                                            border: "1px solid #e5e7eb",
+                                          }}
+                                        />
+                                        <span className="flex-1 text-gray-700">
+                                          {label}
+                                        </span>
+                                        <span
+                                          className="font-semibold"
+                                          style={{ color: text }}
+                                        >
+                                          {value}
+                                        </span>
+                                      </div>
+                                    ),
+                                  )}{" "}
+                                </div>{" "}
+                              </div>{" "}
+                            </div>
+                          ),
+                        });
+                        setHelpOpen(true);
+                      }}
+                      className="font-semibold text-[#1a4e8a] underline underline-offset-2 cursor-pointer hover:text-[#15407a] transition-colors"
+                    >
+                      Need for Instruction
+                    </button>{" "}
+                    will be assessed using the full DESSA for all remaining
+                    rating windows.
+                  </>
+                ),
+              },
+              {
+                value: "rescreen" as const,
+                label: "No",
+                desc: (
+                  <>
+                    They start each new window fresh, assessed alongside all
+                    other students.
+                  </>
+                ),
+              },
+            ] as {
+              value: "skip" | "rescreen";
+              label: string;
+              desc: React.ReactNode;
+            }[]
+          ).map(({ value, label, desc }) => (
+            <label
+              key={value}
+              className="flex items-start gap-3 cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="global-reset-behavior"
+                value={value}
+                checked={resetBehavior === value}
+                onChange={() => setResetBehavior(value)}
                 className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
               />
               <div>
@@ -1751,35 +2644,56 @@ function EditSetupPage() {
     // ── Site custom setups ─────────────────────────────────────────────────
     if (screenId === "site-overrides") {
       const filteredSites = MOCK_SITES.filter((s) =>
-        s.toLowerCase().includes(siteSearchQuery.toLowerCase())
+        s.toLowerCase().includes(siteSearchQuery.toLowerCase()),
       );
       const allFilteredSelected =
-        filteredSites.length > 0 && filteredSites.every((s) => selectedSiteRows.includes(s));
+        filteredSites.length > 0 &&
+        filteredSites.every((s) => selectedSiteRows.includes(s));
 
       return (
         <div className="space-y-6">
           <RadioGroupField hasError={siteOverridesError}>
-          <div className="space-y-3">
-            {([
-              { value: false, label: "Yes, all sites use the same setup", desc: "Every site follows the windows and assessment types you configured." },
-              { value: true, label: "No, some sites need a custom setup", desc: "You can set different windows, dates, and assessment types per site." },
-            ] as const).map(({ value, label, desc }) => (
-              <label key={String(value)} className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="site-overrides"
-                  checked={hasSiteCustomSetups === value}
-                  onChange={() => { setHasSiteCustomSetups(value); if (!value) setSelectedSiteRows([]); setSiteOverridesError(false); }}
-                  className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
-                />
-                <div>
-                  <p className="text-[15px] text-gray-800">{label}</p>
-                  <p className="text-[13px] text-gray-500 mt-0.5">{desc}</p>
-                </div>
-              </label>
-            ))}
-          </div>
-          <FieldErrorText message="Please make a selection to continue." show={siteOverridesError} />
+            <div className="space-y-3">
+              {(
+                [
+                  {
+                    value: false,
+                    label: "Yes, all sites use the same setup",
+                    desc: "Every site follows the windows and assessment types you configured.",
+                  },
+                  {
+                    value: true,
+                    label: "No, some sites need a custom setup",
+                    desc: "You can set different windows, dates, and assessment types per site.",
+                  },
+                ] as const
+              ).map(({ value, label, desc }) => (
+                <label
+                  key={String(value)}
+                  className="flex items-start gap-3 cursor-pointer"
+                >
+                  <input
+                    type="radio"
+                    name="site-overrides"
+                    checked={hasSiteCustomSetups === value}
+                    onChange={() => {
+                      setHasSiteCustomSetups(value);
+                      if (!value) setSelectedSiteRows([]);
+                      setSiteOverridesError(false);
+                    }}
+                    className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
+                  />
+                  <div>
+                    <p className="text-[15px] text-gray-800">{label}</p>
+                    <p className="text-[13px] text-gray-500 mt-0.5">{desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <FieldErrorText
+              message="Please make a selection to continue."
+              show={siteOverridesError}
+            />
           </RadioGroupField>
 
           <AnimatePresence initial={false}>
@@ -1792,11 +2706,17 @@ function EditSetupPage() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="rounded-xl border border-[#e8ecf0] overflow-hidden bg-white">
+                <div
+                  ref={siteTableRef}
+                  className="rounded-xl border border-[#e8ecf0] overflow-hidden bg-white"
+                >
                   {/* Toolbar */}
                   <div className="flex items-center gap-3 px-4 py-3 bg-[#f8fafc] border-b border-[#e8ecf0]">
                     <div className="relative max-w-[300px] w-full">
-                      <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <Search
+                        size={13}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                      />
                       <input
                         type="text"
                         placeholder="Search sites…"
@@ -1810,11 +2730,16 @@ function EditSetupPage() {
                       const groupCount = new Set(
                         Object.values(siteCustomSetups)
                           .filter(Boolean)
-                          .map((cfg) => cfg!.groupName?.trim() || "__ungrouped__" + JSON.stringify(cfg))
+                          .map(
+                            (cfg) =>
+                              cfg!.groupName?.trim() ||
+                              "__ungrouped__" + JSON.stringify(cfg),
+                          ),
                       ).size;
                       return groupCount > 0 ? (
                         <span className="text-[12px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-3 py-1">
-                          {groupCount} custom {groupCount === 1 ? "setup" : "setups"}
+                          {groupCount} custom{" "}
+                          {groupCount === 1 ? "setup" : "setups"}
                         </span>
                       ) : null;
                     })()}
@@ -1827,22 +2752,31 @@ function EditSetupPage() {
                         type="checkbox"
                         checked={allFilteredSelected}
                         onChange={(e) =>
-                          setSelectedSiteRows(e.target.checked ? filteredSites : [])
+                          setSelectedSiteRows(
+                            e.target.checked ? filteredSites : [],
+                          )
                         }
                         className="w-4 h-4 accent-[#1a4e8a] cursor-pointer"
                       />
                     </div>
                     <div className="px-3 py-2.5 flex items-center">
-                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Site</span>
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                        Site
+                      </span>
                     </div>
                     <div className="px-3 py-2.5 flex items-center">
-                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Schedule</span>
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                        Schedule
+                      </span>
                     </div>
                     <div />
                   </div>
 
                   {/* Rows */}
-                  <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+                  <div
+                    className="overflow-y-auto"
+                    style={{ maxHeight: "60vh" }}
+                  >
                     {filteredSites.map((site) => {
                       const hasCustom = !!siteCustomSetups[site];
                       const isSelected = selectedSiteRows.includes(site);
@@ -1851,38 +2785,64 @@ function EditSetupPage() {
                           key={site}
                           onClick={() =>
                             setSelectedSiteRows((prev) =>
-                              prev.includes(site) ? prev.filter((s) => s !== site) : [...prev, site]
+                              prev.includes(site)
+                                ? prev.filter((s) => s !== site)
+                                : [...prev, site],
                             )
                           }
                           className={`grid grid-cols-[44px_1fr_130px_44px] border-b border-[#f0f4f8] last:border-0 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2f8]" : "bg-white hover:bg-[#f8fafc]"}`}
                         >
-                          <div className="flex items-center justify-center py-3" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="flex items-center justify-center py-3"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <input
                               type="checkbox"
                               checked={isSelected}
                               onChange={() =>
                                 setSelectedSiteRows((prev) =>
-                                  prev.includes(site) ? prev.filter((s) => s !== site) : [...prev, site]
+                                  prev.includes(site)
+                                    ? prev.filter((s) => s !== site)
+                                    : [...prev, site],
                                 )
                               }
                               className="w-4 h-4 accent-[#1a4e8a] cursor-pointer"
                             />
                           </div>
                           <div className="px-3 py-3 flex items-center">
-                            <span className="text-[14px] text-gray-800">{site}</span>
+                            <span className="text-[14px] text-gray-800">
+                              {site}
+                            </span>
                           </div>
                           <div className="px-3 py-3 flex items-center">
-                            <span title={hasCustom ? (siteCustomSetups[site]?.groupName?.trim() || "Custom") : "Default"} className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md max-w-[120px] truncate block ${hasCustom ? "bg-[#eef2f8] text-[#1a4e8a]" : "bg-gray-100 text-gray-400"}`}>
-                              {hasCustom ? (siteCustomSetups[site]?.groupName?.trim() || "Custom") : "Default"}
+                            <span
+                              title={
+                                hasCustom
+                                  ? siteCustomSetups[site]?.groupName?.trim() ||
+                                    "Custom"
+                                  : "Default"
+                              }
+                              className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md max-w-[120px] truncate block ${hasCustom ? "bg-[#eef2f8] text-[#1a4e8a]" : "bg-gray-100 text-gray-400"}`}
+                            >
+                              {hasCustom
+                                ? siteCustomSetups[site]?.groupName?.trim() ||
+                                  "Custom"
+                                : "Default"}
                             </span>
                           </div>
                           <div className="flex items-center justify-center py-3">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const groupName = siteCustomSetups[site]?.groupName?.trim();
+                                const groupName =
+                                  siteCustomSetups[site]?.groupName?.trim();
                                 const targets = groupName
-                                  ? MOCK_SITES.filter((s) => siteCustomSetups[s]?.groupName?.trim() === groupName)
+                                  ? MOCK_SITES.filter(
+                                      (s) =>
+                                        siteCustomSetups[
+                                          s
+                                        ]?.groupName?.trim() === groupName,
+                                    )
                                   : [site];
                                 openSiteModal(targets);
                               }}
@@ -1895,40 +2855,10 @@ function EditSetupPage() {
                       );
                     })}
                     {filteredSites.length === 0 && (
-                      <div className="px-4 py-8 text-center text-[13px] text-gray-400">No sites match your search.</div>
+                      <div className="px-4 py-8 text-center text-[13px] text-gray-400">
+                        No sites match your search.
+                      </div>
                     )}
-                  </div>
-
-                  {/* Bottom toolbar */}
-                  <div className="flex items-center justify-end px-4 py-3 bg-[#f8fafc] border-t border-[#e8ecf0]">
-                    <button
-                      disabled={selectedSiteRows.length === 0}
-                      onClick={() => {
-                        const params = new URLSearchParams({
-                          sites: selectedSiteRows.join(","),
-                          year: searchParams.get("year") ?? "2025-2026",
-                          windowCount: String(windowCount),
-                          dates: dates.join(","),
-                          returnTo: `/settings/yearly-setup/edit2${existingId ? `?id=${existingId}` : ""}`,
-                        });
-                        // Store current site configs in sessionStorage for the config page to read
-                        try {
-                          const existing = sessionStorage.getItem("site-config-context");
-                          const ctx = existing ? JSON.parse(existing) : { configs: {} };
-                          ctx.configs = ctx.configs ?? {};
-                          selectedSiteRows.forEach(site => {
-                            if (siteCustomSetups[site]) ctx.configs[site] = siteCustomSetups[site];
-                          });
-                          sessionStorage.setItem("site-config-context", JSON.stringify(ctx));
-                        } catch { /* ignore */ }
-                        router.push(`/settings/yearly-setup/site-config?${params.toString()}`);
-                      }}
-                      className="shrink-0 h-8 px-4 rounded-lg text-[13px] font-semibold transition-colors cursor-pointer bg-[#1a4e8a] text-white hover:bg-[#15407a] disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {selectedSiteRows.length > 0
-                        ? `Edit ${selectedSiteRows.length} schedule${selectedSiteRows.length > 1 ? "s" : ""}`
-                        : "Edit schedules"}
-                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -1942,11 +2872,24 @@ function EditSetupPage() {
     if (screenId === "students") {
       return (
         <div className="space-y-3">
-          {([
-            { value: false, label: "Automatic", desc: "Student assessments open at the start of each rating window. No extra step needed." },
-            { value: true, label: "Site Leader controlled", desc: "Site Leaders choose when students at their site can access their self-assessment within the window." },
-          ] as const).map(({ value, label, desc }) => (
-            <label key={String(value)} className="flex items-start gap-3 cursor-pointer">
+          {(
+            [
+              {
+                value: false,
+                label: "Automatic",
+                desc: "Student assessments open at the start of each rating window. No extra step needed.",
+              },
+              {
+                value: true,
+                label: "Site Leader controlled",
+                desc: "Site Leaders choose when students at their site can access their self-assessment within the window.",
+              },
+            ] as const
+          ).map(({ value, label, desc }) => (
+            <label
+              key={String(value)}
+              className="flex items-start gap-3 cursor-pointer"
+            >
               <input
                 type="radio"
                 name="students"
@@ -1971,116 +2914,186 @@ function EditSetupPage() {
 
   // (legacy perWindowCard kept below for reference during transition)
   const _perWindowCard = (cfg: WindowConfig, i: number) => {
-          const color = BAND_COLORS[i % BAND_COLORS.length];
-          const nextIsScreener = i < windowCount - 1 && windowConfigs[i + 1]?.assessment === "screener";
-          return (
-            <div key={i} className="rounded-xl border border-[#e8ecf0] bg-white overflow-visible">
-              <div className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b border-[#f0f4f8]" style={{ borderLeftWidth: 4, borderLeftColor: color.text, borderLeftStyle: "solid", backgroundColor: color.text + "14" }}>
-                <p className="text-[18px] font-bold text-gray-800">{labels[i]}</p>
-                <span className="text-sm text-gray-500">
-                  {dates[i] ? `Opens ${new Date(dates[i] + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "—"}
-                </span>
+    const color = BAND_COLORS[i % BAND_COLORS.length];
+    const nextIsScreener =
+      i < windowCount - 1 && windowConfigs[i + 1]?.assessment === "screener";
+    return (
+      <div
+        key={i}
+        className="rounded-xl border border-[#e8ecf0] bg-white overflow-visible"
+      >
+        <div
+          className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b border-[#f0f4f8]"
+          style={{
+            borderLeftWidth: 4,
+            borderLeftColor: color.text,
+            borderLeftStyle: "solid",
+            backgroundColor: color.text + "14",
+          }}
+        >
+          <p className="text-[18px] font-bold text-gray-800">{labels[i]}</p>
+          <span className="text-sm text-gray-500">
+            {dates[i]
+              ? `Opens ${new Date(dates[i] + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+              : "—"}
+          </span>
+        </div>
+        <div className="px-5 py-4">
+          <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] overflow-visible">
+            <div className="px-4 py-4">
+              <p className="text-base font-semibold text-gray-700 mb-3">
+                Assessment type
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {ASSESSMENT_OPTIONS.map(
+                  ({ value, icon: Icon, label, desc }) => {
+                    const isSelected = cfg.assessment === value;
+                    return (
+                      <button
+                        key={value}
+                        onClick={() =>
+                          updateWindowConfig(i, {
+                            assessment: value as "screener" | "full",
+                          })
+                        }
+                        className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}
+                        >
+                          <Icon
+                            size={15}
+                            className={
+                              isSelected ? "text-white" : "text-gray-500"
+                            }
+                            strokeWidth={1.75}
+                          />
+                        </div>
+                        <p
+                          className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}
+                        >
+                          {label}
+                        </p>
+                        <p className="text-xs text-gray-500 leading-snug">
+                          {desc}
+                        </p>
+                      </button>
+                    );
+                  },
+                )}
               </div>
-              <div className="px-5 py-4">
-                <div className="bg-[#f8fafc] rounded-xl border border-[#e8ecf0] overflow-visible">
-                  <div className="px-4 py-4">
-                    <p className="text-base font-semibold text-gray-700 mb-3">Assessment type</p>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {ASSESSMENT_OPTIONS.map(({ value, icon: Icon, label, desc }) => {
-                        const isSelected = cfg.assessment === value;
-                        return (
-                          <button
-                            key={value}
-                            onClick={() => updateWindowConfig(i, { assessment: value as "screener" | "full" })}
-                            className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
-                          >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 ${isSelected ? "bg-[#1a4e8a]" : "bg-gray-100"}`}>
-                              <Icon size={15} className={isSelected ? "text-white" : "text-gray-500"} strokeWidth={1.75} />
-                            </div>
-                            <p className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
-                            <p className="text-xs text-gray-500 leading-snug">{desc}</p>
-                          </button>
-                        );
-                      })}
+            </div>
+            <AnimatePresence initial={false}>
+              {cfg.assessment === "screener" && (
+                <motion.div
+                  key="q1"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-t border-[#e8ecf0] px-4 py-4">
+                    <div className="flex items-center gap-2.5">
+                      <Switch
+                        checked={cfg.conditionalAssignment ?? false}
+                        onCheckedChange={(v) =>
+                          updateWindowConfig(i, { conditionalAssignment: v })
+                        }
+                        className="cursor-pointer"
+                      />
+                      <span
+                        className={`text-sm select-none transition-colors ${cfg.conditionalAssignment ? "text-gray-700" : "text-gray-400"}`}
+                      >
+                        Assign the full DESSA to students scoring at or below a
+                        T-Score of
+                      </span>
+                      <input
+                        type="number"
+                        value={cfg.tScore}
+                        onChange={(e) =>
+                          updateWindowConfig(i, { tScore: e.target.value })
+                        }
+                        disabled={!cfg.conditionalAssignment}
+                        className="w-16 h-7 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
+                      />
+                      <TScoreInfoTooltip />
                     </div>
                   </div>
-                  <AnimatePresence initial={false}>
-                    {cfg.assessment === "screener" && (
-                      <motion.div
-                        key="q1"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.18, ease: "easeOut" }}
-                        className="overflow-hidden"
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Low-scorer handoff — forward-looking, belongs to this window's screener outcome */}
+        <AnimatePresence initial={false}>
+          {cfg.assessment === "screener" && nextIsScreener && (
+            <motion.div
+              key="handoff"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <div className="border-t border-[#c7d7ee] bg-[#f0f6ff] rounded-b-xl px-5 py-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <ArrowRight
+                    size={14}
+                    className="text-[#1a4e8a] shrink-0"
+                    strokeWidth={2}
+                  />
+                  <p className="text-sm font-semibold text-gray-800">
+                    Students scoring below the threshold
+                  </p>
+                </div>
+                <p className="text-[13px] text-gray-500 mb-3 pl-5">
+                  How should they begin {labels[i + 1]}?
+                </p>
+                <div className="pl-5 grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      {
+                        value: "rescreen",
+                        label: "Screen again",
+                        sublabel: `They take the screener again in ${labels[i + 1]}.`,
+                      },
+                      {
+                        value: "skip",
+                        label: "Full DESSA",
+                        sublabel: `They go straight to the full assessment in ${labels[i + 1]}.`,
+                      },
+                    ] as const
+                  ).map(({ value, label, sublabel }) => {
+                    const isSelected =
+                      windowConfigs[i + 1]?.resetBehavior === value;
+                    return (
+                      <button
+                        key={value}
+                        onClick={() =>
+                          updateWindowConfig(i + 1, { resetBehavior: value })
+                        }
+                        className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#c7d7ee] bg-white hover:border-[#a3bfdf]"}`}
                       >
-                        <div className="border-t border-[#e8ecf0] px-4 py-4">
-                          <div className="flex items-center gap-2.5">
-                            <Switch
-                              checked={cfg.conditionalAssignment ?? false}
-                              onCheckedChange={(v) => updateWindowConfig(i, { conditionalAssignment: v })}
-                              className="cursor-pointer"
-                            />
-                            <span className={`text-sm select-none transition-colors ${cfg.conditionalAssignment ? "text-gray-700" : "text-gray-400"}`}>Assign the full DESSA to students scoring at or below a T-Score of</span>
-                            <input
-                              type="number"
-                              value={cfg.tScore}
-                              onChange={(e) => updateWindowConfig(i, { tScore: e.target.value })}
-                              disabled={!cfg.conditionalAssignment}
-                              className="w-16 h-7 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0] disabled:opacity-40 disabled:cursor-not-allowed"
-                            />
-                            <TScoreInfoTooltip />
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                        <p
+                          className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}
+                        >
+                          {label}
+                        </p>
+                        <p className="text-xs text-gray-500 leading-snug">
+                          {sublabel}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-
-              {/* Low-scorer handoff — forward-looking, belongs to this window's screener outcome */}
-              <AnimatePresence initial={false}>
-                {cfg.assessment === "screener" && nextIsScreener && (
-                  <motion.div
-                    key="handoff"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="overflow-hidden"
-                  >
-                    <div className="border-t border-[#c7d7ee] bg-[#f0f6ff] rounded-b-xl px-5 py-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <ArrowRight size={14} className="text-[#1a4e8a] shrink-0" strokeWidth={2} />
-                        <p className="text-sm font-semibold text-gray-800">Students scoring below the threshold</p>
-                      </div>
-                      <p className="text-[13px] text-gray-500 mb-3 pl-5">
-                        How should they begin {labels[i + 1]}?
-                      </p>
-                      <div className="pl-5 grid grid-cols-2 gap-2">
-                        {([
-                          { value: "rescreen", label: "Screen again", sublabel: `They take the screener again in ${labels[i + 1]}.` },
-                          { value: "skip", label: "Full DESSA", sublabel: `They go straight to the full assessment in ${labels[i + 1]}.` },
-                        ] as const).map(({ value, label, sublabel }) => {
-                          const isSelected = windowConfigs[i + 1]?.resetBehavior === value;
-                          return (
-                            <button
-                              key={value}
-                              onClick={() => updateWindowConfig(i + 1, { resetBehavior: value })}
-                              className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#c7d7ee] bg-white hover:border-[#a3bfdf]"}`}
-                            >
-                              <p className={`text-sm font-semibold mb-0.5 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>{label}</p>
-                              <p className="text-xs text-gray-500 leading-snug">{sublabel}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
   };
 
   return (
@@ -2094,13 +3107,30 @@ function EditSetupPage() {
       )}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowDeleteConfirm(false)} />
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setShowDeleteConfirm(false)}
+          />
           <div className="relative bg-white rounded-xl border border-[#e8ecf0] shadow-xl p-6 w-[400px]">
-            <h2 className="text-[16px] font-bold text-gray-900 mb-2">Delete this setup?</h2>
-            <p className="text-[14px] text-gray-500 mb-6">All data for this setup will be permanently deleted. This cannot be undone.</p>
+            <h2 className="text-[16px] font-bold text-gray-900 mb-2">
+              Delete this setup?
+            </h2>
+            <p className="text-[14px] text-gray-500 mb-6">
+              All data for this setup will be permanently deleted. This cannot
+              be undone.
+            </p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeleteConfirm(false)} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
-              <button onClick={handleDelete} disabled={deleting} className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="h-9 px-4 rounded-lg border border-[#d1d5db] text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60"
+              >
                 {deleting ? "Deleting…" : "Delete Setup"}
               </button>
             </div>
@@ -2108,18 +3138,27 @@ function EditSetupPage() {
         </div>
       )}
       {showLastYear && (
-        <LastYearModal onClose={() => setShowLastYear(false)} onUse={applyLastYear} />
+        <LastYearModal
+          onClose={() => setShowLastYear(false)}
+          onUse={applyLastYear}
+        />
       )}
 
       {showSuccess ? (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
           <SuccessAnimation />
-          <h2 className="text-[28px] font-bold text-gray-900 mt-8 mb-3">Setup complete</h2>
+          <h2 className="text-[28px] font-bold text-gray-900 mt-8 mb-3">
+            Setup complete
+          </h2>
           <p className="text-[16px] text-gray-500 max-w-sm">
-            Your rating windows have been saved. Taking you to the overview in {countdown}…
+            Your rating windows have been saved. Taking you to the overview in{" "}
+            {countdown}…
           </p>
           <button
-            onClick={() => { router.refresh(); router.push("/settings/yearly-setup"); }}
+            onClick={() => {
+              router.refresh();
+              router.push("/settings/yearly-setup");
+            }}
             className="mt-6 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
           >
             Go now
@@ -2137,8 +3176,13 @@ function EditSetupPage() {
               Back to edit
             </button>
             <span className="text-[16px] font-semibold tracking-tight text-gray-700">
-              {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"} School Year
-              {isOverride && <span className="ml-2 text-[11px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-2 py-0.5">Custom schedule</span>}
+              {searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}{" "}
+              School Year
+              {isOverride && (
+                <span className="ml-2 text-[11px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-2 py-0.5">
+                  Custom schedule
+                </span>
+              )}
             </span>
             <button
               onClick={handleSave}
@@ -2152,8 +3196,12 @@ function EditSetupPage() {
           {/* Review main */}
           <main className="flex-1 overflow-y-auto bg-[#f8fafc]">
             <div className="max-w-[900px] mx-auto px-8 py-12">
-              <h1 className="text-[30px] font-medium text-[#2a2c32] mb-1">Review your setup</h1>
-              <p className="text-[15px] text-gray-400 mb-10">Make sure everything looks right before saving.</p>
+              <h1 className="text-[30px] font-medium text-[#2a2c32] mb-1">
+                Review your setup
+              </h1>
+              <p className="text-[15px] text-gray-400 mb-10">
+                Make sure everything looks right before saving.
+              </p>
 
               <div className="space-y-3">
                 {/* Section 1 — Rating Windows */}
@@ -2161,22 +3209,35 @@ function EditSetupPage() {
                   const sectionId = "windows";
                   const isOpen = openReviewSections.includes(sectionId);
                   const isComplete = dates.every(Boolean);
-                  const toggle = () => setOpenReviewSections(prev =>
-                    prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
-                  );
+                  const toggle = () =>
+                    setOpenReviewSections((prev) =>
+                      prev.includes(sectionId)
+                        ? prev.filter((s) => s !== sectionId)
+                        : [...prev, sectionId],
+                    );
                   return (
                     <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
                       <button
                         onClick={toggle}
                         className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
                       >
-                        <span className="text-[16px] font-semibold text-gray-800">Default Rating Windows</span>
+                        <span className="text-[16px] font-semibold text-gray-800">
+                          Default Rating Windows
+                        </span>
                         <div className="flex items-center gap-3">
-                          {isComplete
-                            ? <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">Complete</span>
-                            : <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">Incomplete</span>
-                          }
-                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                          {isComplete ? (
+                            <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">
+                              Complete
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">
+                              Incomplete
+                            </span>
+                          )}
+                          <motion.div
+                            animate={{ rotate: isOpen ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
                             <ChevronDown size={16} className="text-gray-400" />
                           </motion.div>
                         </div>
@@ -2197,14 +3258,32 @@ function EditSetupPage() {
                               </div>
                               <div className="flex justify-between">
                                 {dates.map((d, i) => (
-                                  <div key={i} className={`flex flex-col gap-1 flex-1 ${i === dates.length - 1 ? "items-end" : ""}`}>
-                                    <span className="text-[12px] font-medium text-gray-400">{labels[i]}</span>
-                                    <span className="text-sm font-semibold text-gray-700">{d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
+                                  <div
+                                    key={i}
+                                    className={`flex flex-col gap-1 flex-1 ${i === dates.length - 1 ? "items-end" : ""}`}
+                                  >
+                                    <span className="text-[12px] font-medium text-gray-400">
+                                      {labels[i]}
+                                    </span>
+                                    <span className="text-sm font-semibold text-gray-700">
+                                      {d
+                                        ? new Date(
+                                            d + "T00:00:00",
+                                          ).toLocaleDateString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                          })
+                                        : "—"}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
                               <button
-                                onClick={() => { setShowReview(false); setCurrentScreenId("window-count"); }}
+                                onClick={() => {
+                                  setShowReview(false);
+                                  setCurrentScreenId("window-count");
+                                }}
                                 className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
                               >
                                 Edit
@@ -2221,23 +3300,38 @@ function EditSetupPage() {
                 {(() => {
                   const sectionId = "assessment";
                   const isOpen = openReviewSections.includes(sectionId);
-                  const isComplete = windowConfigs.every(wc => wc.assessment !== null);
-                  const toggle = () => setOpenReviewSections(prev =>
-                    prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
+                  const isComplete = windowConfigs.every(
+                    (wc) => wc.assessment !== null,
                   );
+                  const toggle = () =>
+                    setOpenReviewSections((prev) =>
+                      prev.includes(sectionId)
+                        ? prev.filter((s) => s !== sectionId)
+                        : [...prev, sectionId],
+                    );
                   return (
                     <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
                       <button
                         onClick={toggle}
                         className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
                       >
-                        <span className="text-[16px] font-semibold text-gray-800">Assessment Configuration</span>
+                        <span className="text-[16px] font-semibold text-gray-800">
+                          Assessment Configuration
+                        </span>
                         <div className="flex items-center gap-3">
-                          {isComplete
-                            ? <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">Complete</span>
-                            : <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">Incomplete</span>
-                          }
-                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                          {isComplete ? (
+                            <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">
+                              Complete
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">
+                              Incomplete
+                            </span>
+                          )}
+                          <motion.div
+                            animate={{ rotate: isOpen ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
                             <ChevronDown size={16} className="text-gray-400" />
                           </motion.div>
                         </div>
@@ -2255,26 +3349,46 @@ function EditSetupPage() {
                             <div className="border-t border-[#e8ecf0] px-6 py-5">
                               <div className="space-y-3">
                                 {windowConfigs.map((wc, i) => {
-                                  const typeLabel = wc.assessment === "screener" ? "Screener" : "Full DESSA";
-                                  const autoEscalation = wc.assessment === "screener"
-                                    ? (wc.conditionalAssignment ? `Yes (T ≤ ${wc.tScore})` : "No")
-                                    : "Not applicable";
+                                  const typeLabel =
+                                    wc.assessment === "screener"
+                                      ? "Screener"
+                                      : "Full DESSA";
+                                  const autoEscalation =
+                                    wc.assessment === "screener"
+                                      ? wc.conditionalAssignment
+                                        ? `Yes (T ≤ ${wc.tScore})`
+                                        : "No"
+                                      : "Not applicable";
                                   return (
-                                    <div key={i} className="flex py-2.5 border-b border-[#f0f4f8] last:border-0">
+                                    <div
+                                      key={i}
+                                      className="flex py-2.5 border-b border-[#f0f4f8] last:border-0"
+                                    >
                                       <div className="w-48 shrink-0">
-                                        <span className="text-[12px] font-medium text-gray-400 block">{labels[i]}</span>
-                                        <span className="text-sm font-medium text-gray-700">{typeLabel}</span>
+                                        <span className="text-[12px] font-medium text-gray-400 block">
+                                          {labels[i]}
+                                        </span>
+                                        <span className="text-sm font-medium text-gray-700">
+                                          {typeLabel}
+                                        </span>
                                       </div>
                                       <div>
-                                        <span className="text-[12px] font-medium text-gray-400 block">Auto-assign DESSA</span>
-                                        <span className="text-sm font-medium text-gray-700">{autoEscalation}</span>
+                                        <span className="text-[12px] font-medium text-gray-400 block">
+                                          Auto-assign DESSA
+                                        </span>
+                                        <span className="text-sm font-medium text-gray-700">
+                                          {autoEscalation}
+                                        </span>
                                       </div>
                                     </div>
                                   );
                                 })}
                               </div>
                               <button
-                                onClick={() => { setShowReview(false); setCurrentScreenId("date-0"); }}
+                                onClick={() => {
+                                  setShowReview(false);
+                                  setCurrentScreenId("date-0");
+                                }}
                                 className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
                               >
                                 Edit
@@ -2288,100 +3402,155 @@ function EditSetupPage() {
                 })()}
 
                 {/* Section 3 — Site Custom Setups (only if hasSiteCustomSetups !== null) */}
-                {hasSiteCustomSetups !== null && (() => {
-                  const sectionId = "sites";
-                  const isOpen = openReviewSections.includes(sectionId);
-                  const isComplete = hasSiteCustomSetups !== null;
-                  const toggle = () => setOpenReviewSections(prev =>
-                    prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
-                  );
-                  return (
-                    <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
-                      <button
-                        onClick={toggle}
-                        className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
-                      >
-                        <span className="text-[16px] font-semibold text-gray-800">Site Custom Setups</span>
-                        <div className="flex items-center gap-3">
-                          {isComplete
-                            ? <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">Complete</span>
-                            : <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">Incomplete</span>
-                          }
-                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                            <ChevronDown size={16} className="text-gray-400" />
-                          </motion.div>
-                        </div>
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {isOpen && (
-                          <motion.div
-                            key="body"
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-[#e8ecf0] px-6 py-5">
-                              {hasSiteCustomSetups === false ? (
-                                <p className="text-sm text-gray-600">All sites follow the same setup.</p>
-                              ) : (() => {
-                                const customSites = MOCK_SITES.filter((s) => !!siteCustomSetups[s]);
-                                const defaultCount = MOCK_SITES.length - customSites.length;
-                                const shown = customSites.slice(0, 3);
-                                const overflow = customSites.length - shown.length;
-                                const customLine = overflow > 0
-                                  ? `${shown.join(", ")} +${overflow} more`
-                                  : shown.join(", ") || "None";
-                                return (
-                                  <div className="space-y-0">
-                                    {[
-                                      { label: "Custom setup", value: `${customSites.length} site${customSites.length !== 1 ? "s" : ""} — ${customLine}` },
-                                      { label: "Default", value: `${defaultCount} site${defaultCount !== 1 ? "s" : ""}` },
-                                    ].map(({ label, value }) => (
-                                      <div key={label} className="flex items-baseline py-2.5 border-b border-[#f0f4f8] last:border-0">
-                                        <span className="text-[13px] text-gray-400 w-36 shrink-0">{label}</span>
-                                        <span className="text-[13px] font-medium text-gray-700">{value}</span>
+                {hasSiteCustomSetups !== null &&
+                  (() => {
+                    const sectionId = "sites";
+                    const isOpen = openReviewSections.includes(sectionId);
+                    const isComplete = hasSiteCustomSetups !== null;
+                    const toggle = () =>
+                      setOpenReviewSections((prev) =>
+                        prev.includes(sectionId)
+                          ? prev.filter((s) => s !== sectionId)
+                          : [...prev, sectionId],
+                      );
+                    return (
+                      <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
+                        <button
+                          onClick={toggle}
+                          className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
+                        >
+                          <span className="text-[16px] font-semibold text-gray-800">
+                            Site Custom Setups
+                          </span>
+                          <div className="flex items-center gap-3">
+                            {isComplete ? (
+                              <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">
+                                Complete
+                              </span>
+                            ) : (
+                              <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">
+                                Incomplete
+                              </span>
+                            )}
+                            <motion.div
+                              animate={{ rotate: isOpen ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <ChevronDown
+                                size={16}
+                                className="text-gray-400"
+                              />
+                            </motion.div>
+                          </div>
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {isOpen && (
+                            <motion.div
+                              key="body"
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="border-t border-[#e8ecf0] px-6 py-5">
+                                {hasSiteCustomSetups === false ? (
+                                  <p className="text-sm text-gray-600">
+                                    All sites follow the same setup.
+                                  </p>
+                                ) : (
+                                  (() => {
+                                    const customSites = MOCK_SITES.filter(
+                                      (s) => !!siteCustomSetups[s],
+                                    );
+                                    const defaultCount =
+                                      MOCK_SITES.length - customSites.length;
+                                    const shown = customSites.slice(0, 3);
+                                    const overflow =
+                                      customSites.length - shown.length;
+                                    const customLine =
+                                      overflow > 0
+                                        ? `${shown.join(", ")} +${overflow} more`
+                                        : shown.join(", ") || "None";
+                                    return (
+                                      <div className="space-y-0">
+                                        {[
+                                          {
+                                            label: "Custom setup",
+                                            value: `${customSites.length} site${customSites.length !== 1 ? "s" : ""} — ${customLine}`,
+                                          },
+                                          {
+                                            label: "Default",
+                                            value: `${defaultCount} site${defaultCount !== 1 ? "s" : ""}`,
+                                          },
+                                        ].map(({ label, value }) => (
+                                          <div
+                                            key={label}
+                                            className="flex items-baseline py-2.5 border-b border-[#f0f4f8] last:border-0"
+                                          >
+                                            <span className="text-[13px] text-gray-400 w-36 shrink-0">
+                                              {label}
+                                            </span>
+                                            <span className="text-[13px] font-medium text-gray-700">
+                                              {value}
+                                            </span>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
-                                );
-                              })()}
-                              <button
-                                onClick={() => { setShowReview(false); setCurrentScreenId("site-overrides"); }}
-                                className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                })()}
+                                    );
+                                  })()
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setShowReview(false);
+                                    setCurrentScreenId("site-overrides");
+                                  }}
+                                  className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })()}
 
                 {/* Section 4 — Student Self-Assessments */}
                 {(() => {
                   const sectionId = "students";
                   const isOpen = openReviewSections.includes(sectionId);
                   const isComplete = siteLeaderManage !== null;
-                  const toggle = () => setOpenReviewSections(prev =>
-                    prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
-                  );
+                  const toggle = () =>
+                    setOpenReviewSections((prev) =>
+                      prev.includes(sectionId)
+                        ? prev.filter((s) => s !== sectionId)
+                        : [...prev, sectionId],
+                    );
                   return (
                     <div className="rounded-xl border border-[#e8ecf0] bg-white overflow-hidden">
                       <button
                         onClick={toggle}
                         className="w-full flex items-center justify-between px-6 py-4 text-left cursor-pointer hover:bg-[#f8fafc] transition-colors"
                       >
-                        <span className="text-[16px] font-semibold text-gray-800">Student Self-Assessments</span>
+                        <span className="text-[16px] font-semibold text-gray-800">
+                          Student Self-Assessments
+                        </span>
                         <div className="flex items-center gap-3">
-                          {isComplete
-                            ? <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">Complete</span>
-                            : <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">Incomplete</span>
-                          }
-                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                          {isComplete ? (
+                            <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-2 py-0.5">
+                              Complete
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400 rounded-md px-2 py-0.5">
+                              Incomplete
+                            </span>
+                          )}
+                          <motion.div
+                            animate={{ rotate: isOpen ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
                             <ChevronDown size={16} className="text-gray-400" />
                           </motion.div>
                         </div>
@@ -2405,7 +3574,10 @@ function EditSetupPage() {
                                     : "—"}
                               </p>
                               <button
-                                onClick={() => { setShowReview(false); setCurrentScreenId("students"); }}
+                                onClick={() => {
+                                  setShowReview(false);
+                                  setCurrentScreenId("students");
+                                }}
                                 className="mt-4 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
                               >
                                 Edit
@@ -2444,7 +3616,7 @@ function EditSetupPage() {
           </header>
 
           {/* Main content */}
-          <main className="flex-1 overflow-y-auto">
+          <main ref={mainRef} className="flex-1 overflow-y-auto">
             <div className="max-w-[900px] mx-auto px-8 py-16">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -2455,7 +3627,13 @@ function EditSetupPage() {
                   transition={{ duration: 0.18, ease: "easeOut" }}
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <h1 className="text-[30px] font-medium leading-tight" style={{ color: "#2a2c32" }}>
+                    <h1
+                      className="text-[30px] font-medium leading-tight"
+                      style={{ color: "#2a2c32" }}
+                    >
+                      <span className="text-[#1a4e8a] mr-2">
+                        {currentScreenIdx + 1}.
+                      </span>
                       {currentScreen.title}
                     </h1>
                     {currentScreen.helpTitle && (
@@ -2477,7 +3655,9 @@ function EditSetupPage() {
                   </div>
 
                   {/* In-content navigation */}
-                  <div className={`flex items-center justify-between pt-6 ${currentScreen.id === "site-overrides" ? "mt-4" : "mt-10 border-t border-[#f0f4f8]"}`}>
+                  <div
+                    className={`flex items-center justify-between pt-6 ${currentScreen.id === "site-overrides" ? "mt-4" : "mt-10 border-t border-[#f0f4f8]"}`}
+                  >
                     {!isFirstScreen ? (
                       <button
                         onClick={handlePrev}
@@ -2498,13 +3678,56 @@ function EditSetupPage() {
                     )}
                     <div className="flex flex-col items-end gap-1.5">
                       {validationError && (
-                        <p className="text-[13px] text-red-500">{validationError}</p>
+                        <p className="text-[13px] text-red-500">
+                          {validationError}
+                        </p>
                       )}
                       <button
-                        onClick={handleNext}
+                        onClick={() => {
+                          if (
+                            currentScreen.id === "site-overrides" &&
+                            hasSiteCustomSetups === true
+                          ) {
+                            const params = new URLSearchParams({
+                              sites: selectedSiteRows.join(","),
+                              year: searchParams.get("year") ?? "2025-2026",
+                              windowCount: String(windowCount),
+                              dates: dates.join(","),
+                              returnTo: `/settings/yearly-setup/edit2${existingId ? `?id=${existingId}` : ""}`,
+                            });
+                            try {
+                              const existing = sessionStorage.getItem(
+                                "site-config-context",
+                              );
+                              const ctx = existing
+                                ? JSON.parse(existing)
+                                : { configs: {} };
+                              ctx.configs = ctx.configs ?? {};
+                              selectedSiteRows.forEach((site) => {
+                                if (siteCustomSetups[site])
+                                  ctx.configs[site] = siteCustomSetups[site];
+                              });
+                              sessionStorage.setItem(
+                                "site-config-context",
+                                JSON.stringify(ctx),
+                              );
+                            } catch {
+                              /* ignore */
+                            }
+                            router.push(
+                              `/settings/yearly-setup/site-config?${params.toString()}`,
+                            );
+                          } else {
+                            handleNext();
+                          }
+                        }}
                         className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
                       >
-                        {isLastScreen ? "Save" : "Continue"}
+                        {isLastScreen
+                          ? "Save"
+                          : currentScreen.id === "site-overrides"
+                            ? "Customize schedules"
+                            : "Continue"}
                       </button>
                     </div>
                   </div>
@@ -2522,7 +3745,10 @@ function EditSetupPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  onClick={() => { setHelpOpen(false); setHelpContent(null); }}
+                  onClick={() => {
+                    setHelpOpen(false);
+                    setHelpContent(null);
+                  }}
                 />
                 <motion.aside
                   className="fixed right-0 top-0 bottom-0 w-[400px] bg-white border-l border-[#e8ecf0] shadow-2xl z-50 flex flex-col"
@@ -2532,9 +3758,14 @@ function EditSetupPage() {
                   transition={{ type: "spring", damping: 28, stiffness: 260 }}
                 >
                   <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8ecf0]">
-                    <h2 className="text-[17px] font-bold text-gray-900">{helpContent?.title ?? currentScreen.helpTitle}</h2>
+                    <h2 className="text-[17px] font-bold text-gray-900">
+                      {helpContent?.title ?? currentScreen.helpTitle}
+                    </h2>
                     <button
-                      onClick={() => { setHelpOpen(false); setHelpContent(null); }}
+                      onClick={() => {
+                        setHelpOpen(false);
+                        setHelpContent(null);
+                      }}
                       className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                     >
                       <X size={16} />
@@ -2545,7 +3776,10 @@ function EditSetupPage() {
                   </div>
                   <div className="px-8 py-5 border-t border-[#e8ecf0] shrink-0">
                     <button
-                      onClick={() => { setHelpOpen(false); setHelpContent(null); }}
+                      onClick={() => {
+                        setHelpOpen(false);
+                        setHelpContent(null);
+                      }}
                       className="w-full h-9 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       Close
@@ -2562,15 +3796,32 @@ function EditSetupPage() {
       {siteModalOpen && siteModalConfig && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <style>{`@keyframes pulse-border{0%{box-shadow:0 0 0 0 rgba(26,78,138,0.55);border-color:#1a4e8a}65%{box-shadow:0 0 0 10px rgba(26,78,138,0);border-color:#1a4e8a}100%{box-shadow:0 0 0 0 rgba(26,78,138,0);border-color:#e8ecf0}}`}</style>
-          <div className="absolute inset-0 bg-black/40" onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} />
-          <div className="relative bg-white rounded-2xl shadow-2xl flex flex-col" style={{ width: "85vw", height: "85vh" }}>
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => {
+              setSiteModalOpen(false);
+              setSiteModalValidated(false);
+            }}
+          />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl flex flex-col"
+            style={{ width: "85vw", height: "85vh" }}
+          >
             {/* Modal header */}
             <div className="px-8 pt-5 pb-4 border-b border-[#e8ecf0] bg-[#f0f4f8] shrink-0">
               <div className="flex items-start justify-between mb-2">
                 <h2 className="text-[18px] font-bold text-gray-900">
-                  {siteModalTargets.length === 1 ? siteModalTargets[0] : `Custom settings for ${siteModalTargets.length} sites`}
+                  {siteModalTargets.length === 1
+                    ? siteModalTargets[0]
+                    : `Custom settings for ${siteModalTargets.length} sites`}
                 </h2>
-                <button onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer shrink-0 ml-4">
+                <button
+                  onClick={() => {
+                    setSiteModalOpen(false);
+                    setSiteModalValidated(false);
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer shrink-0 ml-4"
+                >
                   <X size={16} />
                 </button>
               </div>
@@ -2578,17 +3829,32 @@ function EditSetupPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => chipsScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" })}
+                      onClick={() =>
+                        chipsScrollRef.current?.scrollBy({
+                          left: -200,
+                          behavior: "smooth",
+                        })
+                      }
                       className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                     >
                       <ChevronLeft size={14} />
                     </button>
-                    <div ref={chipsScrollRef} className="flex items-center gap-1.5 flex-1 overflow-x-auto scrollbar-hide p-2">
+                    <div
+                      ref={chipsScrollRef}
+                      className="flex items-center gap-1.5 flex-1 overflow-x-auto scrollbar-hide p-2"
+                    >
                       {siteModalTargets.map((s) => (
-                        <span key={s} className="flex items-center gap-1 shrink-0 bg-white border border-[#d1d5db] text-[12px] text-gray-600 rounded-full px-2.5 py-0.5">
+                        <span
+                          key={s}
+                          className="flex items-center gap-1 shrink-0 bg-white border border-[#d1d5db] text-[12px] text-gray-600 rounded-full px-2.5 py-0.5"
+                        >
                           {s}
                           <button
-                            onClick={() => setSiteModalTargets((prev) => prev.filter((t) => t !== s))}
+                            onClick={() =>
+                              setSiteModalTargets((prev) =>
+                                prev.filter((t) => t !== s),
+                              )
+                            }
                             className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer ml-0.5"
                           >
                             <X size={11} />
@@ -2597,7 +3863,12 @@ function EditSetupPage() {
                       ))}
                     </div>
                     <button
-                      onClick={() => chipsScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" })}
+                      onClick={() =>
+                        chipsScrollRef.current?.scrollBy({
+                          left: 200,
+                          behavior: "smooth",
+                        })
+                      }
                       className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                     >
                       <ChevronRight size={14} />
@@ -2606,51 +3877,70 @@ function EditSetupPage() {
                   {/* Add site */}
                   <div ref={addSiteRef} className="relative inline-block">
                     <button
-                      onClick={() => { setAddSiteOpen((o) => !o); setAddSiteSearch(""); }}
+                      onClick={() => {
+                        setAddSiteOpen((o) => !o);
+                        setAddSiteSearch("");
+                      }}
                       className="flex items-center gap-1 text-[12px] font-semibold text-[#1a4e8a] hover:text-[#15407a] transition-colors cursor-pointer"
                     >
                       <Plus size={12} strokeWidth={2.5} />
                       Add site
                     </button>
-                    {addSiteOpen && (() => {
-                      const remaining = MOCK_SITES.filter(
-                        (s) => !siteModalTargets.includes(s) &&
-                          s.toLowerCase().includes(addSiteSearch.toLowerCase())
-                      );
-                      return (
-                        <div className="absolute left-0 top-full mt-1.5 z-[80] w-64 bg-white rounded-xl border border-[#e8ecf0] shadow-lg flex flex-col overflow-hidden">
-                          <div className="px-3 py-2 border-b border-[#f0f4f8]">
-                            <div className="flex items-center gap-2">
-                              <Search size={12} className="text-gray-400 shrink-0" />
-                              <input
-                                autoFocus
-                                type="text"
-                                value={addSiteSearch}
-                                onChange={(e) => setAddSiteSearch(e.target.value)}
-                                placeholder="Search sites…"
-                                className="flex-1 text-[13px] text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
-                              />
+                    {addSiteOpen &&
+                      (() => {
+                        const remaining = MOCK_SITES.filter(
+                          (s) =>
+                            !siteModalTargets.includes(s) &&
+                            s
+                              .toLowerCase()
+                              .includes(addSiteSearch.toLowerCase()),
+                        );
+                        return (
+                          <div className="absolute left-0 top-full mt-1.5 z-[80] w-64 bg-white rounded-xl border border-[#e8ecf0] shadow-lg flex flex-col overflow-hidden">
+                            <div className="px-3 py-2 border-b border-[#f0f4f8]">
+                              <div className="flex items-center gap-2">
+                                <Search
+                                  size={12}
+                                  className="text-gray-400 shrink-0"
+                                />
+                                <input
+                                  autoFocus
+                                  type="text"
+                                  value={addSiteSearch}
+                                  onChange={(e) =>
+                                    setAddSiteSearch(e.target.value)
+                                  }
+                                  placeholder="Search sites…"
+                                  className="flex-1 text-[13px] text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
+                                />
+                              </div>
+                            </div>
+                            <div className="overflow-y-auto max-h-52">
+                              {remaining.length === 0 ? (
+                                <p className="text-[12px] text-gray-400 text-center py-4">
+                                  No sites found
+                                </p>
+                              ) : (
+                                remaining.map((s) => (
+                                  <button
+                                    key={s}
+                                    onClick={() => {
+                                      setSiteModalTargets((prev) => [
+                                        ...prev,
+                                        s,
+                                      ]);
+                                      setAddSiteSearch("");
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-[#f0f4f8] transition-colors cursor-pointer"
+                                  >
+                                    {s}
+                                  </button>
+                                ))
+                              )}
                             </div>
                           </div>
-                          <div className="overflow-y-auto max-h-52">
-                            {remaining.length === 0 ? (
-                              <p className="text-[12px] text-gray-400 text-center py-4">No sites found</p>
-                            ) : remaining.map((s) => (
-                              <button
-                                key={s}
-                                onClick={() => {
-                                  setSiteModalTargets((prev) => [...prev, s]);
-                                  setAddSiteSearch("");
-                                }}
-                                className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-[#f0f4f8] transition-colors cursor-pointer"
-                              >
-                                {s}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
+                        );
+                      })()}
                   </div>
                 </div>
               )}
@@ -2661,7 +3951,9 @@ function EditSetupPage() {
               {/* Group name (multi-site only) */}
               {siteModalTargets.length > 1 && (
                 <div>
-                  <p className="text-[18px] font-semibold text-gray-700 mb-2">Group name</p>
+                  <p className="text-[18px] font-semibold text-gray-700 mb-2">
+                    Group name
+                  </p>
                   <input
                     type="text"
                     value={siteModalGroupName}
@@ -2675,33 +3967,52 @@ function EditSetupPage() {
 
               {/* Window count selector */}
               <div>
-                <p className="text-[18px] font-semibold text-gray-700 mb-2">How many rating windows?</p>
+                <p className="text-[18px] font-semibold text-gray-700 mb-2">
+                  How many rating windows?
+                </p>
                 <div className="grid grid-cols-5 gap-2">
                   {WINDOW_OPTIONS.map(({ count, desc }) => {
                     const isSelected = siteModalConfig.windowCount === count;
                     return (
                       <button
                         key={count}
-                        onClick={() => setSiteModalConfig((prev) => {
-                          if (!prev || count === prev.windowCount) return prev;
-                          return {
-                            ...prev,
-                            windowCount: count,
-                            dates: DEFAULT_DATES[count],
-                            windowConfigs: count > prev.windowCount
-                              ? [...prev.windowConfigs, ...Array(count - prev.windowCount).fill(null).map(() => ({ ...DEFAULT_WINDOW_CONFIG }))]
-                              : prev.windowConfigs.slice(0, count),
-                          };
-                        })}
+                        onClick={() =>
+                          setSiteModalConfig((prev) => {
+                            if (!prev || count === prev.windowCount)
+                              return prev;
+                            return {
+                              ...prev,
+                              windowCount: count,
+                              dates: DEFAULT_DATES[count],
+                              windowConfigs:
+                                count > prev.windowCount
+                                  ? [
+                                      ...prev.windowConfigs,
+                                      ...Array(count - prev.windowCount)
+                                        .fill(null)
+                                        .map(() => ({
+                                          ...DEFAULT_WINDOW_CONFIG,
+                                        })),
+                                    ]
+                                  : prev.windowConfigs.slice(0, count),
+                            };
+                          })
+                        }
                         className={`text-left rounded-xl border p-4 transition-all cursor-pointer ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}
                       >
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}>
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}
+                        >
                           {count}
                         </div>
-                        <p className={`text-[14px] font-semibold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>
+                        <p
+                          className={`text-[14px] font-semibold mb-1 leading-snug ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}
+                        >
                           {count === 1 ? "1 Window" : `${count} Windows`}
                         </p>
-                        <p className="text-[12px] text-gray-500 leading-snug">{desc}</p>
+                        <p className="text-[12px] text-gray-500 leading-snug">
+                          {desc}
+                        </p>
                       </button>
                     );
                   })}
@@ -2709,23 +4020,40 @@ function EditSetupPage() {
               </div>
 
               {/* Timeline */}
-              {siteModalConfig.dates.some(Boolean) && (() => {
-                const siteLabels = WINDOW_OPTIONS.find((o) => o.count === siteModalConfig.windowCount)?.labels ?? [];
-                const allDates = siteModalConfig.dates
-                  .map((d, i) => ({ date: d, label: siteLabels[i] ?? `W${i + 1}` }))
-                  .filter((e) => e.date);
-                return (
-                  <div className="rounded-xl border border-[#e8ecf0] bg-[#f8fafc] px-5 py-4">
-                    <p className="text-[15px] font-medium text-gray-400 mb-0.5">Year at a glance</p>
-                    <p className="text-[14px] font-semibold text-gray-800 mb-3">{searchParams.get("year")?.replace("-", "–") ?? "2025–2026"}</p>
-                    <WizardTimeline dates={allDates.map((e) => e.date)} labels={allDates.map((e) => e.label)} />
-                  </div>
-                );
-              })()}
+              {siteModalConfig.dates.some(Boolean) &&
+                (() => {
+                  const siteLabels =
+                    WINDOW_OPTIONS.find(
+                      (o) => o.count === siteModalConfig.windowCount,
+                    )?.labels ?? [];
+                  const allDates = siteModalConfig.dates
+                    .map((d, i) => ({
+                      date: d,
+                      label: siteLabels[i] ?? `W${i + 1}`,
+                    }))
+                    .filter((e) => e.date);
+                  return (
+                    <div className="rounded-xl border border-[#e8ecf0] bg-[#f8fafc] px-5 py-4">
+                      <p className="text-[15px] font-medium text-gray-400 mb-0.5">
+                        Year at a glance
+                      </p>
+                      <p className="text-[14px] font-semibold text-gray-800 mb-3">
+                        {searchParams.get("year")?.replace("-", "–") ??
+                          "2025–2026"}
+                      </p>
+                      <WizardTimeline
+                        dates={allDates.map((e) => e.date)}
+                        labels={allDates.map((e) => e.label)}
+                      />
+                    </div>
+                  );
+                })()}
 
               {/* Copy-from rows */}
               {(() => {
-                const otherCustomSites = MOCK_SITES.filter((s) => !siteModalTargets.includes(s) && !!siteCustomSetups[s]);
+                const otherCustomSites = MOCK_SITES.filter(
+                  (s) => !siteModalTargets.includes(s) && !!siteCustomSetups[s],
+                );
                 const groupMap = new Map<string, string[]>();
                 otherCustomSites.forEach((s) => {
                   const key = JSON.stringify(siteCustomSetups[s]);
@@ -2735,24 +4063,51 @@ function EditSetupPage() {
                 const groups = Array.from(groupMap.entries());
                 if (groups.length === 0) return null;
                 const joinNames = (names: string[]) => {
-                  if (names.length === 1) return <span className="font-semibold">{names[0]}</span>;
-                  if (names.length === 2) return <><span className="font-semibold">{names[0]}</span> and <span className="font-semibold">{names[1]}</span></>;
+                  if (names.length === 1)
+                    return <span className="font-semibold">{names[0]}</span>;
+                  if (names.length === 2)
+                    return (
+                      <>
+                        <span className="font-semibold">{names[0]}</span> and{" "}
+                        <span className="font-semibold">{names[1]}</span>
+                      </>
+                    );
                   const rest = names.length - 2;
-                  return <><span className="font-semibold">{names[0]}</span>, <span className="font-semibold">{names[1]}</span> <span className="text-gray-400">+{rest} more</span></>;
+                  return (
+                    <>
+                      <span className="font-semibold">{names[0]}</span>,{" "}
+                      <span className="font-semibold">{names[1]}</span>{" "}
+                      <span className="text-gray-400">+{rest} more</span>
+                    </>
+                  );
                 };
                 return (
                   <div className="space-y-2">
                     {groups.map(([key, groupSites]) => (
-                      <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-[#e8ecf0] bg-[#f8fafc] px-4 py-3">
+                      <div
+                        key={key}
+                        className="flex items-center justify-between gap-4 rounded-lg border border-[#e8ecf0] bg-[#f8fafc] px-4 py-3"
+                      >
                         <div className="flex items-center gap-3">
-                          <Copy className="shrink-0 text-gray-400" style={{ width: 20, height: 20 }} />
+                          <Copy
+                            className="shrink-0 text-gray-400"
+                            style={{ width: 20, height: 20 }}
+                          />
                           <div>
-                            <p className="text-[13px] font-medium text-gray-700">Copy settings from {joinNames(groupSites)}</p>
-                            <p className="text-[12px] text-gray-400 mt-0.5">Dates, assessment types, and escalation rules</p>
+                            <p className="text-[13px] font-medium text-gray-700">
+                              Copy settings from {joinNames(groupSites)}
+                            </p>
+                            <p className="text-[12px] text-gray-400 mt-0.5">
+                              Dates, assessment types, and escalation rules
+                            </p>
                           </div>
                         </div>
                         <button
-                          onClick={() => setSiteModalConfig({ ...siteCustomSetups[groupSites[0]]! })}
+                          onClick={() =>
+                            setSiteModalConfig({
+                              ...siteCustomSetups[groupSites[0]]!,
+                            })
+                          }
                           className="shrink-0 h-8 px-3 rounded-lg border border-[#c7d7ee] text-[12px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer"
                         >
                           Copy
@@ -2765,120 +4120,242 @@ function EditSetupPage() {
 
               {/* Per-window config */}
               <div className="grid grid-cols-3 gap-4">
-              {Array.from({ length: siteModalConfig.windowCount }, (_, i) => {
-                const siteLabels = WINDOW_OPTIONS.find((o) => o.count === siteModalConfig.windowCount)?.labels ?? [];
-                const windowLabel = siteLabels[i] ?? `W${i + 1}`;
-                const isPulsing = pulsingWindowIndices.has(i);
-                return (
-                <div
-                  key={i}
-                  ref={(el) => { windowCardRefs.current[i] = el; }}
-                  style={isPulsing ? { animation: "pulse-border 1.5s ease-out 2" } : undefined}
-                  className="rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3"
-                >
-                  <p className="text-[14px] font-bold text-gray-700">{windowLabel}</p>
-                  <div>
-                    <p className="text-[13px] text-gray-500 mb-1.5">Opening date</p>
-                    <div className="w-[200px]">
-                      <DatePicker
-                        value={siteModalConfig.dates[i] ?? ""}
-                        onChange={(v) => {
-                          const newDates = [...siteModalConfig.dates];
-                          newDates[i] = v;
-                          setSiteModalConfig((prev) => prev ? { ...prev, dates: newDates } : prev);
-                        }}
-                        popoverClassName="z-[70]"
-                      />
-                    </div>
-                  </div>
-                  <RadioGroupField hasError={siteModalValidated && siteModalConfig.windowConfigs[i]?.assessment === null}>
-                  <div>
-                    <p className="text-[13px] text-gray-500 mb-0">Assessment type</p>
-                    <FieldErrorText message="Please make a selection." show={siteModalValidated && siteModalConfig.windowConfigs[i]?.assessment === null} />
-                    <div className="space-y-2">
-                      {ASSESSMENT_OPTIONS.map(({ value, label }) => (
-                        <label key={value} className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`modal-window-${i}`}
-                            value={value}
-                            checked={siteModalConfig.windowConfigs[i]?.assessment === value}
-                            onChange={() => {
-                              const newWcs = siteModalConfig.windowConfigs.map((wc, idx) =>
-                                idx === i ? { ...wc, assessment: value as "screener" | "full" } : wc
+                {Array.from({ length: siteModalConfig.windowCount }, (_, i) => {
+                  const siteLabels =
+                    WINDOW_OPTIONS.find(
+                      (o) => o.count === siteModalConfig.windowCount,
+                    )?.labels ?? [];
+                  const windowLabel = siteLabels[i] ?? `W${i + 1}`;
+                  const isPulsing = pulsingWindowIndices.has(i);
+                  return (
+                    <div
+                      key={i}
+                      ref={(el) => {
+                        windowCardRefs.current[i] = el;
+                      }}
+                      style={
+                        isPulsing
+                          ? { animation: "pulse-border 1.5s ease-out 2" }
+                          : undefined
+                      }
+                      className="rounded-lg border border-[#e8ecf0] bg-[#f8fafc] p-4 space-y-3"
+                    >
+                      <p className="text-[14px] font-bold text-gray-700">
+                        {windowLabel}
+                      </p>
+                      <div>
+                        <p className="text-[13px] text-gray-500 mb-1.5">
+                          Opening date
+                        </p>
+                        <div className="w-[200px]">
+                          <DatePicker
+                            value={siteModalConfig.dates[i] ?? ""}
+                            onChange={(v) => {
+                              const newDates = [...siteModalConfig.dates];
+                              newDates[i] = v;
+                              setSiteModalConfig((prev) =>
+                                prev ? { ...prev, dates: newDates } : prev,
                               );
-                              setSiteModalConfig((prev) => prev ? { ...prev, windowConfigs: newWcs } : prev);
                             }}
-                            className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
+                            popoverClassName="z-[70]"
                           />
-                          <span className="text-[14px] text-gray-800">{label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  </RadioGroupField>
-                  <AnimatePresence initial={false}>
-                    {siteModalConfig.windowConfigs[i]?.assessment === "screener" && (
-                      <motion.div key="esc" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
-                        <div className="pt-1 space-y-2">
-                          <p className="text-[13px] text-gray-500">If a student&apos;s screener score is below a threshold, should they automatically take the full DESSA?</p>
+                        </div>
+                      </div>
+                      <RadioGroupField
+                        hasError={
+                          siteModalValidated &&
+                          siteModalConfig.windowConfigs[i]?.assessment === null
+                        }
+                      >
+                        <div>
+                          <p className="text-[13px] text-gray-500 mb-0">
+                            Assessment type
+                          </p>
+                          <FieldErrorText
+                            message="Please make a selection."
+                            show={
+                              siteModalValidated &&
+                              siteModalConfig.windowConfigs[i]?.assessment ===
+                                null
+                            }
+                          />
                           <div className="space-y-2">
-                            {([{ value: true, label: "Yes" }, { value: false, label: "No" }] as const).map(({ value, label }) => (
-                              <label key={String(value)} className="flex items-center gap-3 cursor-pointer">
+                            {ASSESSMENT_OPTIONS.map(({ value, label }) => (
+                              <label
+                                key={value}
+                                className="flex items-center gap-3 cursor-pointer"
+                              >
                                 <input
                                   type="radio"
-                                  name={`modal-escalate-${i}`}
-                                  checked={siteModalConfig.windowConfigs[i]?.conditionalAssignment === value}
+                                  name={`modal-window-${i}`}
+                                  value={value}
+                                  checked={
+                                    siteModalConfig.windowConfigs[i]
+                                      ?.assessment === value
+                                  }
                                   onChange={() => {
-                                    const newWcs = siteModalConfig.windowConfigs.map((wc, idx) =>
-                                      idx === i ? { ...wc, conditionalAssignment: value } : wc
+                                    const newWcs =
+                                      siteModalConfig.windowConfigs.map(
+                                        (wc, idx) =>
+                                          idx === i
+                                            ? {
+                                                ...wc,
+                                                assessment: value as
+                                                  | "screener"
+                                                  | "full",
+                                              }
+                                            : wc,
+                                      );
+                                    setSiteModalConfig((prev) =>
+                                      prev
+                                        ? { ...prev, windowConfigs: newWcs }
+                                        : prev,
                                     );
-                                    setSiteModalConfig((prev) => prev ? { ...prev, windowConfigs: newWcs } : prev);
                                   }}
                                   className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
                                 />
-                                <span className="text-[14px] text-gray-800">{label}</span>
+                                <span className="text-[14px] text-gray-800">
+                                  {label}
+                                </span>
                               </label>
                             ))}
                           </div>
-                          <AnimatePresence initial={false}>
-                            {siteModalConfig.windowConfigs[i]?.conditionalAssignment === true && (
-                              <motion.div key="tscore" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
-                                <div className="flex items-center gap-3 pt-2">
-                                  <span className="text-[13px] text-gray-600">Assign full DESSA at or below T-Score</span>
-                                  <input
-                                    type="number"
-                                    value={siteModalConfig.windowConfigs[i]?.tScore ?? "40"}
-                                    onChange={(e) => {
-                                      const newWcs = siteModalConfig.windowConfigs.map((wc, idx) =>
-                                        idx === i ? { ...wc, tScore: e.target.value } : wc
-                                      );
-                                      setSiteModalConfig((prev) => prev ? { ...prev, windowConfigs: newWcs } : prev);
-                                    }}
-                                    className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0]"
-                                  />
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                );
-              })}
+                      </RadioGroupField>
+                      <AnimatePresence initial={false}>
+                        {siteModalConfig.windowConfigs[i]?.assessment ===
+                          "screener" && (
+                          <motion.div
+                            key="esc"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.18 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="pt-1 space-y-2">
+                              <p className="text-[13px] text-gray-500">
+                                If a student&apos;s screener score is below a
+                                threshold, should they automatically take the
+                                full DESSA?
+                              </p>
+                              <div className="space-y-2">
+                                {(
+                                  [
+                                    { value: true, label: "Yes" },
+                                    { value: false, label: "No" },
+                                  ] as const
+                                ).map(({ value, label }) => (
+                                  <label
+                                    key={String(value)}
+                                    className="flex items-center gap-3 cursor-pointer"
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={`modal-escalate-${i}`}
+                                      checked={
+                                        siteModalConfig.windowConfigs[i]
+                                          ?.conditionalAssignment === value
+                                      }
+                                      onChange={() => {
+                                        const newWcs =
+                                          siteModalConfig.windowConfigs.map(
+                                            (wc, idx) =>
+                                              idx === i
+                                                ? {
+                                                    ...wc,
+                                                    conditionalAssignment:
+                                                      value,
+                                                  }
+                                                : wc,
+                                          );
+                                        setSiteModalConfig((prev) =>
+                                          prev
+                                            ? { ...prev, windowConfigs: newWcs }
+                                            : prev,
+                                        );
+                                      }}
+                                      className="w-4 h-4 accent-[#1a4e8a] cursor-pointer shrink-0"
+                                    />
+                                    <span className="text-[14px] text-gray-800">
+                                      {label}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                              <AnimatePresence initial={false}>
+                                {siteModalConfig.windowConfigs[i]
+                                  ?.conditionalAssignment === true && (
+                                  <motion.div
+                                    key="tscore"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.18 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="flex items-center gap-3 pt-2">
+                                      <span className="text-[13px] text-gray-600">
+                                        Assign full DESSA at or below T-Score
+                                      </span>
+                                      <input
+                                        type="number"
+                                        value={
+                                          siteModalConfig.windowConfigs[i]
+                                            ?.tScore ?? "40"
+                                        }
+                                        onChange={(e) => {
+                                          const newWcs =
+                                            siteModalConfig.windowConfigs.map(
+                                              (wc, idx) =>
+                                                idx === i
+                                                  ? {
+                                                      ...wc,
+                                                      tScore: e.target.value,
+                                                    }
+                                                  : wc,
+                                            );
+                                          setSiteModalConfig((prev) =>
+                                            prev
+                                              ? {
+                                                  ...prev,
+                                                  windowConfigs: newWcs,
+                                                }
+                                              : prev,
+                                          );
+                                        }}
+                                        className="w-16 h-8 px-2 text-sm text-center border border-[#d1d5db] rounded-md bg-white focus:outline-none focus:border-[#1565c0]"
+                                      />
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
               </div>
-
             </div>
 
             {/* Modal footer */}
             <div className="flex items-center justify-end px-8 py-4 border-t border-[#e8ecf0] bg-[#f0f4f8] shrink-0">
               <div className="flex items-center gap-2">
-                <button onClick={() => { setSiteModalOpen(false); setSiteModalValidated(false); }} className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                <button
+                  onClick={() => {
+                    setSiteModalOpen(false);
+                    setSiteModalValidated(false);
+                  }}
+                  className="h-9 px-4 rounded-lg border border-[#d1d5db] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
                   Cancel
                 </button>
-                <button onClick={saveSiteModal} className="h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer">
+                <button
+                  onClick={saveSiteModal}
+                  className="h-9 px-5 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                >
                   Save
                 </button>
               </div>
@@ -2897,4 +4374,3 @@ export default function EditSetupPageWrapper() {
     </Suspense>
   );
 }
-
