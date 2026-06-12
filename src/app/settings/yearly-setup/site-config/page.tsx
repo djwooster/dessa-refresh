@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, HelpCircle, X, Info, ChevronDown } from "lucide-react";
+import { ArrowLeft, HelpCircle, X, Info, ChevronDown, Plus, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
 
@@ -47,6 +47,41 @@ const TSCORE_RANGES = [
   { label: "Need for Instruction", value: "≤ 40", bg: "#fecaca", text: "#b91c1c", flex: 2 },
   { label: "Typical",              value: "41–59", bg: "#dbeafe", text: "#1e40af", flex: 3 },
   { label: "Strength",             value: "≥ 60",  bg: "#dcfce7", text: "#166534", flex: 2 },
+];
+
+const ALL_SITES = [
+  "Adams Middle","Agave High","Arroyo Seco Elementary","Arthur Elementary",
+  "Aspen Grove Middle","Bayshore Middle","Birchwood Middle","Blackrock High",
+  "Bluehills High","Bluffview Middle","Bridgeview Elementary","Bronzedale High",
+  "Buchanan Middle","Bush Elementary","Cactus Wren Elementary","Canyon View Middle",
+  "Capstone High","Carter Middle","Cedarbrook Elementary","Chaparral Middle",
+  "Clearwater Middle","Cleveland Middle","Cliffside Elementary","Clinton Middle",
+  "Coastline High","Coolidge Middle","Copperfield Middle","Coral Reef High",
+  "Cornerstone High","Cottonwood Elementary","Creekside Elementary","Crestwood High",
+  "Desert Ridge Elementary","Dolphin Bay Elementary","Eagle View Elementary","Eastview Middle",
+  "Eisenhower High","Elmwood High","Fairview High","Falcon Ridge High",
+  "FDR Elementary","Fillmore High","Flint Ridge Middle","Ford Elementary",
+  "Garfield High","Glenview Middle","Goldfield Middle","Granite Ridge Middle",
+  "Grant Elementary","Greenlawn Elementary","GW Bush High","Harborview Elementary",
+  "Harding Elementary","Harrison Prep","Hawk Creek Middle","Hayes Middle",
+  "Heron Bay Elementary","Hillcrest High","Hillside High","Hoover High",
+  "Inland Empire Elementary","Ironwood Elementary","Jackson Academy","Jefferson Elementary",
+  "Johnson High","Juniper Valley Elementary","Kennedy Elementary","Keystone Elementary",
+  "Lakeshore Middle","Lakeview Middle","LBJ Middle","Limestone High",
+  "Lincoln Elementary","Madison High","Manatee Middle","Maplewood High",
+  "Marble Falls Elementary","McKinley High","Meadowbrook Elementary","Mesa Verde High",
+  "Mesquite Middle","Milestone Middle","Monroe Elementary","Nixon High",
+  "Northside High","Oakwood Middle","Obama Elementary","Ocotillo Middle",
+  "Osprey High","Palo Verde High","Parkview Elementary","Pelican Cove Middle",
+  "Pierce Elementary","Pinecrest Elementary","Pinnacle Middle","Plains High",
+  "Polk Elementary","Pondview Middle","Prairie View Middle","Reagan High",
+  "Redwood High","Ridgecrest High","Riverbend High","Riverside Elementary",
+  "Roadrunner Middle","Roosevelt Elementary","Roosevelt Middle","Sage Hills High",
+  "Sagebrush Middle","Saguaro Elementary","Sandstone Elementary","Seagull Shores High",
+  "Silverstone Elementary","Southside Elementary","Summit Elementary","Sunrise Middle",
+  "Sunset Elementary","Taft Middle","Taylor Middle","Truman Middle",
+  "Tumbleweed High","Tyler Charter","Valley High","Washington High",
+  "Westwood High","Whitewater Middle","Willowbrook Elementary","Wilson High",
 ];
 
 // ─── Mini timeline ─────────────────────────────────────────────────────────────
@@ -317,8 +352,23 @@ function SiteConfigPage() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpContent, setHelpContent] = useState<{ title: string; body: React.ReactNode } | null>(null);
+  const [addSiteOpen, setAddSiteOpen] = useState(false);
+  const [addSiteSearch, setAddSiteSearch] = useState("");
+  const addSiteRef = useRef<HTMLDivElement>(null);
 
   const handleBack = () => { if (isDirty) { setShowLeaveConfirm(true); } else { router.push(returnTo); } };
+
+  useEffect(() => {
+    if (!addSiteOpen) return;
+    const handle = (e: MouseEvent) => {
+      if (addSiteRef.current && !addSiteRef.current.contains(e.target as Node)) {
+        setAddSiteOpen(false);
+        setAddSiteSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [addSiteOpen]);
 
   const labels = WINDOW_OPTIONS.find(o => o.count === windowCount)?.labels ?? [];
 
@@ -434,6 +484,48 @@ function SiteConfigPage() {
                 </span>
               ))}
             </div>
+            <div ref={addSiteRef} className="relative inline-block mt-2">
+              <button
+                onClick={() => { setAddSiteOpen(o => !o); setAddSiteSearch(""); }}
+                className="flex items-center gap-1 text-[12px] font-semibold text-[#1a4e8a] hover:text-[#15407a] transition-colors cursor-pointer"
+              >
+                <Plus size={12} strokeWidth={2.5} />
+                Add school
+              </button>
+              {addSiteOpen && (() => {
+                const remaining = ALL_SITES.filter(s => !sites.includes(s) && s.toLowerCase().includes(addSiteSearch.toLowerCase()));
+                return (
+                  <div className="absolute left-0 top-full mt-1.5 z-[80] w-64 bg-white rounded-xl border border-[#e8ecf0] shadow-lg flex flex-col overflow-hidden">
+                    <div className="px-3 py-2 border-b border-[#f0f4f8]">
+                      <div className="relative">
+                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <input
+                          autoFocus
+                          type="text"
+                          placeholder="Search schools…"
+                          value={addSiteSearch}
+                          onChange={e => setAddSiteSearch(e.target.value)}
+                          className="w-full pl-7 pr-3 py-1.5 text-[13px] border border-[#d1d5db] rounded-lg focus:outline-none focus:border-[#1a4e8a] placeholder:text-gray-400"
+                        />
+                      </div>
+                    </div>
+                    <div className="overflow-y-auto max-h-48">
+                      {remaining.length === 0
+                        ? <p className="px-3 py-3 text-[13px] text-gray-400">No schools found</p>
+                        : remaining.map(s => (
+                          <button
+                            key={s}
+                            onClick={() => { setSites(prev => [...prev, s]); setAddSiteOpen(false); setAddSiteSearch(""); setIsDirty(true); }}
+                            className="w-full text-left px-3 py-2 text-[13px] text-gray-700 hover:bg-[#f0f4f8] transition-colors cursor-pointer"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
 
           <hr className="border-[#e8ecf0]" />
@@ -451,7 +543,7 @@ function SiteConfigPage() {
               </div>
             </div>
             <div className="grid grid-cols-5 gap-3">
-              {WINDOW_OPTIONS.map(({ count }) => {
+              {WINDOW_OPTIONS.map(({ count, labels: optLabels }) => {
                 const isSelected = windowCount === count;
                 const isParent = count === parentWindowCount;
                 return (
@@ -460,12 +552,16 @@ function SiteConfigPage() {
                     {isParent && (
                       <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-100 rounded px-1">Default</span>
                     )}
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-[18px] font-bold ${isSelected ? "bg-[#1a4e8a] text-white" : "bg-gray-100 text-gray-500"}`}>
-                      {count}
-                    </div>
-                    <p className={`text-[14px] font-semibold ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>
+                    <p className={`text-[14px] font-semibold mb-2 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>
                       {count === 1 ? "1 Window" : `${count} Windows`}
                     </p>
+                    <div className="space-y-0.5">
+                      {optLabels.map((l) => (
+                        <p key={l} className={`text-[11px] leading-snug ${isSelected ? "text-[#1a4e8a]/70" : "text-gray-400"}`}>
+                          {l.replace(/ Assessment/i, "")}
+                        </p>
+                      ))}
+                    </div>
                   </button>
                 );
               })}

@@ -977,7 +977,7 @@ function EditSetupPage() {
 
   // UI state
   const [currentScreenId, setCurrentScreenId] = useState(
-    isOverride ? "name" : "window-count",
+    searchParams.get("screen") ?? (isOverride ? "name" : "window-count"),
   );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [assessmentError, setAssessmentError] = useState(false);
@@ -3617,7 +3617,7 @@ function EditSetupPage() {
 
           {/* Main content */}
           <main ref={mainRef} className="flex-1 overflow-y-auto">
-            <div className="max-w-[900px] mx-auto px-8 py-16">
+            <div className="max-w-[900px] mx-auto px-8 py-8">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentScreen.id}
@@ -3656,7 +3656,7 @@ function EditSetupPage() {
 
                   {/* In-content navigation */}
                   <div
-                    className={`flex items-center justify-between pt-6 ${currentScreen.id === "site-overrides" ? "mt-4" : "mt-10 border-t border-[#f0f4f8]"}`}
+                    className={`flex items-center justify-between pt-6 ${currentScreen.id === "site-overrides" ? "mt-4" : "mt-4"}`}
                   >
                     {!isFirstScreen ? (
                       <button
@@ -3693,7 +3693,7 @@ function EditSetupPage() {
                               year: searchParams.get("year") ?? "2025-2026",
                               windowCount: String(windowCount),
                               dates: dates.join(","),
-                              returnTo: `/settings/yearly-setup/edit2${existingId ? `?id=${existingId}` : ""}`,
+                              returnTo: `/settings/yearly-setup/edit2?${existingId ? `id=${existingId}&` : ""}screen=site-overrides`,
                             });
                             try {
                               const existing = sessionStorage.getItem(
