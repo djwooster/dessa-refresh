@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, HelpCircle, X, Info, ChevronDown, Plus, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@/components/ui/date-picker";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -396,7 +397,7 @@ function SiteConfigPage() {
   const handleCountChange = (count: number) => {
     setIsDirty(true);
     setWindowCount(count);
-    setDates(count <= parentDates.length ? parentDates.slice(0, count) : [...parentDates, ...DEFAULT_DATES[count].slice(parentDates.length)]);
+    setDates(count <= parentDates.length ? parentDates.slice(0, count) : DEFAULT_DATES[count]);
     setWindowConfigs(count > windowConfigs.length
       ? [...windowConfigs, ...Array(count - windowConfigs.length).fill(null).map(() => ({ assessment: null, conditionalAssignment: null, tScore: "40", resetBehavior: null }))]
       : windowConfigs.slice(0, count)
@@ -433,15 +434,14 @@ function SiteConfigPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
       {/* Sticky header */}
-      <header className="h-[60px] shrink-0 flex items-center gap-4 px-8 border-b border-[#e8ecf0] bg-white sticky top-0 z-10">
+      <header className="h-[60px] relative shrink-0 flex items-center px-8 border-b border-[#e8ecf0] bg-white sticky top-0 z-10">
         <button onClick={handleBack}
-          className="flex items-center gap-2 text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer shrink-0">
+          className="flex items-center gap-2 text-[13px] font-medium text-[#2443f0] hover:opacity-80 transition-opacity cursor-pointer shrink-0">
           <ArrowLeft size={14} />
           Back to setup
         </button>
-        <div className="h-4 w-px bg-[#e8ecf0]" />
-        <p className="text-[15px] font-semibold text-gray-700 truncate">
-          {sites.length === 1 ? sites[0] : `Configure ${sites.length} sites`}
+        <p className="absolute left-1/2 -translate-x-1/2 text-[20px] font-bold text-gray-800 truncate" style={{ letterSpacing: "-0.02em" }}>
+          {sites.length === 1 ? `Custom Configure ${sites[0]}` : `Custom Configure ${sites.length} sites`}
         </p>
         <div className="flex-1" />
         <span className="text-[13px] text-gray-400 shrink-0">{yearDisplay}</span>
@@ -542,30 +542,18 @@ function SiteConfigPage() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-5 gap-3">
-              {WINDOW_OPTIONS.map(({ count, labels: optLabels }) => {
-                const isSelected = windowCount === count;
-                const isParent = count === parentWindowCount;
-                return (
-                  <button key={count} onClick={() => handleCountChange(count)}
-                    className={`text-left rounded-xl border p-4 transition-all cursor-pointer relative ${isSelected ? "border-[#1a4e8a] bg-[#eef2f8]" : "border-[#e8ecf0] bg-white hover:border-gray-300"}`}>
-                    {isParent && (
-                      <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-100 rounded px-1">Default</span>
-                    )}
-                    <p className={`text-[14px] font-semibold mb-2 ${isSelected ? "text-[#1a4e8a]" : "text-gray-600"}`}>
-                      {count === 1 ? "1 Window" : `${count} Windows`}
-                    </p>
-                    <div className="space-y-0.5">
-                      {optLabels.map((l) => (
-                        <p key={l} className={`text-[11px] leading-snug ${isSelected ? "text-[#1a4e8a]/70" : "text-gray-400"}`}>
-                          {l.replace(/ Assessment/i, "")}
-                        </p>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              value={String(windowCount)}
+              onValueChange={(v) => { if (v) handleCountChange(parseInt(v)); }}
+            >
+              {WINDOW_OPTIONS.map(({ count }) => (
+                <ToggleGroupItem key={count} value={String(count)} aria-label={`${count} rating windows`}>
+                  {count === 1 ? "1 Rating Window" : `${count} Rating Windows`}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
 
           {/* Timeline */}
@@ -616,15 +604,17 @@ function SiteConfigPage() {
       </main>
 
       {/* Fixed footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e8ecf0] px-8 py-4 flex items-center justify-between z-10">
-        <button onClick={handleBack}
-          className="h-10 px-5 rounded-lg border border-[#d1d5db] text-[13.5px] font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
-          Cancel
-        </button>
-        <button onClick={handleSave} disabled={saving}
-          className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer disabled:opacity-60">
-          {saving ? "Saving…" : "Save configuration"}
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e8ecf0] px-8 py-4 flex items-center justify-end z-10">
+        <div className="flex items-center gap-4">
+          <button onClick={handleBack}
+            className="h-10 px-5 rounded-lg border border-[#d1d5db] text-[13.5px] font-medium text-red-500 hover:bg-gray-50 transition-colors cursor-pointer">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer disabled:opacity-60">
+            {saving ? "Saving…" : "Save configuration"}
+          </button>
+        </div>
       </div>
 
       {/* Leave confirmation */}
