@@ -1103,29 +1103,48 @@ function EditSetupPage() {
                   </label>
                 ))}
               </div>
+              <AnimatePresence initial={false}>
+                {!isFirstScreener && cfg?.assessment === "screener" && (
+                  <motion.div
+                    key="subsequent-screener-alert"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="rounded-xl bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3 mt-4 text-[13.5px] text-[#1a4e8a] leading-relaxed flex items-start gap-2.5">
+                      <Info size={15} className="shrink-0 mt-0.5" />
+                      <span>
+                        {resetBehavior === "skip"
+                          ? <>Students who were assessed using the full DESSA as a result of a low screener score in previous windows are automatically being assessed using the full DESSA for the rest of the year.{" "}
+                            <button
+                              onClick={() => {
+                                setHelpContent({
+                                  title: "Year-Round Full DESSA",
+                                  body: (
+                                    <div className="space-y-4 text-[14px] text-gray-600 leading-relaxed">
+                                      <p>When a student scores below the threshold on a screener, they are flagged as having a <strong>Need for Instruction</strong>. Based on your setup, this triggers an automatic escalation: they are assessed using the full DESSA for every remaining window this year.</p>
+                                      <p>This means that in this window, some students will start with the full DESSA rather than the screener — not because of their current performance, but because of what was identified earlier in the year.</p>
+                                      <p>This behavior is controlled by the escalation setting you configured in the first rating window.</p>
+                                    </div>
+                                  ),
+                                });
+                                setHelpOpen(true);
+                              }}
+                              className="font-semibold underline underline-offset-2 cursor-pointer hover:opacity-70 transition-opacity"
+                            >
+                              Read more →
+                            </button>
+                          </>
+                          : "Students who score below the threshold will be re-screened in each new window."}
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </RadioGroupField>
-          <AnimatePresence initial={false}>
-            {!isFirstScreener && cfg?.assessment === "screener" && (
-              <motion.div
-                key="subsequent-screener-alert"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="rounded-xl bg-[#eef2f8] border border-[#c7d7ee] px-4 py-3 text-[13.5px] text-[#1a4e8a] leading-relaxed flex items-start gap-2.5">
-                  <Info size={15} className="shrink-0 mt-0.5" />
-                  <span>
-                    {resetBehavior === "skip"
-                      ? "Students who scored below the threshold in previous screener windows are already being assessed using the full DESSA. Students who score below the threshold in this window will be too."
-                      : "Students who score below the threshold will be re-screened in each new window."}
-                  </span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
           <AnimatePresence initial={false}>
             {cfg?.assessment === "screener" && (
               <motion.div
@@ -1181,6 +1200,22 @@ function EditSetupPage() {
                       message="Please answer this question to continue."
                       show={escalationError}
                     />
+                    <AnimatePresence initial={false}>
+                      {cfg?.conditionalAssignment === true && (
+                        <motion.div
+                          key="escalation-subtext"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <p className="text-[13px] text-gray-500 leading-relaxed">
+                            Students that score below the threshold will be assessed using the full DESSA in all upcoming rating windows.
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     <div
                       className={`space-y-3 ${escalationError ? "" : "mt-4"}`}
                     >
