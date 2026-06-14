@@ -129,13 +129,12 @@ function MiniTimeline({ dates, labels }: { dates: string[]; labels: string[] }) 
 // ─── Window section ────────────────────────────────────────────────────────────
 
 function WindowSection({
-  index, label, windowCount, date, cfg, allConfigs, colorBg, colorText,
-  onDateChange, onConfigChange, onHelp,
+  index, label, windowCount, cfg, allConfigs, colorBg, colorText,
+  onConfigChange, onHelp,
 }: {
-  index: number; label: string; windowCount: number; date: string;
+  index: number; label: string; windowCount: number;
   cfg: WindowConfig; allConfigs: WindowConfig[];
   colorBg: string; colorText: string;
-  onDateChange: (v: string) => void;
   onConfigChange: (patch: Partial<WindowConfig>) => void;
   onHelp: (title: string, body: React.ReactNode) => void;
 }) {
@@ -169,14 +168,6 @@ function WindowSection({
             </span>
           </div>
         )}
-
-        {/* Opening date */}
-        <div>
-          <p className="text-[15px] font-semibold text-gray-700 mb-2">Opening date</p>
-          <div className="w-[220px]">
-            <DatePicker value={date} onChange={onDateChange} />
-          </div>
-        </div>
 
         {/* Q1: Assessment type */}
         <div className="rounded-xl border border-[#e8ecf0] p-4">
@@ -468,30 +459,18 @@ function SiteConfigPage() {
 
           {/* Sites list */}
           <div>
-            <p className="text-[13px] font-semibold text-gray-500 mb-2">
-              {sites.length === 1 ? "Site" : `Sites (${sites.length})`}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {sites.map((site) => (
-                <span key={site} className="flex items-center gap-1 bg-white border border-[#d1d5db] text-[13px] text-gray-600 rounded-full px-3 py-1">
-                  {site}
-                  {sites.length > 1 && (
-                    <button onClick={() => setSites(prev => prev.filter(s => s !== site))}
-                      className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer ml-0.5">
-                      <X size={12} />
-                    </button>
-                  )}
-                </span>
-              ))}
-            </div>
-            <div ref={addSiteRef} className="relative inline-block mt-2">
-              <button
-                onClick={() => { setAddSiteOpen(o => !o); setAddSiteSearch(""); }}
-                className="flex items-center gap-1 text-[12px] font-semibold text-[#1a4e8a] hover:text-[#15407a] transition-colors cursor-pointer"
-              >
-                <Plus size={12} strokeWidth={2.5} />
-                Add school
-              </button>
+            <div className="flex items-center justify-between w-full mb-2">
+              <p className="text-[13px] font-semibold text-gray-500">
+                {sites.length === 1 ? "Site" : `Sites (${sites.length})`}
+              </p>
+              <div ref={addSiteRef} className="relative">
+                <button
+                  onClick={() => { setAddSiteOpen(o => !o); setAddSiteSearch(""); }}
+                  className="flex items-center gap-1 text-[12px] font-semibold text-[#1a4e8a] hover:text-[#15407a] transition-colors cursor-pointer"
+                >
+                  <Plus size={12} strokeWidth={2.5} />
+                  Add school
+                </button>
               {addSiteOpen && (() => {
                 const remaining = ALL_SITES.filter(s => !sites.includes(s) && s.toLowerCase().includes(addSiteSearch.toLowerCase()));
                 return (
@@ -527,8 +506,28 @@ function SiteConfigPage() {
               })()}
             </div>
           </div>
-
-          <hr className="border-[#e8ecf0]" />
+          <div
+            className="overflow-x-auto gap-1.5 pb-1"
+            style={{
+              display: "grid",
+              gridTemplateRows: "repeat(2, auto)",
+              gridAutoFlow: "column",
+              gridAutoColumns: "max-content",
+            }}
+          >
+            {sites.map((site) => (
+              <span key={site} className="flex items-center gap-1 bg-white border border-[#d1d5db] text-[13px] text-gray-600 rounded-full px-3 py-1">
+                {site}
+                {sites.length > 1 && (
+                  <button onClick={() => setSites(prev => prev.filter(s => s !== site))}
+                    className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer ml-0.5">
+                    <X size={12} />
+                  </button>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
 
           {/* Window count */}
           <div>
@@ -563,19 +562,17 @@ function SiteConfigPage() {
               <p className="text-[15px] font-semibold text-gray-800 mb-4">{yearDisplay}</p>
               <MiniTimeline dates={dates} labels={labels} />
               <div className={`flex mt-4 pt-4 border-t border-[#f0f4f8] ${windowCount > 1 ? "justify-between" : ""}`}>
-                {labels.slice(0, windowCount).map((label, j) => dates[j] ? (
+                {labels.slice(0, windowCount).map((label, j) => (
                   <div key={j}>
-                    <p className="text-[13px] font-medium text-gray-400">{label}</p>
-                    <p className="text-[14px] font-semibold text-gray-800 mt-0.5">
-                      {new Date(dates[j] + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                    </p>
+                    <p className="text-[13px] font-medium text-gray-400 mb-1">{label}</p>
+                    <div className="w-[140px]">
+                      <DatePicker value={dates[j]} onChange={(v) => updateDate(j, v)} />
+                    </div>
                   </div>
-                ) : null)}
+                ))}
               </div>
             </div>
           )}
-
-          <hr className="border-[#e8ecf0]" />
 
           {/* Per-window sections */}
           <div>
@@ -587,12 +584,10 @@ function SiteConfigPage() {
                   index={i}
                   label={labels[i]}
                   windowCount={windowCount}
-                  date={dates[i] ?? ""}
                   cfg={windowConfigs[i] ?? { assessment: null, conditionalAssignment: null, tScore: "40", resetBehavior: null }}
                   allConfigs={windowConfigs}
                   colorBg={BAND_COLORS[i % BAND_COLORS.length].bg}
                   colorText={BAND_COLORS[i % BAND_COLORS.length].text}
-                  onDateChange={(v) => updateDate(i, v)}
                   onConfigChange={(patch) => updateConfig(i, patch)}
                   onHelp={openHelp}
                 />
