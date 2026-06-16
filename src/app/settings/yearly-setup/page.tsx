@@ -212,8 +212,8 @@ function AssessmentConfigRows({
         {/* Header row */}
         <div className="grid grid-cols-[1fr_160px_1fr] gap-4 px-5 py-2.5 bg-[#f8fafc] border-b border-[#e8ecf0]">
           <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Window</span>
-          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Assessment type</span>
-          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Auto-assign DESSA</span>
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Initial Assessment</span>
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">DESSA Follow-up</span>
         </div>
         {Array.from({ length: windowCount }, (_, i) => {
           const wc = windowConfigs.find((c) => c.window_index === i);
@@ -233,9 +233,11 @@ function AssessmentConfigRows({
                 <span className="text-[13px] text-gray-700">{isScreener ? "Screener" : "Full Assessment"}</span>
               </div>
               <div className="flex items-center">
-                {wc?.conditional_assignment
-                  ? <p className="text-[13px] text-gray-700">T-score ≤ {wc.t_score}</p>
-                  : <p className="text-[13px] text-gray-400">Disabled</p>}
+                {!isScreener
+                  ? <p className="text-[13px] text-gray-300">—</p>
+                  : wc?.conditional_assignment
+                    ? <p className="text-[13px] text-gray-700">Full DESSA at T-score ≤ {wc.t_score}</p>
+                    : <p className="text-[13px] text-gray-400">None</p>}
               </div>
             </div>
           );

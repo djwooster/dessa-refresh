@@ -152,6 +152,10 @@ export function buildScreens(
 ): ScreenDef[] {
   const screens: ScreenDef[] = [];
 
+  if (!isOverride) {
+    screens.push({ id: "intro", title: "" });
+  }
+
   if (isOverride) {
     screens.push({
       id: "name",
@@ -239,31 +243,8 @@ export function buildScreens(
     });
   } */
 
-  if (!isOverride)
-    screens.push({
-      id: "site-overrides",
-      title: "Should all sites follow this setup?",
-      subtitle:
-        "You can give individual sites their own windows, dates, and assessment types.",
-      helpTitle: "Site Custom Setups",
-      helpBody: (
-        <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">
-          <p>
-            By default, every site in your organization follows the same rating
-            windows and assessment configuration.
-          </p>
-          <p>
-            If a site has a different schedule — for example, a school on a
-            trimester calendar — you can give it a custom setup with its own
-            dates and assessment types.
-          </p>
-          <p>
-            Custom setups are independent from the default. Changes to the
-            default setup won&apos;t affect sites with a custom setup.
-          </p>
-        </div>
-      ),
-    });
+  /* site-overrides screen removed from default flow — custom setups are
+     created from the overview page using the override wizard */
 
   screens.push({
     id: "students",

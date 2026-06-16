@@ -124,7 +124,7 @@ function EditSetupPage() {
 
   // UI state
   const [currentScreenId, setCurrentScreenId] = useState(
-    searchParams.get("screen") ?? (isOverride ? "name" : "window-count"),
+    searchParams.get("screen") ?? (isOverride ? "name" : "intro"),
   );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [assessmentError, setAssessmentError] = useState(false);
@@ -1201,7 +1201,7 @@ function EditSetupPage() {
                       show={escalationError}
                     />
                     <AnimatePresence initial={false}>
-                      {cfg?.conditionalAssignment === true && (
+                      {cfg?.conditionalAssignment === true && !isFirstScreener && (
                         <motion.div
                           key="escalation-subtext"
                           initial={{ opacity: 0, height: 0 }}
@@ -2775,6 +2775,33 @@ function EditSetupPage() {
             </div>
           </main>
         </>
+      ) : currentScreen.id === "intro" ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center -mt-8">
+          <img
+            src="/start-image.png"
+            alt=""
+            className="w-full mb-8 select-none pointer-events-none"
+            style={{ maxWidth: 300 }}
+          />
+          <h1 className="text-[28px] font-bold text-gray-900 mb-3 tracking-tight">
+            Set up your yearly assessment schedule
+          </h1>
+          <p className="text-[16px] text-gray-500 leading-relaxed mb-8" style={{ maxWidth: 620 }}>
+            This wizard will walk you through choosing rating windows, opening dates, and assessment types for the year. It takes about 5 minutes. Once the default setup is saved, you can create custom schedules for sites that run on a different calendar.
+          </p>
+          <button
+            onClick={handleNext}
+            className="h-11 px-8 rounded-lg bg-[#1a4e8a] text-white text-[14px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+          >
+            Get started
+          </button>
+          <button
+            onClick={handleCancel}
+            className="mt-4 text-[13px] text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
       ) : (
         <>
           {/* 60px progress header */}
@@ -2792,9 +2819,16 @@ function EditSetupPage() {
                 transition={{ duration: 0.35, ease: "easeOut" }}
               />
             </div>
-            <span className="text-[13px] text-gray-400 shrink-0 tabular-nums">
-              {currentScreenIdx + 1} / {totalScreens}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              {isOverride && (
+                <span className="text-[11px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-2 py-0.5">
+                  Custom schedule
+                </span>
+              )}
+              <span className="text-[13px] text-gray-400 tabular-nums">
+                {currentScreenIdx + 1} / {totalScreens}
+              </span>
+            </div>
           </header>
 
           {/* Main content */}
@@ -2829,7 +2863,9 @@ function EditSetupPage() {
                   </div>
                   {currentScreen.subtitle && (
                     <p className="text-[16px] text-gray-500 mb-10 leading-relaxed">
-                      {currentScreen.subtitle}
+                      {currentScreen.id === "sites" && overrideName.trim()
+                        ? <>Select all sites that should follow the custom schedule for <strong className="font-semibold text-gray-900">{overrideName.trim()}</strong>.</>
+                        : currentScreen.subtitle}
                     </p>
                   )}
                   <div className={currentScreen.subtitle ? "" : "mt-10"}>
