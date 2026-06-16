@@ -129,6 +129,7 @@ function EditSetupPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [assessmentError, setAssessmentError] = useState(false);
   const [escalationError, setEscalationError] = useState(false);
+  const [resetBehaviorError, setResetBehaviorError] = useState(false);
   const [siteOverridesError, setSiteOverridesError] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpContent, setHelpContent] = useState<{
@@ -167,6 +168,7 @@ function EditSetupPage() {
     setAssessmentError(false);
     setEscalationError(false);
     setSiteOverridesError(false);
+    setResetBehaviorError(false);
   }, [currentScreenId]);
 
   useEffect(() => {
@@ -534,8 +536,11 @@ function EditSetupPage() {
   const totalScreens = screenSequence.length;
   const isFirstScreen = currentScreenIdx === 0;
   const isLastScreen = currentScreenIdx === totalScreens - 1;
+  const stepOffset = !isOverride ? 1 : 0;
+  const displayStep = currentScreenIdx + 1 - stepOffset;
+  const displayTotal = totalScreens - stepOffset;
   const progress =
-    totalScreens > 0 ? ((currentScreenIdx + 1) / totalScreens) * 100 : 0;
+    displayTotal > 0 ? (displayStep / displayTotal) * 100 : 0;
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
@@ -621,6 +626,17 @@ function EditSetupPage() {
         setAssessmentError(false);
         setSiteOverridesError(false);
         setValidationError(null);
+      } else if (
+        idx >= 0 &&
+        windowConfigs[idx]?.assessment === "screener" &&
+        windowConfigs[idx]?.conditionalAssignment === true &&
+        resetBehavior === null
+      ) {
+        setResetBehaviorError(true);
+        setAssessmentError(false);
+        setEscalationError(false);
+        setSiteOverridesError(false);
+        setValidationError(null);
       } else if (currentScreen.id === "site-overrides") {
         setSiteOverridesError(true);
         setAssessmentError(false);
@@ -630,6 +646,7 @@ function EditSetupPage() {
         setAssessmentError(false);
         setEscalationError(false);
         setSiteOverridesError(false);
+        setResetBehaviorError(false);
         setValidationError(getValidationError());
       }
       return;
@@ -1376,8 +1393,8 @@ function EditSetupPage() {
                       className="overflow-hidden"
                     >
                       {true && (
-                        <div className="rounded-xl border border-[#e8ecf0] p-4 bg-white">
-                          <div className="flex items-start gap-2 mb-4">
+                        <RadioGroupField hasError={resetBehaviorError}>
+                          <div className="flex items-start gap-2 mb-0">
                             <p className="text-[15px] font-semibold text-gray-800">
                               If a student scores below the threshold on a
                               screener in any rating window, should they
@@ -1436,7 +1453,11 @@ function EditSetupPage() {
                               <HelpCircle size={15} />
                             </button>
                           </div>
-                          <div className="space-y-3">
+                          <FieldErrorText
+                            message="Please answer this question to continue."
+                            show={resetBehaviorError}
+                          />
+                          <div className={`space-y-3 ${resetBehaviorError ? "" : "mt-4"}`}>
                             {(
                               [
                                 {
@@ -1444,120 +1465,7 @@ function EditSetupPage() {
                                   label: "Yes",
                                   desc: (
                                     <>
-                                      Students with an identified{" "}
-                                      <button
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setHelpContent({
-                                            title: "Need for Instruction",
-                                            body: (
-                                              <div className="space-y-8 text-[14px] text-gray-600 leading-relaxed">
-                                                {" "}
-                                                <div>
-                                                  {" "}
-                                                  <p className="text-[18px] font-semibold text-gray-800 mb-1">
-                                                    What it means
-                                                  </p>{" "}
-                                                  <p>
-                                                    A student is classified as{" "}
-                                                    <strong>
-                                                      Need for Instruction
-                                                    </strong>{" "}
-                                                    when their DESSA T-score
-                                                    falls at or below the
-                                                    threshold you set. This
-                                                    indicates they may benefit
-                                                    from targeted
-                                                    social-emotional support.
-                                                  </p>{" "}
-                                                </div>{" "}
-                                                <div>
-                                                  {" "}
-                                                  <p className="text-[18px] font-semibold text-gray-800 mb-2">
-                                                    T-Score ranges
-                                                  </p>{" "}
-                                                  <div className="h-5 rounded-md overflow-hidden flex mb-3">
-                                                    {" "}
-                                                    {TSCORE_RANGES.map(
-                                                      ({
-                                                        label,
-                                                        value,
-                                                        bg,
-                                                        text,
-                                                        flex,
-                                                      }) => (
-                                                        <div
-                                                          key={label}
-                                                          className="flex items-center justify-center"
-                                                          style={{
-                                                            flex,
-                                                            backgroundColor: bg,
-                                                          }}
-                                                        >
-                                                          {" "}
-                                                          <span
-                                                            className="text-[9px] font-bold"
-                                                            style={{
-                                                              color: text,
-                                                            }}
-                                                          >
-                                                            {value}
-                                                          </span>{" "}
-                                                        </div>
-                                                      ),
-                                                    )}{" "}
-                                                  </div>{" "}
-                                                  <div className="space-y-2">
-                                                    {" "}
-                                                    {TSCORE_RANGES.map(
-                                                      ({
-                                                        label,
-                                                        value,
-                                                        bg,
-                                                        text,
-                                                      }) => (
-                                                        <div
-                                                          key={label}
-                                                          className="flex items-center gap-2"
-                                                        >
-                                                          {" "}
-                                                          <div
-                                                            className="w-2.5 h-2.5 rounded-sm shrink-0"
-                                                            style={{
-                                                              backgroundColor:
-                                                                bg,
-                                                              border:
-                                                                "1px solid #e5e7eb",
-                                                            }}
-                                                          />{" "}
-                                                          <span className="flex-1 text-gray-700">
-                                                            {label}
-                                                          </span>{" "}
-                                                          <span
-                                                            className="font-semibold"
-                                                            style={{
-                                                              color: text,
-                                                            }}
-                                                          >
-                                                            {value}
-                                                          </span>{" "}
-                                                        </div>
-                                                      ),
-                                                    )}{" "}
-                                                  </div>{" "}
-                                                </div>{" "}
-                                              </div>
-                                            ),
-                                          });
-                                          setHelpOpen(true);
-                                        }}
-                                        className="font-semibold text-[#1a4e8a] underline underline-offset-2 cursor-pointer hover:text-[#15407a] transition-colors"
-                                      >
-                                        Need for Instruction
-                                      </button>{" "}
-                                      will be assessed using the full DESSA for
-                                      all remaining rating windows.
+                                      Students that scored below the threshold on their screener will be assessed using the full DESSA for all remaining rating windows.
                                     </>
                                   ),
                                 },
@@ -1586,7 +1494,7 @@ function EditSetupPage() {
                                   name="global-reset-behavior"
                                   value={value}
                                   checked={resetBehavior === value}
-                                  onChange={() => setResetBehavior(value)}
+                                  onChange={() => { setResetBehavior(value); setResetBehaviorError(false); }}
                                   className="w-5 h-5 accent-[#1a4e8a] cursor-pointer shrink-0 mt-0.5"
                                 />
                                 <div>
@@ -1600,7 +1508,7 @@ function EditSetupPage() {
                               </label>
                             ))}
                           </div>
-                        </div>
+                        </RadioGroupField>
                       )}
                     </motion.div>
                   )}
@@ -2826,7 +2734,7 @@ function EditSetupPage() {
                 </span>
               )}
               <span className="text-[13px] text-gray-400 tabular-nums">
-                {currentScreenIdx + 1} / {totalScreens}
+                {displayStep} / {displayTotal}
               </span>
             </div>
           </header>
@@ -2848,7 +2756,7 @@ function EditSetupPage() {
                       style={{ color: "#2a2c32" }}
                     >
                       <span className="text-[#1a4e8a] mr-2">
-                        {currentScreenIdx + 1}.
+                        {displayStep}.
                       </span>
                       {currentScreen.title}
                     </h1>
