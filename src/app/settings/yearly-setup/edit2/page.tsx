@@ -63,7 +63,6 @@ import {
   LastYearModal,
   RadioGroupField,
   FieldErrorText,
-  SuccessAnimation,
 } from "./_components";
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -140,8 +139,6 @@ function EditSetupPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLastYear, setShowLastYear] = useState(false);
   const [showReview, setShowReview] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [countdown, setCountdown] = useState(4);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [openReviewSections, setOpenReviewSections] = useState<string[]>([
@@ -495,21 +492,9 @@ function EditSetupPage() {
 
   const handleSave = async () => {
     await saveToSupabase();
-    setShowReview(false);
-    setCountdown(4);
-    setShowSuccess(true);
+    const param = isOverride ? "savedOverride=1" : "saved=1";
+    router.push(`/settings/yearly-setup?${param}`);
   };
-
-  useEffect(() => {
-    if (!showSuccess) return;
-    if (countdown <= 0) {
-      router.refresh();
-      router.push("/settings/yearly-setup");
-      return;
-    }
-    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [showSuccess, countdown]);
 
   // ─── Derived state ─────────────────────────────────────────────────────────
 
@@ -2235,27 +2220,7 @@ function EditSetupPage() {
         />
       )}
 
-      {showSuccess ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-          <SuccessAnimation />
-          <h2 className="text-[28px] font-bold text-gray-900 mt-8 mb-3">
-            Setup complete
-          </h2>
-          <p className="text-[16px] text-gray-500 max-w-sm">
-            Your rating windows have been saved. Taking you to the overview in{" "}
-            {countdown}…
-          </p>
-          <button
-            onClick={() => {
-              router.refresh();
-              router.push("/settings/yearly-setup");
-            }}
-            className="mt-6 text-[13px] font-semibold text-[#1a4e8a] hover:underline cursor-pointer"
-          >
-            Go now
-          </button>
-        </div>
-      ) : false /* showReview */ ? (
+      {false /* showReview */ ? (
         <>
           {/* Review header */}
           <header className="h-[60px] shrink-0 flex items-center justify-between px-8 border-b border-[#e8ecf0] bg-white">
@@ -2821,13 +2786,16 @@ function EditSetupPage() {
                             handleNext();
                           }
                         }}
-                        className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                        disabled={isLastScreen && saving}
+                        className="h-10 px-7 rounded-lg bg-[#1a4e8a] text-white text-[13.5px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer disabled:opacity-60"
                       >
-                        {isLastScreen
-                          ? "Save"
-                          : currentScreen.id === "site-overrides"
-                            ? "Customize schedules"
-                            : "Continue"}
+                        {isLastScreen && saving
+                          ? "Saving…"
+                          : isLastScreen
+                            ? "Save"
+                            : currentScreen.id === "site-overrides"
+                              ? "Customize schedules"
+                              : "Continue"}
                       </button>
                     </div>
                   </div>

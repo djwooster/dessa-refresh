@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { SuccessToast } from "@/components/ui/sonner";
 import {
   Zap,
   ClipboardList,
@@ -252,8 +254,10 @@ function AssessmentConfigRows({
   );
 }
 
-export default function YearlySetupPage() {
+function YearlySetupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const toastFiredRef = useRef(false);
   const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
@@ -280,6 +284,29 @@ export default function YearlySetupPage() {
     };
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
+  }, []);
+
+  useEffect(() => {
+    if (toastFiredRef.current) return;
+    const saved = searchParams.get("saved");
+    const savedOverride = searchParams.get("savedOverride");
+    if (saved || savedOverride) {
+      toastFiredRef.current = true;
+      const isOverride = !!savedOverride;
+      toast.custom((t) => (
+        <SuccessToast
+          id={t}
+          title={isOverride ? "Custom schedule saved" : "Setup saved"}
+          description="Your rating windows are ready. Set up email reminders to notify staff when windows open."
+          actionLabel="Set up reminders"
+          onAction={() => router.push("/settings/rating-window-reminders")}
+        />
+      ));
+      const url = new URL(window.location.href);
+      url.searchParams.delete("saved");
+      url.searchParams.delete("savedOverride");
+      window.history.replaceState({}, "", url.toString());
+    }
   }, []);
 
   useEffect(() => {
@@ -708,5 +735,13 @@ function YearSelect({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+export default function YearlySetupPageWrapper() {
+  return (
+    <Suspense>
+      <YearlySetupPage />
+    </Suspense>
   );
 }
