@@ -37,6 +37,7 @@ export interface Database {
           id: string;
           setup_id: string;
           window_index: number;
+          assessment_type: "screener" | "full" | null;
           conditional_assignment: boolean;
           t_score: string;
           reset_behavior: "rescreen" | "skip";

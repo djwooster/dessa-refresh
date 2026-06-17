@@ -77,7 +77,7 @@ function EditSetupPage() {
   const supabase = createClient();
 
   // Override-specific state
-  const [overrideName, setOverrideName] = useState("");
+  const [overrideName, setOverrideName] = useState("Custom Group 1");
   const [selectedSites, setSelectedSites] = useState<string[]>([]);
 
   // Form state
@@ -124,7 +124,7 @@ function EditSetupPage() {
 
   // UI state
   const [currentScreenId, setCurrentScreenId] = useState(
-    searchParams.get("screen") ?? (isOverride ? "name" : "intro"),
+    searchParams.get("screen") ?? (isOverride ? "sites" : "window-count"),
   );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [assessmentError, setAssessmentError] = useState(false);
@@ -387,9 +387,10 @@ function EditSetupPage() {
         windowConfigs.map((wc, i) => ({
           setup_id: setupId,
           window_index: i,
-          conditional_assignment: wc.conditionalAssignment,
-          t_score: wc.tScore,
-          reset_behavior: wc.resetBehavior,
+          assessment_type: wc.assessment ?? "screener",
+          conditional_assignment: wc.conditionalAssignment ?? false,
+          t_score: wc.tScore ?? "40",
+          reset_behavior: wc.resetBehavior ?? "rescreen",
         })),
       );
     }
@@ -536,9 +537,8 @@ function EditSetupPage() {
   const totalScreens = screenSequence.length;
   const isFirstScreen = currentScreenIdx === 0;
   const isLastScreen = currentScreenIdx === totalScreens - 1;
-  const stepOffset = !isOverride ? 1 : 0;
-  const displayStep = currentScreenIdx + 1 - stepOffset;
-  const displayTotal = totalScreens - stepOffset;
+  const displayStep = currentScreenIdx + 1;
+  const displayTotal = totalScreens;
   const progress =
     displayTotal > 0 ? (displayStep / displayTotal) * 100 : 0;
 
@@ -820,6 +820,7 @@ function EditSetupPage() {
           placeholder="e.g. Downtown Sites, North Region"
           className="w-full max-w-sm bg-transparent border-0 border-b-2 border-[#d1d5db] text-[20px] text-gray-700 placeholder:text-gray-300 focus:outline-none focus:border-[#1565c0] pb-2"
           autoFocus
+          onClick={(e) => (e.target as HTMLInputElement).select()}
         />
       );
     }
@@ -2683,33 +2684,6 @@ function EditSetupPage() {
             </div>
           </main>
         </>
-      ) : currentScreen.id === "intro" ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center -mt-8">
-          <img
-            src="/start-image.png"
-            alt=""
-            className="w-full mb-8 select-none pointer-events-none"
-            style={{ maxWidth: 300 }}
-          />
-          <h1 className="text-[28px] font-bold text-gray-900 mb-3 tracking-tight">
-            Set up your yearly assessment schedule
-          </h1>
-          <p className="text-[16px] text-gray-500 leading-relaxed mb-8" style={{ maxWidth: 620 }}>
-            This wizard will walk you through choosing rating windows, opening dates, and assessment types for the year. It takes about 5 minutes. Once the default setup is saved, you can create custom schedules for sites that run on a different calendar.
-          </p>
-          <button
-            onClick={handleNext}
-            className="h-11 px-8 rounded-lg bg-[#1a4e8a] text-white text-[14px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
-          >
-            Get started
-          </button>
-          <button
-            onClick={handleCancel}
-            className="mt-4 text-[13px] text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-        </div>
       ) : (
         <>
           {/* 60px progress header */}
@@ -2755,7 +2729,7 @@ function EditSetupPage() {
                       className="text-[30px] font-medium leading-tight"
                       style={{ color: "#2a2c32" }}
                     >
-                      <span className="text-[#1a4e8a] mr-2">
+                      <span className="text-[#2a2c32] mr-2">
                         {displayStep}.
                       </span>
                       {currentScreen.title}

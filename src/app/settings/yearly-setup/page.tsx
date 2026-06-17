@@ -24,6 +24,7 @@ import type { YearlySetup, YearlySetupSite } from "@/lib/supabase/types";
 
 type WindowConfig = {
   window_index: number;
+  assessment_type: "screener" | "full" | null;
   conditional_assignment: boolean;
   t_score: string | null;
   reset_behavior: string;
@@ -198,16 +199,20 @@ function AssessmentConfigRows({
   dates,
   assessmentType,
   windowConfigs,
+  setupConditionalAssignment,
+  setupTScore,
 }: {
   windowCount: number;
   dates: string[];
   assessmentType: "screener" | "full";
   windowConfigs: WindowConfig[];
+  setupConditionalAssignment?: boolean | null;
+  setupTScore?: string | null;
 }) {
   const labels = WINDOW_LABELS[windowCount] ?? Array.from({ length: windowCount }, (_, i) => `Window ${i + 1}`);
   return (
     <div>
-      <h3 className="text-[20px] font-semibold text-gray-800 mb-4">Assessment configuration</h3>
+      <h3 className="text-[20px] font-semibold text-gray-800 mb-4">Assessment Configuration</h3>
       <div className="rounded-xl border border-[#e8ecf0] overflow-hidden">
         {/* Header row */}
         <div className="grid grid-cols-[1fr_160px_1fr] gap-4 px-5 py-2.5 bg-[#f8fafc] border-b border-[#e8ecf0]">
@@ -217,7 +222,7 @@ function AssessmentConfigRows({
         </div>
         {Array.from({ length: windowCount }, (_, i) => {
           const wc = windowConfigs.find((c) => c.window_index === i);
-          const isScreener = assessmentType === "screener";
+          const isScreener = (wc?.assessment_type ?? assessmentType) === "screener";
           return (
             <div key={i} className="grid grid-cols-[1fr_160px_1fr] gap-4 px-5 py-3.5 border-b border-[#f0f4f8] last:border-0 bg-white">
               <div>
@@ -235,8 +240,8 @@ function AssessmentConfigRows({
               <div className="flex items-center">
                 {!isScreener
                   ? <p className="text-[13px] text-gray-300">—</p>
-                  : wc?.conditional_assignment
-                    ? <p className="text-[13px] text-gray-700">Full DESSA at T-score ≤ {wc.t_score}</p>
+                  : (wc?.conditional_assignment ?? setupConditionalAssignment)
+                    ? <p className="text-[13px] text-gray-700">Full DESSA at or below T-score {wc?.t_score ?? setupTScore}</p>
                     : <p className="text-[13px] text-gray-400">None</p>}
               </div>
             </div>
@@ -421,8 +426,7 @@ export default function YearlySetupPage() {
               No setup for {formatYear(selectedYear)}
             </h3>
             <p className="text-[16px] text-gray-500 max-w-sm mb-6">
-              Define your rating windows and assessment configuration to get
-              started.
+              Define your sites' default rating windows and assessments. Once a default schedule is created, you can create custom schedules for sites.
             </p>
             <button
               onClick={() =>
@@ -443,7 +447,8 @@ export default function YearlySetupPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => router.push(`/settings/yearly-setup/edit2?id=${defaultSetup.id}&year=${selectedYear}`)}
-                  className="flex items-center justify-center w-[130px] h-9 rounded-lg bg-[#1a4e8a] text-white text-[13px] font-semibold hover:bg-[#15407a] transition-colors cursor-pointer"
+                  className="flex items-center justify-center rounded-lg bg-[#1a4e8a] text-white hover:bg-[#15407a] transition-colors cursor-pointer"
+                  style={{ width: 90, height: 34, fontSize: 13, fontWeight: 500 }}
                 >
                   Edit Setup
                 </button>
@@ -461,7 +466,7 @@ export default function YearlySetupPage() {
                   className="overflow-hidden"
                 >
                   <div className="px-6 py-5 border-b border-[#f0f4f8]">
-                    <h3 className="text-[20px] font-semibold text-gray-800 mb-0.5">Default rating windows</h3>
+                    <h3 className="text-[20px] font-semibold text-gray-800 mb-0.5">Default Rating Windows</h3>
                     <p className="text-sm text-gray-500 mb-4">Applies to {defaultSiteCount} {defaultSiteCount === 1 ? "site" : "sites"}</p>
                     <ConceptC showYearLabel={false} />
                   </div>
@@ -471,6 +476,8 @@ export default function YearlySetupPage() {
                       dates={(defaultSetup.dates as string[]) ?? []}
                       assessmentType={defaultSetup.assessment_type as "screener" | "full"}
                       windowConfigs={defaultSetup.yearly_setup_window_configs ?? []}
+                      setupConditionalAssignment={defaultSetup.conditional_assignment}
+                      setupTScore={defaultSetup.t_score}
                     />
                   </div>
                 </motion.div>
@@ -521,18 +528,24 @@ export default function YearlySetupPage() {
                   schedule.
                 </p>
               </div>
+              <button
+                onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer shrink-0"
+              >
+                <Plus size={13} strokeWidth={2} />
+                Add Schedule
+              </button>
             </div>
 
             <div className={overrides.length === 0 ? "bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden" : ""}>
               {overrides.length === 0 ? (
                 <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
                   <img src="/undraw_date-picker_8qys.svg" alt="" className="w-32 h-32 mb-1" />
-                  <h6 className="text-[15px] font-semibold text-gray-700 mb-1">
-                    No custom schedules
-                  </h6>
+                  <h3 className="text-[20px] font-semibold text-gray-800 mb-1">
+                    No Custom Schedules
+                  </h3>
                   <p className="text-sm text-gray-400 mb-5 max-w-sm">
-                    All sites are following the default setup. Add a custom
-                    schedule for sites that need different window dates.
+                    Create custom schedules for sites that don't follow the default schedule and assessment configuration.
                   </p>
                   <button
                     onClick={() =>

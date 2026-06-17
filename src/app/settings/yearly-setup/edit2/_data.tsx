@@ -152,21 +152,17 @@ export function buildScreens(
 ): ScreenDef[] {
   const screens: ScreenDef[] = [];
 
-  if (!isOverride) {
-    screens.push({ id: "intro", title: "" });
-  }
-
   if (isOverride) {
+    screens.push({
+      id: "sites",
+      title: "Which sites are in this group?",
+      subtitle: "Select all sites that should follow this custom schedule.",
+    });
     screens.push({
       id: "name",
       title: "What should we call this group?",
       subtitle:
         "Give this custom schedule a name so Site Leaders and admins can identify it.",
-    });
-    screens.push({
-      id: "sites",
-      title: "Which sites are in this group?",
-      subtitle: "Select all sites that should follow this custom schedule.",
     });
   }
 
