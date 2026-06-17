@@ -404,9 +404,10 @@ export default function YearlySetupPage() {
               assessmentType={PAST_YEAR_MOCK.assessment_type}
               windowConfigs={PAST_YEAR_MOCK.windows.map((_, i) => ({
                 window_index: i,
+                assessment_type: PAST_YEAR_MOCK.assessment_type,
                 conditional_assignment: PAST_YEAR_MOCK.conditional_assignment,
                 t_score: PAST_YEAR_MOCK.t_score,
-                reset_behavior: "rescreen",
+                reset_behavior: "rescreen" as const,
               }))}
             />
           </div>
