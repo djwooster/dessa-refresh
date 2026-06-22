@@ -218,7 +218,7 @@ function AssessmentConfigRows({
       <div className="rounded-xl border border-[#e8ecf0] overflow-hidden">
         {/* Header row */}
         <div className="grid grid-cols-[1fr_160px_1fr] gap-4 px-5 py-2.5 bg-[#f8fafc] border-b border-[#e8ecf0]">
-          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Window</span>
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Rating Window</span>
           <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Initial Assessment</span>
           <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">DESSA Follow-up</span>
         </div>
@@ -453,8 +453,8 @@ function YearlySetupPage() {
             <h3 className="text-[20px] font-semibold text-gray-800 mb-1">
               No setup for {formatYear(selectedYear)}
             </h3>
-            <p className="text-[16px] text-gray-500 max-w-sm mb-6">
-              Define your sites' default rating windows and assessments. Once a default schedule is created, you can create custom schedules for sites.
+            <p className="text-[16px] text-gray-500 mb-6" style={{ maxWidth: 480 }}>
+              Define your sites' default rating windows and assessments. Once created, you can add custom schedules for sites with different calendars.
             </p>
             <button
               onClick={() =>
@@ -549,20 +549,22 @@ function YearlySetupPage() {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-[20px] font-bold text-gray-900">
-                  Custom Schedules
+                  Custom Rating Window Setup
                 </h2>
                 <p className="text-sm text-gray-500 mt-0.5">
                   Sites whose rating windows don't align with the default
                   schedule.
                 </p>
               </div>
-              <button
-                onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer shrink-0"
-              >
-                <Plus size={13} strokeWidth={2} />
-                Add Schedule
-              </button>
+              {overrides.length > 0 && (
+                <button
+                  onClick={() => router.push("/settings/yearly-setup/edit2?override=true")}
+                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-[#1a4e8a] text-[13px] font-semibold text-[#1a4e8a] hover:bg-[#eef2f8] transition-colors cursor-pointer shrink-0"
+                >
+                  <Plus size={13} strokeWidth={2} />
+                  Add Schedule
+                </button>
+              )}
             </div>
 
             <div className={overrides.length === 0 ? "bg-white rounded-xl border border-[#e8ecf0] shadow-sm overflow-hidden" : ""}>
@@ -570,7 +572,7 @@ function YearlySetupPage() {
                 <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
                   <img src="/undraw_date-picker_8qys.svg" alt="" className="w-32 h-32 mb-1" />
                   <h3 className="text-[20px] font-semibold text-gray-800 mb-1">
-                    No Custom Schedules
+                    No Custom Rating Window Schedules
                   </h3>
                   <p className="text-sm text-gray-400 mb-5 max-w-sm">
                     Create custom schedules for sites that don't follow the default schedule and assessment configuration.

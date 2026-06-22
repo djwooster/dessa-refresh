@@ -156,19 +156,21 @@ export function buildScreens(
     screens.push({
       id: "sites",
       title: "Which sites are in this group?",
-      subtitle: "Select all sites that should follow this custom schedule.",
+      subtitle: "Select the sites that should follow this custom rating window schedule.",
     });
     screens.push({
       id: "name",
       title: "What should we call this group?",
       subtitle:
-        "Give this custom schedule a name so Site Leaders and admins can identify it.",
+        "Give this custom schedule a name so Site Leaders and admins can identify it. e.g. Elementary Schools, Summer Schools",
     });
   }
 
   screens.push({
     id: "window-count",
-    title: "How many rating windows do you need this year?",
+    title: isOverride
+      ? "How many rating windows should this custom setup use?"
+      : "How many rating windows do you need this year?",
     helpTitle: "About Rating Windows",
     helpBody: (
       <div className="space-y-3 text-[14px] text-gray-600 leading-relaxed">

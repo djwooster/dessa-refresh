@@ -2236,7 +2236,7 @@ function EditSetupPage() {
               School Year
               {isOverride && (
                 <span className="ml-2 text-[11px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-2 py-0.5">
-                  Custom schedule
+                  Custom Rating Window Setup
                 </span>
               )}
             </span>
@@ -2669,7 +2669,7 @@ function EditSetupPage() {
             <div className="flex items-center gap-2 shrink-0">
               {isOverride && (
                 <span className="text-[11px] font-semibold text-[#1a4e8a] bg-[#eef2f8] border border-[#c7d7ee] rounded-full px-2 py-0.5">
-                  Custom schedule
+                  Custom Rating Window Setup
                 </span>
               )}
               <span className="text-[13px] text-gray-400 tabular-nums">
