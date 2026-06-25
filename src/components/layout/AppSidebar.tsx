@@ -13,6 +13,7 @@ import {
   GraduationCap,
   ChevronDown,
   Settings,
+  Palette,
 } from "lucide-react";
 import { DessaLogo } from "./DessaLogo";
 
@@ -34,6 +35,7 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Strategies",     href: "/strategies", icon: GitFork },
   { label: "Curriculum",     href: "/lessons",   icon: BookOpen },
   { label: "Training",       href: "/training",  icon: GraduationCap },
+  { label: "Style Guide",    href: "/design-system", icon: Palette },
 ];
 
 const SETTINGS_NAV: NavItem = {
